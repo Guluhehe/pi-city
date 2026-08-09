@@ -43,6 +43,10 @@ for needle in [
     "chapterBumper",
     "updateHotspots",
     "CINEMA UI",
+    "weatherMaterial",
+    "pi-weather-v2",
+    "hazePlane",
+    "lightField",
 ]:
     assert needle in HTML, needle
 

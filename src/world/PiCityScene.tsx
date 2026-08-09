@@ -32,6 +32,39 @@ const MODELS = {
   tool: '/assets/models/tool-works.glb',
 } as const;
 
+const WEATHERED = new Set(['stone','stone_dark','stone_light','cream','wood','wood_light','paper','iron','iron_light','oxide','rust','red','bronze','brass','copper','roof','roof_warm']);
+
+function weatherMaterial(material: THREE.Material) {
+  if (!(material instanceof THREE.MeshStandardMaterial)) return material;
+  const key=(material.name||'').toLowerCase();
+  if (key.includes('glass')) {
+    material.transparent=true;
+    material.opacity=key.includes('dark') ? .62 : .48;
+    material.depthWrite=false;
+    material.roughness=.18;
+    material.metalness=.02;
+    return material;
+  }
+  if (key==='warm') {
+    material.emissiveIntensity=1.35;
+    return material;
+  }
+  if (!WEATHERED.has(key)) return material;
+  const strength=['iron','iron_light','oxide','rust','red','bronze','brass','copper'].includes(key) ? .18 : key.startsWith('wood') ? .15 : .11;
+  const streak=['oxide','rust','iron','iron_light','copper','bronze'].includes(key) ? .10 : .035;
+  material.onBeforeCompile=(shader)=>{
+    shader.vertexShader=shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vPiLocal;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPiLocal = position;');
+    shader.fragmentShader=shader.fragmentShader
+      .replace('#include <common>', `#include <common>\nvarying vec3 vPiLocal;\nfloat piHash(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}`)
+      .replace('#include <color_fragment>', `#include <color_fragment>\nfloat piN=piHash(floor(vPiLocal*7.0));\nfloat piFine=piHash(floor(vPiLocal*23.0+2.7));\nfloat piWear=mix(.90,1.07,piN)*mix(.96,1.035,piFine);\ndiffuseColor.rgb*=mix(1.0,piWear,${strength.toFixed(3)});\nfloat piStreak=smoothstep(.72,.98,piHash(vec3(floor(vPiLocal.x*4.0),floor(vPiLocal.z*4.0),0.0)))*smoothstep(-1.5,2.5,vPiLocal.y);\ndiffuseColor.rgb*=1.0-piStreak*${streak.toFixed(3)};`);
+  };
+  material.customProgramCacheKey=()=>`pi-weather-v2-${key}`;
+  material.needsUpdate=true;
+  return material;
+}
+
 export function PiCityScene({ event, state }: { event?: SemanticEvent; state?: RuntimeState }) {
   return (
     <div className="three-world visual-beta-world">
@@ -76,8 +109,11 @@ function Harbor({ event, state }: { event?: SemanticEvent; state?: RuntimeState 
       <ConceptMatte event={event} />
       <Water />
       <SunsetAtmosphere />
+      <HarborLightField />
+      <AtmosphericDepth />
       <Landmass />
       <IndustrialFabric />
+      <DistrictNeighborhoods />
       <ForegroundInfrastructure />
       <HarborWorkers />
       <SmokePlumes />
@@ -110,6 +146,8 @@ function HeroBuilding({ district, active, children }: { district: keyof typeof M
       if (obj instanceof THREE.Mesh) {
         obj.castShadow = true;
         obj.receiveShadow = true;
+        if (Array.isArray(obj.material)) obj.material=obj.material.map(m=>weatherMaterial(m.clone()));
+        else obj.material=weatherMaterial(obj.material.clone());
       }
     });
     return cloned;
@@ -154,16 +192,19 @@ function SkyDome() {
 
 function ConceptMatte({ event }: { event?: SemanticEvent }) {
   const texture=useLoader(THREE.TextureLoader,'/assets/mattes/industrial-harbor-concept.jpg');
-  const material=useRef<THREE.MeshBasicMaterial>(null);
+  const material=useRef<THREE.ShaderMaterial>(null);
+  const uniforms=useMemo(()=>({uMap:{value:texture},uOpacity:{value:.28},uHaze:{value:new THREE.Color('#c39a6e')}}),[texture]);
   useEffect(()=>{ texture.colorSpace=THREE.SRGBColorSpace; texture.anisotropy=8; },[texture]);
   useFrame((_,delta)=>{
     if(!material.current)return;
     const wide=!event||event.type==='REQUEST_ARRIVED'||event.type==='AGENT_SETTLED';
-    material.current.opacity=THREE.MathUtils.damp(material.current.opacity,wide ? .34 : .10,2.2,delta);
+    material.current.uniforms.uOpacity.value=THREE.MathUtils.damp(material.current.uniforms.uOpacity.value,wide ? .42 : .11,2.2,delta);
   });
-  return <mesh position={[0,10.5,-34]} scale={[1.2,1,1]} renderOrder={-2}>
+  return <mesh position={[0,10.5,-34]} scale={[1.28,1.04,1]} renderOrder={-2}>
     <planeGeometry args={[34,28]} />
-    <meshBasicMaterial ref={material} map={texture} transparent opacity={.28} depthWrite={false} toneMapped={false} fog={false} />
+    <shaderMaterial ref={material} transparent depthWrite={false} toneMapped={false} fog={false} uniforms={uniforms}
+      vertexShader={`varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`}
+      fragmentShader={`uniform sampler2D uMap;uniform float uOpacity;uniform vec3 uHaze;varying vec2 vUv;void main(){vec4 c=texture2D(uMap,vUv);float ex=smoothstep(0.,.12,vUv.x)*smoothstep(0.,.12,1.-vUv.x);float ey=smoothstep(0.,.20,vUv.y)*smoothstep(0.,.09,1.-vUv.y);float horizon=smoothstep(.02,.32,vUv.y);float edge=ex*ey*horizon;float haze=smoothstep(.02,.38,vUv.y)*.15;c.rgb=mix(c.rgb,uHaze,haze);gl_FragColor=vec4(c.rgb,uOpacity*edge);}`} />
   </mesh>;
 }
 
@@ -229,6 +270,27 @@ function DistantCrane({ position, scale }: { position: [number, number, number];
   );
 }
 
+function HarborLightField() {
+  const points=useMemo(()=>{
+    const positions:number[]=[];
+    for(let i=0;i<96;i++){
+      const band=i%3;
+      const x=-25+((i*37)%100)/100*50;
+      const z=-11-band*3.4+(((i*19)%17)/17)*1.5;
+      const y=.65+(((i*13)%11)/11)*(1.8+band*.7);
+      positions.push(x,y,z);
+    }
+    return new Float32Array(positions);
+  },[]);
+  return <points renderOrder={1}><bufferGeometry><bufferAttribute attach="attributes-position" args={[points,3]} /></bufferGeometry><pointsMaterial color="#e7b967" size={.085} transparent opacity={.72} sizeAttenuation depthWrite={false} /></points>;
+}
+
+function AtmosphericDepth() {
+  return <group>
+    {[[0,4.5,-12,28,8,.07],[0,7,-24,39,12,.10]] .map((v,i)=><mesh key={i} position={[v[0] as number,v[1] as number,v[2] as number]} renderOrder={-1}><planeGeometry args={[v[3] as number,v[4] as number]} /><shaderMaterial transparent depthWrite={false} uniforms={{uOpacity:{value:v[5] as number}}} vertexShader={`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`} fragmentShader={`uniform float uOpacity;varying vec2 vUv;void main(){float a=sin(vUv.y*3.14159)*sin(vUv.x*3.14159);gl_FragColor=vec4(.72,.58,.43,uOpacity*a);}`} /></mesh>)}
+  </group>;
+}
+
 function Landmass() {
   return (
     <group>
@@ -270,6 +332,20 @@ function IndustrialFabric() {
   );
 }
 
+
+function DistrictNeighborhoods() {
+  const sheds:[number,number,number,number,number,string][]=[
+    [-8.9,.25,3.2,1.25,.78,'#695845'],[-7.3,.25,2.7,1.05,.68,'#776a54'],[-3.2,.25,-1.2,1.2,.82,'#665b49'],
+    [-1.1,.25,-2.7,1.15,.72,'#675946'],[3.65,.25,-5.7,1.0,.72,'#78634e'],[4.15,.25,-3.2,1.25,.78,'#665c4d'],
+    [8.9,.25,-2.5,1.0,.66,'#6f604c'],[9.9,.25,2.0,1.15,.75,'#655846'],[10.7,.25,5.8,1.0,.7,'#755e47']
+  ];
+  return <group>{sheds.map((s,i)=><group key={i} position={[s[0] as number,s[1] as number,s[2] as number]} rotation={[0,(i%3-.8)*.09,0]}>
+    <mesh position={[0,(s[4] as number)/2,0]} castShadow receiveShadow><boxGeometry args={[s[3] as number,s[4] as number,.95]} /><meshStandardMaterial color={s[5] as string} roughness={.96} /></mesh>
+    <mesh position={[0,(s[4] as number)+.08,0]} rotation={[0,0,i%2?.10:-.10]}><boxGeometry args={[(s[3] as number)*1.04,.10,1.08]} /><meshStandardMaterial color="#37413e" roughness={.78} metalness={.08} /></mesh>
+    {i%2===0&&<mesh position={[(s[3] as number)*.34,(s[4] as number)+.62,-.18]}><cylinderGeometry args={[.08,.10,1.15,10]} /><meshStandardMaterial color="#414844" metalness={.13} roughness={.72} /></mesh>}
+    {i%3===1&&<mesh position={[0,(s[4] as number)*.55,.49]}><boxGeometry args={[(s[3] as number)*.34,.18,.025]} /><meshStandardMaterial color="#d9a75e" emissive="#84521f" emissiveIntensity={.72} roughness={.74} /></mesh>}
+  </group>)}</group>;
+}
 
 function ForegroundInfrastructure() {
   return (
@@ -370,12 +446,20 @@ function AmbientBoat({ start, speed }: { start: [number, number, number]; speed:
 function ArrivalRuntime({ active }: { active: boolean }) {
   const beacon = useRef<THREE.PointLight>(null);
   const hook = useRef<THREE.Group>(null);
+  const sweep = useRef<THREE.Group>(null);
   useFrame(({clock})=>{
     if(beacon.current) beacon.current.intensity = active ? 2.2 + Math.sin(clock.elapsedTime*3.2)*.7 : .35;
     if(hook.current) hook.current.position.y = active ? 1.28 + Math.sin(clock.elapsedTime*1.55)*.22 : 1.28;
+    if(sweep.current) sweep.current.rotation.y=clock.elapsedTime*(active?.38:.12);
   });
   return <group>
     <pointLight ref={beacon} position={[-1.55,4.15,.15]} intensity={.35} distance={8} color="#f1c06d" />
+    <group ref={sweep} position={[-1.55,4.07,.15]}>
+      <mesh position={[2.25,0,0]} rotation={[0,0,-Math.PI/2]} renderOrder={3}>
+        <coneGeometry args={[.44,4.5,24,1,true]} />
+        <meshBasicMaterial color="#f3d28c" transparent opacity={active?.075:.035} depthWrite={false} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} />
+      </mesh>
+    </group>
     <group ref={hook} position={[4.35,1.28,1]}>
       <mesh><boxGeometry args={[.24,.28,.18]} /><meshStandardMaterial color="#9f7040" metalness={.3} roughness={.5} /></mesh>
       <mesh position={[0,-.28,0]}><torusGeometry args={[.12,.025,8,18,Math.PI*1.6]} /><meshStandardMaterial color="#353936" metalness={.5} roughness={.42} /></mesh>

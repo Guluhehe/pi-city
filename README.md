@@ -1,6 +1,6 @@
 # Pi City
 
-**Current milestone: v0.7 Experience Beta — a deployable, asset-based, ~60 second world-first Agent replay with distinct cinematic Watch and spatial Explore modes.**
+**Current milestone: v0.8 Art Pass Beta — the same ~60 second world-first Agent replay with weathered hero materials, soft matte blending, atmospheric depth, denser district fabric, cinematic Watch and spatial Explore modes.**
 
 **A playable visualization of how AI agents actually run.**
 
@@ -8,6 +8,26 @@ Pi City turns agent runtime behavior into a living harbor city. Requests arrive 
 
 ## Current milestone
 
+
+### v0.8 Beta — Art Pass
+
+V0.8 is deliberately not a runtime-feature release. It narrows the remaining visual gap to the original industrial-harbor concept by improving how realtime geometry sits inside the world: GLB materials receive UV-free procedural weathering in the browser, glass is thinner and more transparent, the concept matte uses a feathered/hazed shader instead of a visible rectangular plane, distant practical lights and atmospheric curtains add depth, and low-rise district fabric fills the empty gaps between Hero Buildings.
+
+The visual stack is now explicit:
+
+```text
+Concept Matte / skyline density
+        +
+Atmospheric depth / practical lights
+        +
+Realtime district fabric
+        +
+Weathered GLB Hero Buildings
+        +
+Semantic-Trace-driven machinery
+```
+
+The goal is still technical truth first: no visual layer is allowed to invent runtime behavior.
 
 ### v0.7 Beta — Experience Polish
 
@@ -219,7 +239,7 @@ See `docs/integrated-alpha.md` for the world-first journey contract and the thre
 
 `site-visual-beta/` is the v0.5 asset-based visual build.
 
-`site-live-beta/` is the v0.7 deployable **Experience Beta**: cinematic Watch mode, chapter bumpers, projected 3D Explore hotspots, runtime import, Context Compare, GLB Hero Buildings and realtime runtime machinery.
+`site-live-beta/` is the v0.8 deployable **Art Pass Beta**: cinematic Watch mode, chapter bumpers, projected 3D Explore hotspots, runtime import, Context Compare, weathered GLB Hero Buildings, feathered concept matte, atmospheric depth and realtime runtime machinery.
 
 Preview locally:
 

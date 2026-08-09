@@ -51,7 +51,7 @@ Implemented the Pi runtime/session importer, tolerant JSONL parsing, Semantic Tr
 - shader water and dusk lighting
 - visible Context selection / rejection machinery
 
-## v0.6 — Live Visual Beta — current
+## v0.6 — Live Visual Beta
 
 - 15-beat auth journey (~65 seconds at 1×)
 - duration-driven camera grammar rather than fixed event intervals
@@ -61,11 +61,28 @@ Implemented the Pi runtime/session importer, tolerant JSONL parsing, Semantic Tr
 - post-run district Explore mode
 - procedural WebAudio ambience and event cues
 - runtime JSONL import in the deployable static build
-- GitHub Pages workflow for one-push deployment after the repository is published
 
-### Validation gate before v0.7
+## v0.7 — Experience Beta
 
-- obtain a real public URL
-- run on a normal desktop WebGL browser
-- tune composition, fog, matte blend, bloom, and camera timings from the real rendered output
-- test at least two real Pi runtime logs
+- low-chrome cinematic Watch mode
+- chapter bumpers
+- spatial Explore hotspots projected over real 3D districts
+- gentle district observation camera
+
+## v0.8 — Art Pass — current
+
+- UV-free shader weathering for GLB masonry / timber / metal
+- thinner transparent industrial glass
+- feathered + horizon-hazed concept matte
+- distant warm practical-light field
+- atmospheric depth curtains
+- low-rise district infill between Hero Buildings
+- animated Arrival Harbor lighthouse sweep
+- no new Agent semantics
+
+### Validation gate before v0.9
+
+- obtain a real public URL or normal desktop WebGL preview
+- tune matte/realtime blend from actual rendered screenshots
+- tune material-weathering strength per browser/GPU
+- test at least two real Pi runtime logs before adding Branch / Compaction

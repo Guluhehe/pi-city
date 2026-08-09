@@ -1,8 +1,8 @@
-# Pi City v0.7 Experience Beta
+# Pi City v0.8 Art Pass Beta
 
 Static deployable Experience Beta. No build step is required.
 
-V0.7 separates two interaction modes: a low-chrome cinematic **Watch** journey and a spatial **Explore** mode with building hotspots, lightweight orbiting observation cameras, and district-specific runtime explanations.
+V0.8 keeps the low-chrome cinematic **Watch** journey and spatial **Explore** mode, then adds a visual-integration pass: weathered GLB materials, thinner industrial glass, feathered/hazed matte blending, distant practical-light depth, district infill, and a realtime lighthouse sweep.
 
 ## Run locally
 
