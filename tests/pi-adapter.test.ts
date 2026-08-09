@@ -35,7 +35,7 @@ test('labels reconstructed runtime context as derived evidence', () => {
   const result = importPiJsonl(runtime);
   const context = result.trace.events.find((event) => event.type === 'CONTEXT_COMPILED');
   assert.equal(context?.evidence.level, 'derived');
-  assert.match(context?.evidence.note ?? '', /RPC does not expose context compilation directly/);
+  assert.match(context?.evidence.note ?? '', /exact compiled context requires deeper instrumentation/);
 });
 
 test('combines runtime lifecycle with durable Session nodes', () => {
