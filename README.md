@@ -1,12 +1,23 @@
 # Pi City
 
-**Current milestone: v0.6 Live Visual Beta — a deployable, asset-based, ~60 second world-first Agent replay.**
+**Current milestone: v0.7 Experience Beta — a deployable, asset-based, ~60 second world-first Agent replay with distinct cinematic Watch and spatial Explore modes.**
 
 **A playable visualization of how AI agents actually run.**
 
 Pi City turns agent runtime behavior into a living harbor city. Requests arrive as cargo, session history grows in an archive, context is assembled in a works facility, model decisions open dispatch gates, and tools operate as workshops.
 
 ## Current milestone
+
+
+### v0.7 Beta — Experience Polish
+
+V0.7 keeps the same runtime semantics and GLB harbor world but changes how the product feels to use. Entering the city now defaults to **Cinematic Mode**, which pulls most analysis chrome out of the way while the run is moving. Chapter boundaries get short cinematic title cards instead of relying only on the bottom timeline. After the run settles, **Explore Mode** reveals projected hotspots over the five real 3D districts, adds a gentle district observation camera, and exposes semantic metadata only when the user chooses to inspect a place.
+
+The intended progression is now explicit:
+
+```text
+Enter the city → Watch the loop → notice the U-turn → notice Context change → Run settles → Explore the machinery
+```
 
 ### v0.6 Beta — Live Visual Beta
 
@@ -208,7 +219,7 @@ See `docs/integrated-alpha.md` for the world-first journey contract and the thre
 
 `site-visual-beta/` is the v0.5 asset-based visual build.
 
-`site-live-beta/` is the v0.6 **GitHub Pages** deployment target: cinematic landing, ~60 second Journey, Explore mode, runtime import, Context Compare, GLB Hero Buildings and realtime runtime machinery.
+`site-live-beta/` is the v0.7 deployable **Experience Beta**: cinematic Watch mode, chapter bumpers, projected 3D Explore hotspots, runtime import, Context Compare, GLB Hero Buildings and realtime runtime machinery.
 
 Preview locally:
 

@@ -39,6 +39,10 @@ for needle in [
     "context-cut",
     "request-vessel",
     "tool-result",
+    "watch-mode",
+    "chapterBumper",
+    "updateHotspots",
+    "CINEMA UI",
 ]:
     assert needle in HTML, needle
 

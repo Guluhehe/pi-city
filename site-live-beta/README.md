@@ -1,6 +1,8 @@
-# Pi City v0.6 Live Visual Beta
+# Pi City v0.7 Experience Beta
 
-Static GitHub Pages deployment target. No build step is required.
+Static deployable Experience Beta. No build step is required.
+
+V0.7 separates two interaction modes: a low-chrome cinematic **Watch** journey and a spatial **Explore** mode with building hotspots, lightweight orbiting observation cameras, and district-specific runtime explanations.
 
 ## Run locally
 
