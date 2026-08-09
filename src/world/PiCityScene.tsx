@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { SemanticEvent } from '../semantic-trace/schema';
+import type { RuntimeState } from '../semantic-trace/reducer';
 import { toWorldCue, type WorldDistrict } from './cues';
 
 const DISTRICTS: Record<Exclude<WorldDistrict, 'system'>, [number, number, number]> = {
@@ -23,7 +24,7 @@ const CAMERA_OFFSETS: Record<string, THREE.Vector3> = {
   pullback: new THREE.Vector3(14, 12, 18),
 };
 
-export function PiCityScene({ event }: { event?: SemanticEvent }) {
+export function PiCityScene({ event, state }: { event?: SemanticEvent; state?: RuntimeState }) {
   return (
     <div className="three-world">
       <Canvas shadows camera={{ position: [13, 11, 17], fov: 38, near: 0.1, far: 120 }}>
@@ -31,7 +32,7 @@ export function PiCityScene({ event }: { event?: SemanticEvent }) {
         <fog attach="fog" args={['#bda983', 25, 58]} />
         <hemisphereLight args={['#ffecc9', '#354249', 1.45]} />
         <directionalLight position={[-10, 17, 11]} intensity={3.1} color="#ffd19a" castShadow />
-        <Harbor event={event} />
+        <Harbor event={event} state={state} />
       </Canvas>
       <div className="three-legend">
         <span>{event ? toWorldCue(event).artifact : 'ambient harbor'}</span>
@@ -41,17 +42,19 @@ export function PiCityScene({ event }: { event?: SemanticEvent }) {
   );
 }
 
-function Harbor({ event }: { event?: SemanticEvent }) {
+function Harbor({ event, state }: { event?: SemanticEvent; state?: RuntimeState }) {
   const cue = event ? toWorldCue(event) : undefined;
   const activeDistrict = cue?.district ?? 'system';
 
   return (
     <>
       <Water />
+      <HarborAtmosphere />
       <Land />
+      <ForegroundDocks />
       <AmbientCity />
       <Arrival active={activeDistrict === 'arrival'} />
-      <SessionArchive active={activeDistrict === 'session'} />
+      <SessionArchive active={activeDistrict === 'session'} visibleEntries={state?.sessionEntries ?? 0} />
       <ContextWorks active={activeDistrict === 'context'} cutaway={cue?.camera === 'cutaway'} />
       <ModelCore active={activeDistrict === 'model'} decision={event?.type === 'TOOL_CALL_CREATED'} />
       <ToolDistrict active={activeDistrict === 'tool'} toolName={String(event?.payload.toolName ?? 'read')} />
@@ -72,6 +75,63 @@ function Water() {
       <planeGeometry args={[70, 50, 1, 1]} />
       <meshStandardMaterial color="#3f6267" roughness={0.38} metalness={0.05} />
     </mesh>
+  );
+}
+
+
+function HarborAtmosphere() {
+  const birds = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    if (!birds.current) return;
+    birds.current.rotation.y = clock.elapsedTime * 0.025;
+    birds.current.position.y = 5.7 + Math.sin(clock.elapsedTime * 0.35) * 0.15;
+  });
+  return (
+    <group>
+      <mesh position={[-11, 7.6, -13]}>
+        <sphereGeometry args={[3.2, 24, 16]} />
+        <meshBasicMaterial color="#f0c77c" transparent opacity={0.22} />
+      </mesh>
+      <group ref={birds} position={[0, 5.7, 0]}>
+        {[-5, -2.8, 1.3, 4.5].map((x, i) => (
+          <group key={x} position={[x, Math.sin(i) * 0.35, -5 - i * 0.8]} scale={0.25 + i * 0.025}>
+            <mesh rotation={[0, 0, 0.45]} position={[-0.22, 0, 0]}><boxGeometry args={[0.5, 0.025, 0.08]} /><meshBasicMaterial color="#493f34" /></mesh>
+            <mesh rotation={[0, 0, -0.45]} position={[0.22, 0, 0]}><boxGeometry args={[0.5, 0.025, 0.08]} /><meshBasicMaterial color="#493f34" /></mesh>
+          </group>
+        ))}
+      </group>
+      <DistantCrane position={[-9, 0.2, -5.8]} scale={1.15} />
+      <DistantCrane position={[7, 0.2, -6.5]} scale={0.9} />
+      <DistantCrane position={[11, 0.2, -4.8]} scale={0.7} />
+    </group>
+  );
+}
+
+function DistantCrane({ position, scale }: { position: [number, number, number]; scale: number }) {
+  return (
+    <group position={position} scale={scale}>
+      <mesh position={[0, 2.0, 0]}><boxGeometry args={[0.16, 4, 0.16]} /><meshStandardMaterial color="#5a5145" roughness={0.85} /></mesh>
+      <mesh position={[1.15, 3.75, 0]} rotation={[0, 0, -0.08]}><boxGeometry args={[2.6, 0.12, 0.12]} /><meshStandardMaterial color="#766344" roughness={0.68} metalness={0.15} /></mesh>
+      <mesh position={[2.25, 3.0, 0]}><boxGeometry args={[0.05, 1.45, 0.05]} /><meshStandardMaterial color="#62543c" /></mesh>
+    </group>
+  );
+}
+
+function ForegroundDocks() {
+  return (
+    <group>
+      <mesh position={[-4.8, 0.15, 5.7]} receiveShadow><boxGeometry args={[6.3, 0.28, 1.2]} /><meshStandardMaterial color="#4e3829" roughness={0.95} /></mesh>
+      <mesh position={[5.7, 0.15, 5.5]} receiveShadow><boxGeometry args={[7.8, 0.28, 1.35]} /><meshStandardMaterial color="#4e3829" roughness={0.95} /></mesh>
+      {[-7.2, -5.8, -4.4, -3, 3.2, 4.7, 6.2, 7.7, 9.1].map((x) => (
+        <mesh key={x} position={[x, 0.0, 6.05]}><cylinderGeometry args={[0.08, 0.1, 1.25, 8]} /><meshStandardMaterial color="#3f3025" roughness={0.98} /></mesh>
+      ))}
+      {[-6.5, -5.5, 4, 5.1, 6.2, 7.3].map((x, i) => (
+        <mesh key={`${x}-${i}`} position={[x, 0.6, i % 2 ? 5.2 : 5.5]} castShadow>
+          <boxGeometry args={[0.55, 0.55, 0.55]} />
+          <meshStandardMaterial color={i % 3 === 0 ? '#87633d' : '#69513a'} roughness={0.9} />
+        </mesh>
+      ))}
+    </group>
   );
 }
 
@@ -148,7 +208,7 @@ function Arrival({ active }: { active: boolean }) {
   );
 }
 
-function SessionArchive({ active }: { active: boolean }) {
+function SessionArchive({ active, visibleEntries }: { active: boolean; visibleEntries: number }) {
   const lift = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     if (lift.current && active) lift.current.position.y = 0.45 + (Math.sin(clock.elapsedTime * 2.4) + 1) * 0.65;
@@ -164,9 +224,9 @@ function SessionArchive({ active }: { active: boolean }) {
         <meshStandardMaterial color="#354448" roughness={0.75} />
       </mesh>
       {Array.from({ length: 12 }).map((_, i) => (
-        <mesh key={i} position={[-1 + (i % 4) * 0.66, 0.55 + Math.floor(i / 4) * 0.38, 1.23]}>
+        <mesh key={i} position={[-1 + (i % 4) * 0.66, 0.55 + Math.floor(i / 4) * 0.38, 1.23]} scale={i < Math.max(1, visibleEntries) ? 1 : 0.12}>
           <boxGeometry args={[0.42, 0.14, 0.08]} />
-          <meshStandardMaterial color="#d2c4a2" roughness={0.82} />
+          <meshStandardMaterial color={i < visibleEntries ? '#d9c895' : '#776d5d'} emissive={active && i === Math.max(0, visibleEntries - 1) ? '#6a5325' : '#000000'} emissiveIntensity={active && i === Math.max(0, visibleEntries - 1) ? 0.65 : 0} roughness={0.82} />
         </mesh>
       ))}
       <mesh ref={lift} position={[-1.2, 0.45, -1.3]} castShadow>
@@ -244,12 +304,23 @@ function ToolDistrict({ active, toolName }: { active: boolean; toolName: string 
         <boxGeometry args={[3.8, 1.45, 2.6]} />
         <meshStandardMaterial color="#5b402d" roughness={0.9} />
       </mesh>
-      {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
-        <mesh key={x} position={[x, 0.62, -1]} castShadow>
-          <boxGeometry args={[0.67, 0.9, 0.55]} />
-          <meshStandardMaterial color={active && i === 0 ? '#b08954' : '#796c59'} emissive={active && i === 0 ? '#6c4b22' : '#000000'} emissiveIntensity={active && i === 0 ? 0.65 : 0} />
-        </mesh>
-      ))}
+      {[-1.2, -0.4, 0.4, 1.2].map((x, i) => {
+        const shops = ['inspect', 'edit', 'bash', 'write'];
+        const normalizedTool = ['read', 'grep', 'find', 'ls'].includes(toolName.toLowerCase()) ? 'inspect' : toolName.toLowerCase();
+        const lit = active && shops[i] === normalizedTool;
+        return (
+          <group key={x}>
+            <mesh position={[x, 0.62, -1]} castShadow>
+              <boxGeometry args={[0.67, 0.9, 0.55]} />
+              <meshStandardMaterial color={lit ? '#b08954' : '#796c59'} emissive={lit ? '#6c4b22' : '#000000'} emissiveIntensity={lit ? 0.8 : 0} />
+            </mesh>
+            <mesh position={[x, 1.16, -1.02]}>
+              <boxGeometry args={[0.46, 0.08, 0.05]} />
+              <meshStandardMaterial color={lit ? '#d7c17f' : '#4d5149'} emissive={lit ? '#7e6128' : '#000000'} emissiveIntensity={lit ? 0.6 : 0} />
+            </mesh>
+          </group>
+        );
+      })}
       {[-1.15, 0, 1.15].map((x) => (
         <mesh key={x} position={[x, 2.0, 0.7]} castShadow>
           <cylinderGeometry args={[0.15, 0.23, 2.15, 10]} />

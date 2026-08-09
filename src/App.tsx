@@ -21,7 +21,7 @@ const districtNames = {
 } as const;
 
 type District = keyof typeof districtNames;
-type Tab = 'overview' | 'world' | 'story' | 'session' | 'context' | 'compare' | 'events';
+type Tab = 'overview' | 'journey' | 'world' | 'story' | 'session' | 'context' | 'compare' | 'events';
 
 function load(text: string): SemanticTrace {
   return importPiJsonl(text).trace;
@@ -59,7 +59,7 @@ export function App() {
         }
         return current + 1;
       });
-    }, 850 / speed);
+    }, 950 / speed);
     return () => window.clearInterval(timer);
   }, [playing, speed, frames.length]);
 
@@ -89,7 +89,7 @@ export function App() {
 
   function watchRun() {
     setIndex(0);
-    setTab('world');
+    setTab('journey');
     setPlaying(true);
   }
 
@@ -100,117 +100,232 @@ export function App() {
     setTab('compare');
   }
 
+  const transport = (
+    <section className={`transport ${tab === 'journey' ? 'journey-transport' : ''}`}>
+      <button className="play" onClick={() => { if (index >= frames.length - 1 && !playing) setIndex(0); setPlaying((value) => !value); }}>{playing ? 'Pause' : index >= frames.length - 1 ? 'Replay' : 'Play'}</button>
+      <input
+        type="range"
+        min={0}
+        max={Math.max(frames.length - 1, 0)}
+        value={index}
+        onChange={(event) => { setIndex(Number(event.target.value)); setPlaying(false); }}
+      />
+      <span>{frames.length ? index + 1 : 0} / {frames.length}</span>
+      <select value={speed} onChange={(event) => setSpeed(Number(event.target.value))}>
+        <option value={1}>1×</option>
+        <option value={2}>2×</option>
+        <option value={4}>4×</option>
+      </select>
+    </section>
+  );
+
   return (
-    <main className="app-shell">
+    <main className={`app-shell ${tab === 'journey' ? 'journey-mode' : ''}`}>
       <header className="topbar">
         <div>
           <div className="eyebrow">AGENT RUNTIME, MADE VISIBLE</div>
           <h1>PI CITY</h1>
         </div>
         <div className="top-actions">
+          {tab === 'journey' && <button className="ghost" onClick={() => { setPlaying(false); setTab('overview'); }}>Exit journey</button>}
           <button className="ghost" onClick={() => setTrace(load(demoRuntime))}>Demo run</button>
           <button className="primary" onClick={() => inputRef.current?.click()}>Import Pi JSONL</button>
           <input ref={inputRef} type="file" accept=".jsonl,.json,.txt" multiple hidden onChange={(event) => onFiles(event.target.files)} />
         </div>
       </header>
 
-      <section className="hero-copy">
-        <div>
-          <span className="status-pill">{trace.source === 'pi-runtime' ? 'Runtime replay' : trace.source === 'pi-session' ? 'Session reconstruction' : 'Combined replay'}</span>
-          <h2>{run.title}</h2>
-          <p>{explanation ? `${explanation.title} — ${explanation.plain}` : 'Pi City converts raw runtime evidence into a replayable semantic trace.'}</p>
-        </div>
-        <div className="metrics">
-          <Metric label="Turns" value={run.turns} />
-          <Metric label="Model calls" value={run.modelCalls} />
-          <Metric label="Tool calls" value={run.toolCalls} />
-          <Metric label="Session nodes" value={run.sessionEntries} />
-        </div>
-      </section>
-
-      <nav className="mode-tabs">
-        <button className={tab === 'overview' ? 'active' : ''} onClick={() => setTab('overview')}>Overview</button>
-        <button className={tab === 'world' ? 'active' : ''} onClick={() => setTab('world')}>World</button>
-        <button className={tab === 'story' ? 'active' : ''} onClick={() => setTab('story')}>Story</button>
-        <button className={tab === 'session' ? 'active' : ''} onClick={() => setTab('session')}>Session</button>
-        <button className={tab === 'context' ? 'active' : ''} onClick={() => setTab('context')}>Context</button>
-        <button className={tab === 'compare' ? 'active' : ''} onClick={openCompare}>Compare</button>
-        <button className={tab === 'events' ? 'active' : ''} onClick={() => setTab('events')}>Events</button>
-      </nav>
-
-      <section className="workspace">
-        <div className="stage-card">
-          {tab === 'overview' && <RunOverview run={run} story={story} onWatch={watchRun} />}
-          {tab === 'world' && <PiCityScene event={frame?.event} />}
-          {tab === 'story' && <StoryView trace={trace} story={story} activeIndex={index} onSelect={(value) => { setIndex(value); setPlaying(false); }} />}
-          {tab === 'session' && <SessionTree trace={trace} activeArtifactId={frame?.event.artifactId} />}
-          {tab === 'context' && <ContextView trace={trace} snapshots={contextSnapshots} activeIndex={index} onSelect={(value) => { setIndex(value); setPlaying(false); }} />}
-          {tab === 'compare' && <ContextCompareView snapshots={contextSnapshots} activeIndex={index} onSelect={(value) => { setIndex(value); setPlaying(false); }} />}
-          {tab === 'events' && <TimelineList frames={frames} active={index} onSelect={(value) => { setIndex(value); setPlaying(false); }} />}
-        </div>
-
-        <aside className="inspector">
-          <div className="inspector-head">
-            <div>
-              <div className="eyebrow">INSPECTOR</div>
-              <h3>{frame?.event.type ?? 'No event'}</h3>
-            </div>
-            {evidence && <span className={`evidence ${evidence.level}`}>{evidence.level}</span>}
+      {tab !== 'journey' && (
+        <section className="hero-copy">
+          <div>
+            <span className="status-pill">{trace.source === 'pi-runtime' ? 'Runtime replay' : trace.source === 'pi-session' ? 'Session reconstruction' : 'Combined replay'}</span>
+            <h2>{run.title}</h2>
+            <p>{explanation ? `${explanation.title} — ${explanation.plain}` : 'Pi City converts raw runtime evidence into a replayable semantic trace.'}</p>
           </div>
+          <div className="metrics">
+            <Metric label="Turns" value={run.turns} />
+            <Metric label="Model calls" value={run.modelCalls} />
+            <Metric label="Tool calls" value={run.toolCalls} />
+            <Metric label="Session nodes" value={run.sessionEntries} />
+          </div>
+        </section>
+      )}
 
-          {explanation && (
-            <div className="explanation-stack">
-              <section>
-                <span>What happened</span>
-                <strong>{explanation.title}</strong>
-                <p>{explanation.plain}</p>
-              </section>
-              <section className="why-card">
-                <span>Why it matters</span>
-                <p>{explanation.why}</p>
-              </section>
-            </div>
-          )}
-
-          <dl>
-            <dt>District</dt><dd>{districtNames[activeDistrict]}</dd>
-            <dt>Story step</dt><dd>{activeStory?.title ?? '—'}</dd>
-            <dt>Source</dt><dd>{evidence?.source ?? '—'}</dd>
-            <dt>Turn</dt><dd>{frame?.event.turnId ?? '—'}</dd>
-            <dt>Tool call</dt><dd>{frame?.event.toolCallId ?? '—'}</dd>
-          </dl>
-
-          {evidence?.note && <div className="note"><strong>Why this evidence level?</strong><br />{evidence.note}</div>}
-
-          <div className="payload-title">Semantic payload</div>
-          <pre className="payload">{shortJson(frame?.event.payload ?? {})}</pre>
-          <details className="raw-evidence">
-            <summary>Raw source evidence</summary>
-            <pre>{shortJson(frame?.event.sourceEvent ?? frame?.event)}</pre>
-          </details>
-        </aside>
-      </section>
-
-      <section className="transport">
-        <button className="play" onClick={() => { if (index >= frames.length - 1 && !playing) setIndex(0); setPlaying((value) => !value); }}>{playing ? 'Pause' : index >= frames.length - 1 ? 'Replay' : 'Play'}</button>
-        <input
-          type="range"
-          min={0}
-          max={Math.max(frames.length - 1, 0)}
-          value={index}
-          onChange={(event) => { setIndex(Number(event.target.value)); setPlaying(false); }}
+      {tab === 'journey' ? (
+        <IntegratedJourney
+          run={run}
+          story={story}
+          frames={frames}
+          frame={frame}
+          index={index}
+          contextSnapshots={contextSnapshots}
+          onSelect={(value) => { setIndex(value); setPlaying(false); }}
+          onReplay={() => { setIndex(0); setPlaying(true); }}
+          onExplore={(target) => { setPlaying(false); setTab(target); }}
         />
-        <span>{frames.length ? index + 1 : 0} / {frames.length}</span>
-        <select value={speed} onChange={(event) => setSpeed(Number(event.target.value))}>
-          <option value={1}>1×</option>
-          <option value={2}>2×</option>
-          <option value={4}>4×</option>
-        </select>
-      </section>
+      ) : (
+        <>
+          <nav className="mode-tabs">
+            <button className={tab === 'overview' ? 'active' : ''} onClick={() => setTab('overview')}>Overview</button>
+            <button onClick={watchRun}>Journey</button>
+            <button className={tab === 'world' ? 'active' : ''} onClick={() => setTab('world')}>World</button>
+            <button className={tab === 'story' ? 'active' : ''} onClick={() => setTab('story')}>Story</button>
+            <button className={tab === 'session' ? 'active' : ''} onClick={() => setTab('session')}>Session</button>
+            <button className={tab === 'context' ? 'active' : ''} onClick={() => setTab('context')}>Context</button>
+            <button className={tab === 'compare' ? 'active' : ''} onClick={openCompare}>Compare</button>
+            <button className={tab === 'events' ? 'active' : ''} onClick={() => setTab('events')}>Events</button>
+          </nav>
 
+          <section className="workspace">
+            <div className="stage-card">
+              {tab === 'overview' && <RunOverview run={run} story={story} onWatch={watchRun} />}
+              {tab === 'world' && <PiCityScene event={frame?.event} state={frame?.state} />}
+              {tab === 'story' && <StoryView trace={trace} story={story} activeIndex={index} onSelect={(value) => { setIndex(value); setPlaying(false); }} />}
+              {tab === 'session' && <SessionTree trace={trace} activeArtifactId={frame?.event.artifactId} />}
+              {tab === 'context' && <ContextView trace={trace} snapshots={contextSnapshots} activeIndex={index} onSelect={(value) => { setIndex(value); setPlaying(false); }} />}
+              {tab === 'compare' && <ContextCompareView snapshots={contextSnapshots} activeIndex={index} onSelect={(value) => { setIndex(value); setPlaying(false); }} />}
+              {tab === 'events' && <TimelineList frames={frames} active={index} onSelect={(value) => { setIndex(value); setPlaying(false); }} />}
+            </div>
+
+            <aside className="inspector">
+              <div className="inspector-head">
+                <div><div className="eyebrow">INSPECTOR</div><h3>{frame?.event.type ?? 'No event'}</h3></div>
+                {evidence && <span className={`evidence ${evidence.level}`}>{evidence.level}</span>}
+              </div>
+              {explanation && <InspectorExplanation explanation={explanation} />}
+              <dl>
+                <dt>District</dt><dd>{districtNames[activeDistrict]}</dd>
+                <dt>Story step</dt><dd>{activeStory?.title ?? '—'}</dd>
+                <dt>Source</dt><dd>{evidence?.source ?? '—'}</dd>
+                <dt>Turn</dt><dd>{frame?.event.turnId ?? '—'}</dd>
+                <dt>Tool call</dt><dd>{frame?.event.toolCallId ?? '—'}</dd>
+              </dl>
+              {evidence?.note && <div className="note"><strong>Why this evidence level?</strong><br />{evidence.note}</div>}
+              <div className="payload-title">Semantic payload</div>
+              <pre className="payload">{shortJson(frame?.event.payload ?? {})}</pre>
+              <details className="raw-evidence"><summary>Raw source evidence</summary><pre>{shortJson(frame?.event.sourceEvent ?? frame?.event)}</pre></details>
+            </aside>
+          </section>
+          {transport}
+        </>
+      )}
+
+      {tab === 'journey' && transport}
       {trace.warnings.length > 0 && <div className="warning">{trace.warnings.join(' ')}</div>}
-      <footer>Pi City v0.2 · Real Run Explorer</footer>
+      <footer>Pi City v0.2 Integrated Alpha</footer>
     </main>
+  );
+}
+
+function InspectorExplanation({ explanation }: { explanation: ReturnType<typeof explainEvent> }) {
+  return (
+    <div className="explanation-stack">
+      <section><span>What happened</span><strong>{explanation.title}</strong><p>{explanation.plain}</p></section>
+      <section className="why-card"><span>Why it matters</span><p>{explanation.why}</p></section>
+    </div>
+  );
+}
+
+function IntegratedJourney({
+  run,
+  story,
+  frames,
+  frame,
+  index,
+  contextSnapshots,
+  onSelect,
+  onReplay,
+  onExplore,
+}: {
+  run: ReturnType<typeof analyzeRun>;
+  story: StoryStep[];
+  frames: ReturnType<typeof buildTraceFrames>;
+  frame?: ReturnType<typeof buildTraceFrames>[number];
+  index: number;
+  contextSnapshots: ReturnType<typeof buildContextSnapshots>;
+  onSelect: (index: number) => void;
+  onReplay: () => void;
+  onExplore: (tab: Exclude<Tab, 'journey' | 'overview' | 'world'>) => void;
+}) {
+  const explanation = frame ? explainEvent(frame.event) : undefined;
+  const activeStory = story.find((step) => index >= step.startIndex && index <= step.endIndex);
+  const currentSnapshot = activeContextSnapshot(contextSnapshots, index);
+  const previousSnapshot = currentSnapshot && currentSnapshot.number > 1 ? contextSnapshots[currentSnapshot.number - 2] : undefined;
+  const contextDiff = currentSnapshot ? compareContextSnapshots(currentSnapshot, previousSnapshot) : undefined;
+  const showContextAha = Boolean(frame && (frame.event.type === 'CONTEXT_COMPILED' || frame.event.type === 'MODEL_REQUEST_STARTED') && currentSnapshot?.number && currentSnapshot.number > 1);
+  const isToolReturn = frame?.event.type === 'TOOL_RESULT_ATTACHED';
+  const complete = Boolean(frame?.state.settled || index >= Math.max(frames.length - 1, 0));
+
+  return (
+    <section className="journey-shell">
+      <div className="journey-world">
+        <PiCityScene event={frame?.event} state={frame?.state} />
+
+        <div className="journey-title-card">
+          <span>{activeStory ? `STEP ${String(story.indexOf(activeStory) + 1).padStart(2, '0')}` : 'RUN'}</span>
+          <strong>{activeStory?.title ?? run.title}</strong>
+          <p>{explanation?.plain ?? 'Follow this run through the city.'}</p>
+        </div>
+
+        <div className="journey-stats">
+          <span><b>{frame?.state.modelCalls ?? 0}</b> model</span>
+          <span><b>{frame?.state.toolCalls ?? 0}</b> tools</span>
+          <span><b>{frame?.state.sessionEntries ?? 0}</b> history</span>
+        </div>
+
+        {explanation && (
+          <aside className="journey-inspector">
+            <div className="eyebrow">WHAT JUST HAPPENED</div>
+            <strong>{explanation.title}</strong>
+            <p>{explanation.why}</p>
+            <small>{frame?.event.evidence.level} · {frame?.event.type}</small>
+          </aside>
+        )}
+
+        {isToolReturn && (
+          <div className="journey-aha uturn-aha">
+            <span>AHA</span>
+            <strong>The Tool Result is turning back into the Agent.</strong>
+            <p>It becomes evidence for another reasoning turn — not the final answer.</p>
+          </div>
+        )}
+
+        {showContextAha && contextDiff && (
+          <div className="journey-aha context-aha">
+            <span>CONTEXT CHANGED</span>
+            <strong>Model #{currentSnapshot?.number} sees +{contextDiff.added.length} new item{contextDiff.added.length === 1 ? '' : 's'}.</strong>
+            <p>{contextDiff.added.some((item) => item.kind === 'tool-result') ? 'New external evidence can change the next decision.' : 'The model-visible view changed between calls.'}</p>
+            <button onClick={() => onExplore('compare')}>Compare contexts</button>
+          </div>
+        )}
+
+        {complete && (
+          <div className="journey-complete">
+            <div className="eyebrow">REQUEST COMPLETED</div>
+            <h2>You just watched one Agent run become a city.</h2>
+            <p>{run.modelCalls} model calls · {run.toolCalls} tool calls · {story.length} story steps</p>
+            <div>
+              <button className="primary" onClick={onReplay}>Replay</button>
+              <button onClick={() => onExplore('story')}>Explore story</button>
+              <button onClick={() => onExplore('compare')}>Compare context</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="journey-story-rail">
+        {story.map((step, storyIndex) => {
+          const active = activeStory?.id === step.id;
+          const done = index > step.endIndex;
+          return (
+            <button key={step.id} className={`${active ? 'active' : ''} ${done ? 'done' : ''}`} onClick={() => onSelect(step.startIndex)}>
+              <span>{String(storyIndex + 1).padStart(2, '0')}</span>
+              <strong>{step.title}</strong>
+              {step.tools.length > 0 && <small>{step.tools.map((tool) => tool.name).join(' · ')}</small>}
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

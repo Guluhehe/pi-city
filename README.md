@@ -1,5 +1,7 @@
 # Pi City
 
+**Current milestone: v0.2 Integrated Alpha — a world-first guided replay that combines the Living Harbor with Real Run Explorer.**
+
 **A playable visualization of how AI agents actually run.**
 
 Pi City turns agent runtime behavior into a living harbor city. Requests arrive as cargo, session history grows in an archive, context is assembled in a works facility, model decisions open dispatch gates, and tools operate as workshops.
@@ -173,3 +175,8 @@ Do not upload only the files through the GitHub website if you want to keep the 
 - prediction / intervention mechanics
 - context-management challenges
 - first debug gameplay loops
+
+
+## Integrated Alpha
+
+See `docs/integrated-alpha.md` for the world-first journey contract and the three required aha moments.
