@@ -1,6 +1,6 @@
 # Pi City
 
-**Current milestone: v0.2 Integrated Alpha — a world-first guided replay that combines the Living Harbor with Real Run Explorer.**
+**Current milestone: v0.6 Live Visual Beta — a deployable, asset-based, ~60 second world-first Agent replay.**
 
 **A playable visualization of how AI agents actually run.**
 
@@ -8,11 +8,11 @@ Pi City turns agent runtime behavior into a living harbor city. Requests arrive 
 
 ## Current milestone
 
-### v0.2 Alpha — Real Run Explorer
+### v0.6 Beta — Live Visual Beta
 
-The current build can import Pi-like **runtime JSONL** or **Session JSONL**, normalize it into a runtime-neutral Semantic Trace, and then explain the run at three levels: **Run Overview → Story Timeline → Semantic Events / Raw Evidence**. It also reconstructs per-model-call Context snapshots so users can compare what changed between decisions.
+The project now has two connected surfaces: the full React/Three.js Runtime Explorer and a deployable `site-live-beta/` experience. The live beta uses the v0.5 GLB Hero Buildings, the industrial-harbor concept matte, realtime water/port ecology, distinct information artifacts, duration-driven cinematic camera beats, Aha moments, Context Compare, runtime JSONL import, and a post-run Explore mode.
 
-The harbor is now one synchronized view of the same replay engine rather than a separate scripted demo.
+The bundled auth-bug journey is intentionally paced at about **65 seconds** at 1× so the Agent loop can be understood by watching rather than by reading a trace.
 
 ## What works now
 
@@ -73,6 +73,7 @@ Useful checks:
 
 ```bash
 npm run check:core
+npm run check:live
 npm test
 npm run build
 ```
@@ -183,12 +184,19 @@ Do not upload only the files through the GitHub website if you want to keep the 
 - [ ] browser experience review on a normal WebGL machine
 - [ ] tune visual composition from real user playthroughs
 
-### Next — Live Visual Beta
+### v0.6 — Live Visual Beta
 
-- publish `site-visual-beta/` to a real URL
-- validate several real Pi runs in the high-fidelity world
-- polish loading, first-run onboarding and Explore transition
-- only then add Branch / Compaction exhibits
+- [x] ~65 second duration-driven auth journey
+- [x] distinct request / context / work-order / result / answer artifacts
+- [x] real Tool Result U-turn
+- [x] Context cutaway + selected/rejected runtime machinery
+- [x] first-run cinematic landing
+- [x] post-run Explore mode
+- [x] runtime JSONL import in the static visual build
+- [x] GitHub Pages deployment workflow
+- [ ] publish to a real URL and tune on a normal WebGL browser
+- [ ] capture 2–3 real Pi runs and tune story/camera timing
+- [ ] only then add Branch / Compaction exhibits
 
 ## Integrated Alpha
 
@@ -198,14 +206,18 @@ See `docs/integrated-alpha.md` for the world-first journey contract and the thre
 
 `site-beta/` is the zero-dependency v0.3 fallback.
 
-`site-visual-beta/` is the current asset-based visual build. It loads the GLB Hero Buildings, the v0.5 concept matte, runtime overlays and the guided replay directly in the browser.
+`site-visual-beta/` is the v0.5 asset-based visual build.
 
-Preview on any machine with normal web access:
+`site-live-beta/` is the v0.6 **GitHub Pages** deployment target: cinematic landing, ~60 second Journey, Explore mode, runtime import, Context Compare, GLB Hero Buildings and realtime runtime machinery.
+
+Preview locally:
 
 ```bash
-python3 -m http.server 8080 -d site-visual-beta
+python3 -m http.server 8080 -d site-live-beta
 ```
 
-Then open `http://localhost:8080`.
+Then open `http://localhost:8080`. The static page imports Three.js ES modules from jsDelivr.
 
-See `docs/visual-beta.md` and `docs/visual-fidelity.md`.
+For the online beta, this repository includes `.github/workflows/deploy-pages.yml`; after the repo is on GitHub, set **Settings → Pages → Source: GitHub Actions** if needed, then push `main` or manually run the workflow. The expected project-site shape for `Guluhehe/pi-city` is `https://guluhehe.github.io/pi-city/`.
+
+See `docs/live-visual-beta.md` and `docs/github-pages.md`.

@@ -8,7 +8,7 @@ Validated the industrial harbor, physical logistics, guided camera, cutaway buil
 
 Implemented the Pi runtime/session importer, tolerant JSONL parsing, Semantic Trace Schema, evidence levels, deterministic replay frames, tool correlation, runtime + Session merge, Session Tree, Context reconstruction, Inspector, and a Three.js harbor driven by semantic World Cues.
 
-## v0.2 — Real Run Explorer — current
+## v0.2 — Real Run Explorer
 
 ### Implemented in alpha
 
@@ -42,3 +42,30 @@ Implemented the Pi runtime/session importer, tolerant JSONL parsing, Semantic Tr
 - replay reality
 - intervene in context/tool decisions
 - debug challenges rather than XP/badge gamification
+
+
+## v0.5 — Visual Fidelity
+
+- hybrid concept matte + realtime GLB world
+- denser Arrival / Context / Model hero assets
+- shader water and dusk lighting
+- visible Context selection / rejection machinery
+
+## v0.6 — Live Visual Beta — current
+
+- 15-beat auth journey (~65 seconds at 1×)
+- duration-driven camera grammar rather than fixed event intervals
+- distinct request vessel / session entry / context capsule / work-order / tool-result / answer artifacts
+- explicit Tool Result U-turn
+- automatic Context Compare at the second Context
+- post-run district Explore mode
+- procedural WebAudio ambience and event cues
+- runtime JSONL import in the deployable static build
+- GitHub Pages workflow for one-push deployment after the repository is published
+
+### Validation gate before v0.7
+
+- obtain a real public URL
+- run on a normal desktop WebGL browser
+- tune composition, fog, matte blend, bloom, and camera timings from the real rendered output
+- test at least two real Pi runtime logs
