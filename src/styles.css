@@ -150,9 +150,12 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #d0c3
 
 /* v0.2 Real Run Explorer */
 .run-overview { height: 560px; overflow: auto; padding: 22px; }
-.overview-hero { display: flex; justify-content: space-between; gap: 28px; align-items: flex-end; padding: 4px 2px 22px; border-bottom: 1px solid #293129; }
-.overview-hero h3 { margin: 7px 0 7px; font-size: 27px; }
-.overview-hero p { margin: 0; max-width: 720px; color: #8e998f; font-size: 13px; line-height: 1.55; }
+.overview-hero { position: relative; min-height: 210px; display: flex; justify-content: space-between; gap: 28px; align-items: flex-end; padding: 24px; overflow: hidden; border: 1px solid #3c4036; border-radius: 16px; background-image: linear-gradient(90deg, rgba(10,15,12,.94) 0%, rgba(10,15,12,.78) 44%, rgba(10,15,12,.18) 78%, rgba(10,15,12,.05) 100%), linear-gradient(0deg, rgba(9,14,11,.62), transparent 58%), url('/assets/mattes/industrial-harbor-concept.jpg'); background-size: cover; background-position: center 46%; box-shadow: inset 0 -50px 90px rgba(0,0,0,.18); }
+.overview-hero::after { content: 'L0 MATTE WORLD · REALTIME CITY BEYOND'; position: absolute; right: 13px; top: 12px; padding: 6px 8px; border: 1px solid rgba(245,220,170,.16); border-radius: 999px; background: rgba(12,18,15,.48); color: rgba(244,220,170,.6); font: 7px ui-monospace, monospace; letter-spacing: .12em; backdrop-filter: blur(8px); }
+.overview-hero > div { position: relative; z-index: 1; max-width: 660px; }
+.overview-hero h3 { margin: 7px 0 7px; color: #f1ead7; font-size: clamp(27px,3vw,38px); text-shadow: 0 2px 18px rgba(0,0,0,.35); }
+.overview-hero p { margin: 0; max-width: 650px; color: rgba(232,231,218,.72); font-size: 13px; line-height: 1.55; }
+.overview-hero .overview-cta { position: relative; z-index: 1; flex: 0 0 auto; box-shadow: 0 12px 30px rgba(0,0,0,.25); }
 .overview-cta { white-space: nowrap; }
 .overview-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; padding: 18px 0; }
 .overview-stat { border: 1px solid #293129; background: #101511; border-radius: 12px; padding: 13px; }
@@ -305,7 +308,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #d0c3
 
 /* v0.4 Visual Prototype — asset-based industrial harbor */
 .visual-beta-world { background: radial-gradient(circle at 18% 12%, #e4b26d 0%, #bb8c5f 28%, #61706b 78%, #34484a 100%); }
-.visual-beta-world::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(255,224,177,.08), rgba(29,40,39,.08) 56%, rgba(15,23,22,.24)); mix-blend-mode: multiply; }
+.visual-beta-world::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 43%, transparent 48%, rgba(10,17,16,.20) 100%), linear-gradient(180deg, rgba(255,224,177,.08), rgba(29,40,39,.08) 56%, rgba(15,23,22,.24)); mix-blend-mode: multiply; }
 .visual-beta-legend { border-color: rgba(244,219,169,.2); background: rgba(18,22,19,.72); }
 .visual-beta-mark { position: absolute; left: 16px; bottom: 18px; z-index: 3; padding: 7px 10px; border: 1px solid rgba(239,218,175,.18); border-radius: 999px; color: rgba(246,225,184,.7); background: rgba(20,24,21,.54); backdrop-filter: blur(9px); font: 8px/1 ui-monospace, monospace; letter-spacing: .13em; }
 .visual-beta-world::before { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background-image: url('/assets/noise.png'); background-size: 128px 128px; opacity: .16; mix-blend-mode: soft-light; }

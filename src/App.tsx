@@ -211,7 +211,7 @@ export function App() {
 
       {tab === 'journey' && transport}
       {trace.warnings.length > 0 && <div className="warning">{trace.warnings.join(' ')}</div>}
-      <footer>Pi City v0.2 Integrated Alpha</footer>
+      <footer>Pi City v0.5 Visual Fidelity · Hybrid Matte + Realtime GLB Runtime</footer>
     </main>
   );
 }
@@ -342,7 +342,7 @@ function RunOverview({ run, story, onWatch }: { run: ReturnType<typeof analyzeRu
           <h3>{run.status === 'completed' ? 'Completed run' : 'Run still in progress'}</h3>
           <p>Pi City has compressed the raw trace into a human-readable runtime story. Start with the story; drill into semantic events only when you need evidence.</p>
         </div>
-        <button className="primary overview-cta" onClick={onWatch}>Watch the run →</button>
+        <button className="primary overview-cta" onClick={onWatch}>Enter the city →</button>
       </div>
 
       <div className="overview-grid">

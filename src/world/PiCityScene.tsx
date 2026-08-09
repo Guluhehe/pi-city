@@ -36,7 +36,7 @@ export function PiCityScene({ event, state }: { event?: SemanticEvent; state?: R
   return (
     <div className="three-world visual-beta-world">
       <Canvas shadows dpr={[1, 1.7]} gl={{ antialias: true, alpha: true }} camera={{ position: [19, 14, 24], fov: 36, near: 0.1, far: 150 }}>
-        <CinematicRenderer />
+        <CinematicRenderer event={event} />
         <fog attach="fog" args={['#b88f63', 32, 78]} />
         <hemisphereLight args={['#ffe0ad', '#24363a', 1.25]} />
         <directionalLight position={[-14, 22, 12]} intensity={3.5} color="#ffd09a" castShadow shadow-mapSize={[2048, 2048]} />
@@ -52,15 +52,18 @@ export function PiCityScene({ event, state }: { event?: SemanticEvent; state?: R
   );
 }
 
-function CinematicRenderer() {
+function CinematicRenderer({ event }: { event?: SemanticEvent }) {
   const { gl } = useThree();
   useEffect(() => {
     gl.toneMapping = THREE.ACESFilmicToneMapping;
-    gl.toneMappingExposure = 1.08;
     gl.outputColorSpace = THREE.SRGBColorSpace;
     gl.shadowMap.enabled = true;
     gl.shadowMap.type = THREE.PCFSoftShadowMap;
   }, [gl]);
+  useFrame((_, delta) => {
+    const target = event?.type === 'CONTEXT_COMPILED' ? 1.14 : event?.type === 'MODEL_REQUEST_STARTED' ? 1.02 : 1.08;
+    gl.toneMappingExposure = THREE.MathUtils.damp(gl.toneMappingExposure, target, 2.4, delta);
+  });
   return null;
 }
 
@@ -69,10 +72,14 @@ function Harbor({ event, state }: { event?: SemanticEvent; state?: RuntimeState 
   const activeDistrict = cue?.district ?? 'system';
   return (
     <>
+      <SkyDome />
+      <ConceptMatte event={event} />
       <Water />
       <SunsetAtmosphere />
       <Landmass />
       <IndustrialFabric />
+      <ForegroundInfrastructure />
+      <HarborWorkers />
       <SmokePlumes />
       <HeroBuilding district="arrival" active={activeDistrict === 'arrival'}>
         <ArrivalRuntime active={activeDistrict === 'arrival'} />
@@ -84,7 +91,7 @@ function Harbor({ event, state }: { event?: SemanticEvent; state?: RuntimeState 
         <ContextRuntime active={activeDistrict === 'context'} cutaway={cue?.camera === 'cutaway'} />
       </HeroBuilding>
       <HeroBuilding district="model" active={activeDistrict === 'model'}>
-        <ModelRuntime active={activeDistrict === 'model'} decision={event?.type === 'TOOL_CALL_CREATED'} />
+        <ModelRuntime active={activeDistrict === 'model'} event={event} />
       </HeroBuilding>
       <HeroBuilding district="tool" active={activeDistrict === 'tool'}>
         <ToolRuntime active={activeDistrict === 'tool'} toolName={String(event?.payload.toolName ?? 'read')} />
@@ -134,16 +141,41 @@ function HeroBuilding({ district, active, children }: { district: keyof typeof M
   );
 }
 
-function Water() {
-  const ref = useRef<THREE.Mesh>(null);
-  useFrame(({ clock }) => {
-    if (!ref.current) return;
-    ref.current.position.y = -0.23 + Math.sin(clock.elapsedTime * 0.5) * 0.025;
-  });
+function SkyDome() {
+  const vertex = `varying vec3 vWorld; void main(){ vec4 w=modelMatrix*vec4(position,1.0); vWorld=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }`;
+  const fragment = `varying vec3 vWorld; void main(){ float h=normalize(vWorld).y*.5+.5; vec3 low=vec3(.39,.43,.40); vec3 mid=vec3(.71,.49,.32); vec3 high=vec3(.16,.24,.25); vec3 col=mix(low,mid,smoothstep(.05,.46,h)); col=mix(col,high,smoothstep(.5,1.,h)); float sun=pow(max(0.,dot(normalize(vWorld),normalize(vec3(-.55,.26,-.68)))),26.); col+=vec3(1.0,.60,.24)*sun*.9; gl_FragColor=vec4(col,1.); }`;
   return (
-    <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.23, 3]} receiveShadow>
-      <planeGeometry args={[100, 65, 1, 1]} />
-      <meshStandardMaterial color="#345a61" roughness={0.28} metalness={0.08} />
+    <mesh scale={[-1, 1, 1]}>
+      <sphereGeometry args={[90, 48, 24]} />
+      <shaderMaterial side={THREE.BackSide} vertexShader={vertex} fragmentShader={fragment} depthWrite={false} />
+    </mesh>
+  );
+}
+
+function ConceptMatte({ event }: { event?: SemanticEvent }) {
+  const texture=useLoader(THREE.TextureLoader,'/assets/mattes/industrial-harbor-concept.jpg');
+  const material=useRef<THREE.MeshBasicMaterial>(null);
+  useEffect(()=>{ texture.colorSpace=THREE.SRGBColorSpace; texture.anisotropy=8; },[texture]);
+  useFrame((_,delta)=>{
+    if(!material.current)return;
+    const wide=!event||event.type==='REQUEST_ARRIVED'||event.type==='AGENT_SETTLED';
+    material.current.opacity=THREE.MathUtils.damp(material.current.opacity,wide ? .34 : .10,2.2,delta);
+  });
+  return <mesh position={[0,10.5,-34]} scale={[1.2,1,1]} renderOrder={-2}>
+    <planeGeometry args={[34,28]} />
+    <meshBasicMaterial ref={material} map={texture} transparent opacity={.28} depthWrite={false} toneMapped={false} fog={false} />
+  </mesh>;
+}
+
+function Water() {
+  const material = useRef<THREE.ShaderMaterial>(null);
+  const vertex = `uniform float uTime; varying vec3 vWorld; varying float vWave; void main(){ vec3 p=position; float w=sin(p.x*.32+uTime*.55)*.10+sin(p.y*.47-uTime*.35)*.055; p.z+=w; vWave=w; vec4 world=modelMatrix*vec4(p,1.); vWorld=world.xyz; gl_Position=projectionMatrix*viewMatrix*world; }`;
+  const fragment = `uniform float uTime; varying vec3 vWorld; varying float vWave; void main(){ vec3 deep=vec3(.075,.20,.22); vec3 shallow=vec3(.18,.34,.35); float shimmer=.5+.5*sin(vWorld.x*.9+vWorld.z*.5+uTime*1.2); vec3 col=mix(deep,shallow,.45+vWave*1.8); col+=vec3(.34,.28,.16)*pow(shimmer,18.)*.22; gl_FragColor=vec4(col,.98); }`;
+  useFrame(({ clock }) => { if(material.current) material.current.uniforms.uTime.value=clock.elapsedTime; });
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.26, 3]} receiveShadow>
+      <planeGeometry args={[100, 65, 80, 52]} />
+      <shaderMaterial ref={material} transparent uniforms={{uTime:{value:0}}} vertexShader={vertex} fragmentShader={fragment} />
     </mesh>
   );
 }
@@ -238,6 +270,30 @@ function IndustrialFabric() {
   );
 }
 
+
+function ForegroundInfrastructure() {
+  return (
+    <group>
+      <group position={[-18.5, 0, 6.8]} rotation={[0, -.18, 0]}>
+        <mesh position={[0,4.2,0]} castShadow><boxGeometry args={[.34,8.4,.34]} /><meshStandardMaterial color="#2c3432" roughness={.72} metalness={.16} /></mesh>
+        <mesh position={[3.1,7.7,0]} rotation={[0,0,-.12]} castShadow><boxGeometry args={[6.6,.2,.22]} /><meshStandardMaterial color="#6d5738" roughness={.64} metalness={.18} /></mesh>
+        <mesh position={[5.4,5.5,0]}><boxGeometry args={[.045,4.2,.045]} /><meshStandardMaterial color="#2b302f" /></mesh>
+      </group>
+      <group position={[18.5,0,10.6]} rotation={[0,-.32,0]}>
+        <mesh position={[0,.3,0]} castShadow><boxGeometry args={[5.8,.62,1.55]} /><meshStandardMaterial color="#2e302c" roughness={.94} /></mesh>
+        <mesh position={[-1.4,.88,0]} castShadow><boxGeometry args={[1.4,.82,1.08]} /><meshStandardMaterial color="#706653" roughness={.86} /></mesh>
+        <mesh position={[.45,1.3,0]}><boxGeometry args={[.06,1.45,.06]} /><meshStandardMaterial color="#363b38" /></mesh>
+      </group>
+      {[-15.2,-9.6,4.8,16.4].map((x,i)=><mesh key={x} position={[x,.08,7.75+i*.35]} rotation={[-Math.PI/2,0,0]}><ringGeometry args={[.12,.2,16]} /><meshStandardMaterial color="#282d2b" roughness={.72} metalness={.2} /></mesh>)}
+    </group>
+  );
+}
+
+function HarborWorkers() {
+  const workers:[number,number,number][]=[[-10.6,.58,5.9],[-9.8,.58,5.25],[-4.6,.58,1.7],[.1,.58,-3.1],[1.7,.58,-3.4],[11.7,.58,5.2],[13.6,.58,5.5]];
+  return <group>{workers.map((p,i)=><group key={i} position={p} scale={.72}><mesh position={[0,.22,0]} castShadow><capsuleGeometry args={[.075,.28,4,8]} /><meshStandardMaterial color={i%3===0?'#6f4a36':'#2f3532'} roughness={.88} /></mesh><mesh position={[0,.51,0]}><sphereGeometry args={[.085,10,8]} /><meshStandardMaterial color="#b6a17b" roughness={.92} /></mesh></group>)}</group>;
+}
+
 function SmokePlumes() {
   return (
     <group>
@@ -283,9 +339,9 @@ function DockLamp({ x }: { x: number }) {
 
 function WarehouseRow({ position, count, small=false }: { position: [number, number, number]; count: number; small?: boolean }) {
   return <group position={position}>{Array.from({length:count}).map((_,i)=>{
-    const w=small?1.15:1.45, h=small?.8:1.05;
+    const w=small?1.15:1.45, h=small ? .8 : 1.05;
     const lit=i%3===1;
-    return <group key={i} position={[(i-(count-1)/2)*(w+.18),0,0]}><mesh position={[0,h/2,0]} castShadow><boxGeometry args={[w,h,1.5]} /><meshStandardMaterial color={i%3===0?'#6e5844':'#80715a'} roughness={.96} /></mesh><mesh position={[0,h+.16,0]} rotation={[0,0,i%2?.12:-.12]}><boxGeometry args={[w*1.02,.12,1.7]} /><meshStandardMaterial color="#354543" roughness={.78} /></mesh><mesh position={[0,h*.55,.76]}><boxGeometry args={[w*.46,h*.22,.025]} /><meshStandardMaterial color={lit?'#e2b56c':'#394c4b'} emissive={lit?'#9e6426':'#000'} emissiveIntensity={lit?.9:0} /></mesh></group>
+    return <group key={i} position={[(i-(count-1)/2)*(w+.18),0,0]}><mesh position={[0,h/2,0]} castShadow><boxGeometry args={[w,h,1.5]} /><meshStandardMaterial color={i%3===0?'#6e5844':'#80715a'} roughness={.96} /></mesh><mesh position={[0,h+.16,0]} rotation={[0,0,i%2 ? .12 : -.12]}><boxGeometry args={[w*1.02,.12,1.7]} /><meshStandardMaterial color="#354543" roughness={.78} /></mesh><mesh position={[0,h*.55,.76]}><boxGeometry args={[w*.46,h*.22,.025]} /><meshStandardMaterial color={lit?'#e2b56c':'#394c4b'} emissive={lit?'#9e6426':'#000'} emissiveIntensity={lit ? .9 : 0} /></mesh></group>
   })}</group>;
 }
 
@@ -312,7 +368,19 @@ function AmbientBoat({ start, speed }: { start: [number, number, number]; speed:
 }
 
 function ArrivalRuntime({ active }: { active: boolean }) {
-  return active ? <pointLight position={[-1.55, 4.1, .15]} intensity={2.6} distance={7} color="#f1c06d" /> : null;
+  const beacon = useRef<THREE.PointLight>(null);
+  const hook = useRef<THREE.Group>(null);
+  useFrame(({clock})=>{
+    if(beacon.current) beacon.current.intensity = active ? 2.2 + Math.sin(clock.elapsedTime*3.2)*.7 : .35;
+    if(hook.current) hook.current.position.y = active ? 1.28 + Math.sin(clock.elapsedTime*1.55)*.22 : 1.28;
+  });
+  return <group>
+    <pointLight ref={beacon} position={[-1.55,4.15,.15]} intensity={.35} distance={8} color="#f1c06d" />
+    <group ref={hook} position={[4.35,1.28,1]}>
+      <mesh><boxGeometry args={[.24,.28,.18]} /><meshStandardMaterial color="#9f7040" metalness={.3} roughness={.5} /></mesh>
+      <mesh position={[0,-.28,0]}><torusGeometry args={[.12,.025,8,18,Math.PI*1.6]} /><meshStandardMaterial color="#353936" metalness={.5} roughness={.42} /></mesh>
+    </group>
+  </group>;
 }
 
 function SessionRuntime({ active, visibleEntries }: { active: boolean; visibleEntries: number }) {
@@ -323,14 +391,42 @@ function SessionRuntime({ active, visibleEntries }: { active: boolean; visibleEn
 
 function ContextRuntime({ active, cutaway }: { active: boolean; cutaway: boolean }) {
   const sorter=useRef<THREE.Group>(null);
-  useFrame(({clock})=>{if(sorter.current&&active) sorter.current.rotation.y=clock.elapsedTime*.6;});
-  return <group ref={sorter}>{[-1.25,-.42,.42,1.25].map(x=><mesh key={x} position={[x,1.25,.25]}><torusGeometry args={[.31,.045,8,24]} /><meshStandardMaterial color="#c18e4c" emissive={active?'#5b3e18':'#000'} emissiveIntensity={active?.45:0} metalness={.35} roughness={.42} /></mesh>)}{cutaway&&<mesh position={[0,1.25,-.85]}><sphereGeometry args={[.35,18,12]} /><meshStandardMaterial color="#e0ba69" emissive="#8e6326" emissiveIntensity={1.2} /></mesh>}</group>;
+  const cargo=useRef<THREE.Group>(null);
+  const press=useRef<THREE.Mesh>(null);
+  const capsule=useRef<THREE.Mesh>(null);
+  useFrame(({clock},delta)=>{
+    if(sorter.current) sorter.current.rotation.y += active ? delta*.8 : delta*.08;
+    if(press.current) press.current.position.y = 2.35 + (active ? Math.sin(clock.elapsedTime*2.2)*.17 : 0);
+    if(capsule.current){ const s=cutaway ? 1.08+Math.sin(clock.elapsedTime*2.7)*.08 : .7; capsule.current.scale.setScalar(THREE.MathUtils.damp(capsule.current.scale.x,s,5,delta)); }
+    if(cargo.current){
+      cargo.current.children.forEach((item,i)=>{
+        const selected=i<3;
+        const phase=(clock.elapsedTime*.17+i*.12)%1;
+        if(!active){ item.position.set(-2.05+i*.23,.9,1.05); return; }
+        if(phase<.42){ const t=phase/.42; item.position.set(THREE.MathUtils.lerp(-2.15,-.55,t),.92,THREE.MathUtils.lerp(.92,.28,t)); }
+        else if(selected){ const t=(phase-.42)/.58; item.position.set(THREE.MathUtils.lerp(-.55,0,t),THREE.MathUtils.lerp(.92,1.25,t),THREE.MathUtils.lerp(.28,-.85,t)); }
+        else { const t=(phase-.42)/.58; item.position.set(THREE.MathUtils.lerp(-.55,2.22,t),THREE.MathUtils.lerp(.92,.55,t),THREE.MathUtils.lerp(.28,1.48,t)); }
+      });
+    }
+  });
+  return <group>
+    <group ref={sorter}>{[-1.25,-.42,.42,1.25].map(x=><mesh key={x} position={[x,1.25,.25]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.31,.045,8,24]} /><meshStandardMaterial color="#c18e4c" emissive={active?'#5b3e18':'#000'} emissiveIntensity={active ? .5 : 0} metalness={.35} roughness={.42} /></mesh>)}</group>
+    <group ref={cargo}>{Array.from({length:6}).map((_,i)=><mesh key={i} castShadow><boxGeometry args={[.32,.18,.23]} /><meshStandardMaterial color={i<3?'#d6c38e':'#665c4f'} emissive={active&&i<3?'#4c3819':'#000'} emissiveIntensity={.36} roughness={.8} /></mesh>)}</group>
+    <mesh ref={press} position={[0,2.35,-.85]} castShadow><boxGeometry args={[1.2,.22,.74]} /><meshStandardMaterial color="#a27843" metalness={.32} roughness={.47} /></mesh>
+    <mesh ref={capsule} position={[0,1.25,-.85]}><sphereGeometry args={[.34,20,14]} /><meshStandardMaterial color="#e0ba69" emissive={cutaway?'#8e6326':'#3b2a13'} emissiveIntensity={cutaway?1.25:.25} metalness={.16} roughness={.28} /></mesh>
+    {active&&<pointLight position={[0,1.8,-.4]} intensity={2.1} distance={4.5} color="#efbc65" />}
+  </group>;
 }
 
-function ModelRuntime({ active, decision }: { active: boolean; decision: boolean }) {
+function ModelRuntime({ active, event }: { active: boolean; event?: SemanticEvent }) {
   const wheel=useRef<THREE.Group>(null);
-  useFrame(({clock})=>{if(wheel.current)wheel.current.rotation.z=clock.elapsedTime*(active?1.0:.16)});
-  return <group>{<group ref={wheel} position={[0,1.95,1.95]}><mesh><torusGeometry args={[.72,.065,8,28]} /><meshStandardMaterial color="#d2a45f" emissive={active?'#71501d':'#000'} emissiveIntensity={active?.6:0} /></mesh></group>}{[-1.25,-.42,.42,1.25].map((x,i)=><mesh key={x} position={[x,.88,1.98+(decision&&i===0?.18:0)]}><boxGeometry args={[.38,.66,.06]} /><meshStandardMaterial color={decision&&i===0?'#e0ba69':'#8c704c'} emissive={decision&&i===0?'#b27427':'#000'} emissiveIntensity={decision&&i===0?1.4:0} /></mesh>)}</group>;
+  const gateName=String(event?.payload.toolName??'').toLowerCase();
+  const gateIndex=event?.type==='AGENT_SETTLED'?3:gateName==='edit'||gateName==='write'?1:gateName==='bash'?2:event?.type==='TOOL_CALL_CREATED'?0:-1;
+  useFrame(({clock})=>{if(wheel.current)wheel.current.rotation.z=clock.elapsedTime*(active?1.05:.14)});
+  return <group>
+    <group ref={wheel} position={[0,1.95,1.95]}><mesh><torusGeometry args={[.72,.065,8,28]} /><meshStandardMaterial color="#d2a45f" emissive={active?'#71501d':'#000'} emissiveIntensity={active ? .62 : 0} /></mesh>{Array.from({length:8}).map((_,i)=><mesh key={i} position={[Math.cos(i*Math.PI/4)*.5,Math.sin(i*Math.PI/4)*.5,0]} rotation={[0,0,i*Math.PI/4]}><boxGeometry args={[.48,.035,.04]} /><meshStandardMaterial color="#9e7340" metalness={.42} roughness={.4} /></mesh>)}</group>
+    {[-1.25,-.42,.42,1.25].map((x,i)=>{const open=active&&gateIndex===i;return <group key={x} position={[x,.88,1.98]}><mesh position={[0,0,open ? .2 : 0]}><boxGeometry args={[.38,.66,.06]} /><meshStandardMaterial color={open?'#e0ba69':'#8c704c'} emissive={open?'#b27427':'#000'} emissiveIntensity={open?1.5:0} /></mesh>{open&&<pointLight position={[0,.1,.5]} intensity={2.8} distance={3.5} color="#efbc69" />}</group>})}
+  </group>;
 }
 
 function ToolRuntime({ active, toolName }: { active: boolean; toolName: string }) {
@@ -379,13 +475,25 @@ function CameraDirector({ event }: { event?: SemanticEvent }) {
   const {camera}=useThree();
   const desired=useRef(new THREE.Vector3(19,14,24));
   const lookAt=useRef(new THREE.Vector3(0,1,0));
-  useFrame((_,delta)=>{
+  useFrame(({clock},delta)=>{
     const cue=event?toWorldCue(event):undefined;
     const focus=cue&&cue.district!=='system'?new THREE.Vector3(...DISTRICTS[cue.district]):new THREE.Vector3(0,.8,0);
-    const offset=CAMERA_OFFSETS[cue?.camera??'world']??CAMERA_OFFSETS.world;
+    let offset=(CAMERA_OFFSETS[cue?.camera??'world']??CAMERA_OFFSETS.world).clone();
+    if(event?.type==='REQUEST_ARRIVED') offset.set(10.5,7.4,13.8);
+    if(event?.type==='SESSION_NODE_ADDED') offset.set(6.8,5.0,7.4);
+    if(event?.type==='CONTEXT_COMPILED') offset.set(5.6,4.5,6.2);
+    if(event?.type==='MODEL_REQUEST_STARTED') offset.set(6.2,4.8,6.0);
+    if(event?.type==='TOOL_EXECUTION_STARTED') offset.set(7.2,4.9,7.8);
+    if(event?.type==='TOOL_RESULT_ATTACHED') offset.set(9.0,6.2,9.8);
+    // tiny breathing move keeps the camera cinematic without feeling hand-held.
+    offset.x += Math.sin(clock.elapsedTime*.18)*.16;
+    offset.y += Math.sin(clock.elapsedTime*.13)*.08;
     desired.current.copy(focus).add(offset);
-    lookAt.current.lerp(focus.clone().add(new THREE.Vector3(0,1.4,0)),1-Math.pow(.001,delta));
-    camera.position.lerp(desired.current,1-Math.pow(.004,delta));
+    const lift=event?.type==='CONTEXT_COMPILED' ? .95 : 1.35;
+    lookAt.current.lerp(focus.clone().add(new THREE.Vector3(0,lift,0)),1-Math.pow(.0012,delta));
+    camera.position.lerp(desired.current,1-Math.pow(.0035,delta));
+    const targetFov=event?.type==='CONTEXT_COMPILED'?31:event?.type==='REQUEST_ARRIVED'?38:34;
+    if(camera instanceof THREE.PerspectiveCamera){ camera.fov=THREE.MathUtils.damp(camera.fov,targetFov,3.2,delta); camera.updateProjectionMatrix(); }
     camera.lookAt(lookAt.current);
   });
   return null;

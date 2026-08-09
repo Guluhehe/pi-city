@@ -1,15 +1,13 @@
-# Pi City Visual Beta
+# Pi City v0.5 Visual Beta
 
-Static deployment shell for the v0.4 asset-based harbor.
+Static deployable shell for the asset-based Pi City experience.
 
-It loads five local GLB hero assets and Three.js from jsDelivr. No build step is required.
+It contains local GLB Hero Buildings and the local concept matte. Three.js / GLTFLoader are loaded by the import map from the pinned CDN version in `index.html`.
 
-Deploy this directory as a static site. Keep `assets/models/*` beside `index.html`.
-
-For local testing, serve over HTTP (GLB assets will not reliably load from `file://`):
+Serve the directory over HTTP:
 
 ```bash
-python3 -m http.server 4173 --directory site-visual-beta
+python3 -m http.server 8080 -d site-visual-beta
 ```
 
-Then open `http://localhost:4173` in a browser with internet access so the pinned Three.js CDN imports can load.
+This build keeps the world-first replay, Story Rail, Inspector, Tool Result U-turn, Context Compare, runtime building activation and cinematic camera framing.

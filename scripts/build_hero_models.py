@@ -30,6 +30,10 @@ PALETTE = {
     'roof_warm': (78, 65, 53, 255),
     'warm': (224, 172, 88, 255),
     'black': (34, 35, 32, 255),
+    'oxide': (83, 101, 92, 255),
+    'rust': (111, 65, 39, 255),
+    'cream': (188, 169, 126, 255),
+    'red': (112, 54, 40, 255),
 }
 
 rng = np.random.default_rng(20260809)
@@ -39,13 +43,26 @@ def colored(mesh: trimesh.Trimesh, key: str, variation: float = 0.045) -> trimes
     base = np.array(PALETTE[key], dtype=float)
     # Metals and glass use explicit PBR materials so browser lighting can do more of the work.
     pbr = {
+        # masonry / timber: high roughness, almost no metallic response
+        'stone': (0.00, 0.92, None),
+        'stone_dark': (0.00, 0.96, None),
+        'stone_light': (0.00, 0.88, None),
+        'cream': (0.00, 0.86, None),
+        'wood': (0.00, 0.88, None),
+        'wood_light': (0.00, 0.82, None),
+        'paper': (0.00, 0.96, None),
+        # weathered industrial surfaces
         'iron': (0.18, 0.72, None),
         'iron_light': (0.12, 0.68, None),
+        'oxide': (0.10, 0.82, None),
+        'rust': (0.05, 0.90, None),
+        'red': (0.04, 0.82, None),
         'bronze': (0.38, 0.48, None),
         'brass': (0.52, 0.36, None),
         'copper': (0.36, 0.46, None),
         'roof': (0.12, 0.68, None),
         'roof_warm': (0.08, 0.74, None),
+        # glazing and practical light
         'glass': (0.02, 0.24, 'BLEND'),
         'glass_dark': (0.03, 0.34, 'BLEND'),
         'warm': (0.12, 0.30, None),
@@ -102,7 +119,7 @@ def cyl(scene, name, radius, height, pos, mat='iron', sections=16, axis='z'):
 
 def cone(scene, name, radius, height, pos, mat='roof', sections=16):
     m = colored(trimesh.creation.cone(radius=radius, height=height, sections=sections), mat, 0.03)
-    add(scene, m, name, pos, ([1, 0, 0], math.pi / 2))
+    add(scene, m, name, pos, ([1, 0, 0], -math.pi / 2))
 
 
 def sphere(scene, name, radius, pos, mat='warm'):
@@ -138,6 +155,89 @@ def add_windows(scene, prefix, xs, ys, z, w=0.34, h=0.5, depth=0.04, mat='glass_
             box(scene, f'{prefix}_window_{yi}_{xi}', (w, h, depth), (x, y, z), mat, 0.01)
 
 
+def lit_windows(scene, prefix, centers, size=(.26,.28,.045), strength_mat='warm'):
+    """Small emissive-looking panes used as practical dusk lights."""
+    for i,(x,y,z) in enumerate(centers):
+        box(scene,f'{prefix}_lit_{i}',size,(x,y,z),strength_mat,.0)
+
+
+def rail(scene, prefix, start, end, height=.42, mat='iron'):
+    """Simple industrial safety railing between two X/Z points."""
+    a=np.asarray(start,float); b=np.asarray(end,float)
+    length=float(np.linalg.norm(b-a))
+    if length < 1e-6: return
+    steps=max(2,int(length/.55)+1)
+    for i,t in enumerate(np.linspace(0,1,steps)):
+        p=a*(1-t)+b*t
+        beam_between(scene,f'{prefix}_post_{i}',(p[0],p[1],p[2]),(p[0],p[1]+height,p[2]),.025,mat)
+    beam_between(scene,f'{prefix}_top',(a[0],a[1]+height,a[2]),(b[0],b[1]+height,b[2]),.028,mat)
+    beam_between(scene,f'{prefix}_mid',(a[0],a[1]+height*.54,a[2]),(b[0],b[1]+height*.54,b[2]),.018,mat)
+
+
+def stairs(scene, prefix, start, count=6, step=(.42,.16,.8), direction=1, mat='iron_light'):
+    x,y,z=start
+    sx,sy,sz=step
+    for i in range(count):
+        box(scene,f'{prefix}_step_{i}',(sx,.08,sz),(x+direction*i*sx*.48,y+i*sy,z),mat,.025)
+    endx=x+direction*(count-1)*sx*.48
+    rail(scene,f'{prefix}_rail_a',(x,y+.08,z-sz*.42),(endx,y+(count-1)*sy+.08,z-sz*.42),.34,'iron')
+    rail(scene,f'{prefix}_rail_b',(x,y+.08,z+sz*.42),(endx,y+(count-1)*sy+.08,z+sz*.42),.34,'iron')
+
+
+def catwalk(scene, prefix, a, b, width=.48, mat='iron_light'):
+    a=np.asarray(a,float); b=np.asarray(b,float)
+    center=(a+b)/2; length=float(np.linalg.norm(b-a))
+    angle=math.atan2((b-a)[2],(b-a)[0])
+    box(scene,f'{prefix}_deck',(length,.09,width),tuple(center),mat,.02,rot=([0,1,0],-angle))
+    # rail helper is axis agnostic because it uses beam_between
+    perp=np.array([-math.sin(angle),0,math.cos(angle)])*width*.42
+    rail(scene,f'{prefix}_ra',(tuple(a+perp)),(tuple(b+perp)),.42,'iron')
+    rail(scene,f'{prefix}_rb',(tuple(a-perp)),(tuple(b-perp)),.42,'iron')
+
+
+def truss_portal(scene, prefix, x, y0, y1, z0, z1, mat='iron'):
+    beam_between(scene,f'{prefix}_l',(x,y0,z0),(x,y1,z0),.055,mat)
+    beam_between(scene,f'{prefix}_r',(x,y0,z1),(x,y1,z1),.055,mat)
+    beam_between(scene,f'{prefix}_top',(x,y1,z0),(x,y1,z1),.055,mat)
+    beam_between(scene,f'{prefix}_diag1',(x,y0+.2,z0),(x,y1-.1,z1),.032,mat)
+    beam_between(scene,f'{prefix}_diag2',(x,y0+.2,z1),(x,y1-.1,z0),.032,mat)
+
+
+def lamp(scene, name, pos, height=.8):
+    x,y,z=pos
+    beam_between(scene,f'{name}_post',(x,y,z),(x,y+height,z),.025,'iron')
+    sphere(scene,f'{name}_bulb',.07,(x,y+height+.03,z),'warm')
+
+
+def vent(scene, name, pos, scale=1.0):
+    x,y,z=pos
+    cyl(scene,f'{name}_body',.13*scale,.52*scale,(x,y,z),'iron',sections=12,axis='y')
+    cyl(scene,f'{name}_cap',.2*scale,.08*scale,(x,y+.3*scale,z),'bronze',sections=12,axis='y')
+
+
+def gabled_roof(scene, name, width, depth, height, pos, mat='roof'):
+    w=width/2; d=depth/2
+    verts=np.array([[-w,0,-d],[w,0,-d],[0,height,-d],[-w,0,d],[w,0,d],[0,height,d]],dtype=float)
+    faces=np.array([[0,1,2],[3,5,4],[0,3,4],[0,4,1],[1,4,5],[1,5,2],[2,5,3],[2,3,0]])
+    m=colored(trimesh.Trimesh(vertices=verts,faces=faces,process=False),mat,.03)
+    add(scene,m,name,pos)
+
+
+def arch_frame(scene, prefix, center, radius=.55, height=.9, mat='bronze'):
+    x,y,z=center
+    beam_between(scene,f'{prefix}_left',(x-radius,y,z),(x-radius,y+height,z),.045,mat)
+    beam_between(scene,f'{prefix}_right',(x+radius,y,z),(x+radius,y+height,z),.045,mat)
+    pts=[]
+    for a in np.linspace(math.pi,0,9): pts.append((x+math.cos(a)*radius,y+height+math.sin(a)*radius,z))
+    for i in range(len(pts)-1): beam_between(scene,f'{prefix}_arch_{i}',pts[i],pts[i+1],.045,mat)
+
+
+def roof_monitor(scene, prefix, center, width, depth, height=.55):
+    x,y,z=center
+    box(scene,f'{prefix}_base',(width,.12,depth),(x,y,z),'roof_warm',.025)
+    gabled_roof(scene,f'{prefix}_gable',width*.92,depth*.92,height,(x,y+.05,z),'glass_dark')
+
+
 def arrival_harbor():
     s = trimesh.Scene()
     # heavy dock and warehouse
@@ -148,6 +248,13 @@ def arrival_harbor():
     box(s, 'warehouse', (2.7, 1.75, 2.2), (0.8, 1.05, -0.28), 'stone', 0.055)
     # roof body + ridge
     box(s, 'warehouse_roof', (3.0, 0.16, 2.55), (0.8, 1.98, -0.28), 'roof', rot=([0,0,1],0.0))
+    # grand gabled customs hall evokes the concept-art station/archive silhouette
+    gabled_roof(s,'warehouse_gable',3.15,2.7,.85,(.8,2.02,-.28),'roof')
+    arch_frame(s,'warehouse_arch',(.8,.45,0.86),.58,.78,'bronze')
+    box(s,'warehouse_arch_glass',(1.02,1.12,.055),(.8,1.08,.82),'glass_dark',.01)
+    for sx in [-.8,.8]:
+        box(s,f'warehouse_pilaster_{sx}',(.2,1.9,.24),(.8+sx,1.08,.9),'stone_light',.035)
+    roof_monitor(s,'warehouse_monitor',(.8,2.78,-.28),1.15,1.05,.42)
     add_windows(s, 'warehouse', [0.05, 0.8, 1.55], [0.9, 1.35], 0.84, w=.34, h=.34, depth=.08)
     # lighthouse/arrival tower
     cyl(s, 'arrival_tower', 0.52, 3.6, (-1.55, 1.9, 0.15), 'stone_light', sections=20, axis='y')
@@ -173,6 +280,30 @@ def arrival_harbor():
         cyl(s, f'bollard_{i}', .12,.45,(x,.45,1.55),'iron',axis='y')
     beam_between(s,'signal_mast',(-2.35,.3,-1.2),(-2.35,2.7,-1.2),.05,'iron')
     box(s,'signal_arm',(.85,.07,.07),(-1.95,2.3,-1.2),'bronze')
+    # v0.5 harbor threshold: customs canopy, elevated walk, second service crane and practical lights
+    box(s,'customs_annex',(1.35,1.2,1.45),(-.45,.82,-1.0),'cream',.055)
+    box(s,'customs_awning',(1.75,.12,1.65),(-.45,1.48,-1.0),'roof_warm',.03)
+    add_windows(s,'customs',[-.75,-.2],[.72,1.02],-.25,w=.28,h=.22,depth=.04,mat='glass_dark')
+    stairs(s,'dock_stairs',(-2.55,.22,-.55),count=7,step=(.42,.14,.58),direction=1,mat='iron_light')
+    catwalk(s,'tower_walk',(-2.0,2.95,-.65),(1.55,2.95,-.65),.42,'iron_light')
+    # smaller loading crane creates foreground depth against the hero truss crane
+    beam_between(s,'service_crane_mast',(-.2,.32,1.42),(-.2,2.7,1.42),.065,'iron')
+    beam_between(s,'service_crane_arm',(-.2,2.55,1.42),(1.45,2.8,1.42),.055,'rust')
+    beam_between(s,'service_crane_cable',(1.25,2.77,1.42),(1.25,1.12,1.42),.018,'black')
+    box(s,'service_hook',(.16,.22,.14),(1.25,1.0,1.42),'bronze')
+    rail(s,'dock_front_rail',(-2.6,.3,-1.68),(2.55,.3,-1.68),.38,'iron')
+    for i,(x,z) in enumerate([(-2.25,-1.45),(-1.05,-1.45),(.2,-1.45),(1.45,-1.45),(2.35,-1.45)]):
+        lamp(s,f'dock_lamp_{i}',(x,.3,z),.68)
+    # warm occupied windows break the asset out of the 'museum model' look at dusk
+    lit_windows(s,'arrival_windows',[
+        (.18,1.10,.875),(.80,1.10,.875),(1.42,1.10,.875),
+        (.18,1.50,.875),(.80,1.50,.875),(1.42,1.50,.875),
+        (-.72,.86,-.255),(-.18,.86,-.255)
+    ],(.25,.22,.055))
+    # tiny worker silhouettes establish human scale without turning the asset into a character scene
+    for i,(x,z) in enumerate([(-1.15,.95),(-.65,.82),(1.65,-.85)]):
+        cyl(s,f'worker_body_{i}',.07,.38,(x,.58,z),'black',sections=8,axis='y')
+        sphere(s,f'worker_head_{i}',.085,(x,.86,z),'cream')
     return s
 
 
@@ -218,6 +349,9 @@ def context_works():
     for x in [-1.5,-.5,.5,1.5]:
         box(s,f'glass_front_{x}',(.9,2.55,.055),(x,1.7,1.43),'glass',.015)
     box(s,'context_roof',(4.35,.16,3.0),(0,3.33,0),'roof',.03)
+    for i,x in enumerate([-1.35,-.45,.45,1.35]):
+        gabled_roof(s,f'context_roof_bay_{i}',.88,2.85,.5,(x,3.36,0),'roof_warm' if i%2 else 'roof')
+    roof_monitor(s,'context_monitor',(0,4.02,0),1.25,1.35,.55)
     # sorting drums / conveyors visible through facade
     for i,x in enumerate([-1.25,-.42,.42,1.25]):
         cyl(s,f'sorter_{i}',.28,1.65,(x,1.25,.25),'bronze',sections=16,axis='y')
@@ -239,6 +373,31 @@ def context_works():
     beam_between(s,'gantry_top',(-2.55,3.9,0),(2.55,3.9,0),.08,'iron')
     beam_between(s,'gantry_leg_l',(-2.55,.3,0),(-2.55,3.9,0),.08,'iron')
     beam_between(s,'gantry_leg_r',(2.55,.3,0),(2.55,3.9,0),.08,'iron')
+    # v0.5 makes Context Works read like a production plant from silhouette alone
+    box(s,'intake_annex',(1.15,1.25,1.35),(-2.5,.82,.62),'stone_light',.05)
+    box(s,'reject_annex',(1.15,1.0,1.35),(2.48,.69,.62),'rust',.05)
+    box(s,'intake_hopper',(.9,.78,.86),(-2.52,1.62,.62),'bronze',.04,rot=([0,0,1],.08))
+    box(s,'reject_chute',(.8,.2,1.7),(2.42,1.08,.15),'iron_light',.025,rot=([0,0,1],-.22))
+    # bridge/catwalk makes the building feel occupied and serviceable
+    catwalk(s,'upper_service_walk',(-2.35,3.48,1.3),(2.3,3.48,1.3),.42,'iron_light')
+    stairs(s,'context_service_stairs',(2.42,.33,1.24),count=10,step=(.38,.18,.52),direction=-1,mat='iron_light')
+    for x in [-1.55,0,1.55]:
+        truss_portal(s,f'roof_truss_{x}',x,3.15,4.15,-1.42,1.42,'iron')
+    # auxiliary tanks make the production process legible from the exterior
+    for i,z in enumerate([-1.0,.15,1.15]):
+        cyl(s,f'buffer_tank_{i}',.34,1.4,(2.9,1.05,z),'oxide',sections=18,axis='y')
+        cyl(s,f'buffer_cap_{i}',.38,.12,(2.9,1.78,z),'bronze',sections=18,axis='y')
+    beam_between(s,'buffer_pipe',(2.9,1.65,-1.0),(2.9,1.65,1.15),.065,'copper')
+    for i,(x,z) in enumerate([(-2.55,1.35),(-.9,1.35),(.9,1.35),(2.45,1.35)]):
+        lamp(s,f'context_lamp_{i}',(x,.34,z),.72)
+    # practical interior light bars are visible through the glass factory shell
+    lit_windows(s,'context_interior',[
+        (-1.45,1.0,1.39),(-.48,1.0,1.39),(.48,1.0,1.39),(1.45,1.0,1.39),
+        (-1.45,2.05,1.39),(-.48,2.05,1.39),(.48,2.05,1.39),(1.45,2.05,1.39)
+    ],(.34,.10,.06))
+    # visible rejected cargo catcher and sealed output cradle
+    box(s,'reject_bin',(1.0,.55,.85),(2.45,.52,1.68),'wood',.06)
+    torus(s,'output_cradle',.48,.07,(0,.55,-1.62),'bronze',rot=([1,0,0],math.pi/2))
     return s
 
 
@@ -276,6 +435,38 @@ def model_core():
     for side in [-1,1]:
         beam_between(s,f'pipe_vert_{side}',(side*2.05,.6,-1.15),(side*2.05,2.2,-1.15),.07,'copper')
         beam_between(s,f'pipe_in_{side}',(side*2.05,2.2,-1.15),(side*1.6,2.2,-1.15),.07,'copper')
+    # v0.5 monumentalize the core with gate tunnels, buttresses and a service ring
+    for i,x in enumerate([-1.26,-.42,.42,1.26]):
+        box(s,f'gate_tunnel_{i}',(.66,.92,.82),(x,.82,2.05),'stone_dark',.04)
+        box(s,f'gate_lintel_{i}',(.78,.16,.92),(x,1.34,2.05),'bronze',.03)
+    for angle in np.linspace(0,2*math.pi,8,endpoint=False):
+        x=math.cos(angle)*2.23; z=math.sin(angle)*2.23
+        box(s,f'core_buttress_{angle:.2f}',(.38,1.35,.34),(x,.86,z),'stone_dark',.05,rot=([0,1,0],-angle))
+    # elevated maintenance ring / catwalk around the core front half
+    for angle in np.linspace(-2.55,-.6,9):
+        x=math.cos(angle)*2.45; z=math.sin(angle)*2.45
+        box(s,f'ring_deck_{angle:.2f}',(.48,.08,.46),(x,2.1,z),'iron_light',.02,rot=([0,1,0],-angle))
+        beam_between(s,f'ring_post_{angle:.2f}',(x,2.13,z),(x,2.55,z),.022,'iron')
+    # cooling annexes and vents frame the dome and add industrial scale
+    for side in [-1,1]:
+        box(s,f'cooling_house_{side}',(.95,1.3,1.55),(side*2.5,.88,-.45),'oxide',.045)
+        for zi,z in enumerate([-.9,-.3,.3]):
+            vent(s,f'cooling_vent_{side}_{zi}',(side*2.5,1.75,z),.8)
+    stairs(s,'core_front_stairs',(-2.0,.34,2.35),count=9,step=(.4,.16,.5),direction=1,mat='iron_light')
+    for i,(x,z) in enumerate([(-2.4,1.85),(-.8,2.45),(.8,2.45),(2.4,1.85)]):
+        lamp(s,f'core_lamp_{i}',(x,.3,z),.8)
+    # four warm gate clerestories make the decision exits readable from the harbor
+    lit_windows(s,'core_gate_lights',[
+        (-1.26,1.22,2.50),(-.42,1.22,2.50),(.42,1.22,2.50),(1.26,1.22,2.50)
+    ],(.34,.10,.055))
+    # crown lantern gives the Model Core a unique skyline signature
+    cyl(s,'core_crown',.48,.55,(0,3.92,0),'glass_dark',sections=18,axis='y')
+    torus(s,'core_crown_ring',.58,.07,(0,4.2,0),'brass',rot=([1,0,0],math.pi/2))
+    sphere(s,'core_beacon',.12,(0,4.35,0),'warm')
+    for i,a in enumerate([-2.4,-.8,.8,2.4]):
+        x=math.sin(a)*2.65; z=math.cos(a)*2.65
+        cyl(s,f'core_turret_{i}',.34,.9,(x,.68,z),'stone_light',sections=14,axis='y')
+        cone(s,f'core_turret_cap_{i}',.42,.5,(x,1.42,z),'roof',sections=14)
     return s
 
 
