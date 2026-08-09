@@ -6,11 +6,11 @@ Pi City turns agent runtime behavior into a living harbor city. Requests arrive 
 
 ## Current milestone
 
-### v0.1 — Replay a Real Pi Run
+### v0.2 Alpha — Real Run Explorer
 
-The current build can import Pi-like **runtime JSONL** or **Session JSONL**, normalize it into a runtime-neutral Semantic Trace, replay that trace on a timeline, and inspect both the human explanation and the underlying Pi evidence.
+The current build can import Pi-like **runtime JSONL** or **Session JSONL**, normalize it into a runtime-neutral Semantic Trace, and then explain the run at three levels: **Run Overview → Story Timeline → Semantic Events / Raw Evidence**. It also reconstructs per-model-call Context snapshots so users can compare what changed between decisions.
 
-The harbor rendering spikes proved the visual language. v0.1 is now focused on the product engine underneath that rendering.
+The harbor is now one synchronized view of the same replay engine rather than a separate scripted demo.
 
 ## What works now
 
@@ -21,10 +21,15 @@ The harbor rendering spikes proved the visual language. v0.1 is now focused on t
 - Correlate tool lifecycle with `toolCallId`.
 - Distinguish **Observed / Derived / Synthetic** replay evidence.
 - Build deterministic replay frames with cumulative runtime state.
-- Import one Pi file, or select a runtime + Session pair for a combined replay.
+- Import a local file in the browser.
 - Scrub a generated timeline.
 - Inspect semantic payload and raw Pi evidence.
-- Switch between a compact world view, timeline, and evidence view.
+- Switch between synchronized World, Story, Session, Context, Compare, and Events views.
+- Generate a Run Overview with duration, turns, tool distribution, and evidence quality.
+- Collapse low-level events into a human-readable Story Timeline.
+- Reconstruct model-call Context snapshots and compare newly added evidence.
+- Explain both **what happened** and **why it matters** in the Inspector.
+- Handle multi-tool turns without exposing every runtime event as a top-level story step.
 
 ## Product principles
 
@@ -44,12 +49,14 @@ The harbor rendering spikes proved the visual language. v0.1 is now focused on t
 Pi Runtime JSONL ---------┐
                           ├─> Pi Adapter ─> Semantic Trace ─> Replay Frames
 Pi Session JSONL ---------┘                         │
+                                                   ├─> Run Analyzer
+                                                   ├─> Story Builder
+                                                   ├─> Context Snapshots / Diff
                                                    ├─> World
-                                                   ├─> Timeline
                                                    └─> Inspector
 ```
 
-The procedural Three.js harbor now plugs into `Replay Frames` through `WorldCue`; it does not need to understand Pi RPC event names.
+The future Three.js harbor plugs into `Replay Frames`; it should not need to understand Pi RPC event names.
 
 ## Run locally
 
@@ -58,7 +65,7 @@ npm install
 npm run dev
 ```
 
-Then open the Vite URL shown in the terminal. The app starts with the bundled auth-bug runtime fixture. Use **Import Pi JSONL** to load another Session or runtime log. You can also select a runtime JSONL and its Session JSONL together; Pi City merges live lifecycle evidence with durable Session nodes.
+Then open the Vite URL shown in the terminal. The app starts with the bundled auth-bug runtime fixture. Use **Import Pi JSONL** to load another Session or runtime log.
 
 Useful checks:
 
@@ -71,14 +78,16 @@ npm run build
 ## Repository layout
 
 ```text
-fixtures/auth-bug/       Runtime + Session fixtures
+fixtures/auth-bug/       Minimal tool-loop Runtime + Session fixture
+fixtures/multi-tool/      Multi-tool inspect/change/verify fixture
 src/
   adapters/pi/            JSONL detection + Pi normalization
   semantic-trace/         Runtime-neutral schema, reducer, explanations
-  world/                  Data-driven Three.js / R3F harbor runtime
+  analysis/               Run summary, Story Timeline, Context snapshots/diff
+  world/                  Three.js / R3F harbor runtime (next integration)
   timeline/               Replay controls
   inspector/              Evidence explanation
-  App.tsx                 v0.1 import/replay shell
+  App.tsx                 v0.2 Real Run Explorer shell
 
 docs/
   product-vision.md
@@ -131,27 +140,36 @@ Do not upload only the files through the GitHub website if you want to keep the 
 
 ## Roadmap
 
-### v0.1
+### v0.1 — Replay engine
 
 - [x] Pi JSONL importer
 - [x] Semantic Trace Schema v1
 - [x] evidence-level model
 - [x] deterministic replay frames
-- [x] file import + timeline + inspector shell
-- [x] reconnect the Three.js harbor to real replay frames
-- [x] Session tree view
-- [x] Context reconstruction/detail view
-- [ ] real Pi sample validation beyond fixtures
-- [x] combine runtime + Session evidence into one replay
+- [x] runtime + Session merge
+- [x] Three.js harbor driven by semantic replay
 
-### v0.2
+### v0.2 — Real Run Explorer
 
-- Branch / Session Tree exploration
+- [x] Run Analyzer
+- [x] Story Timeline
+- [x] model-call Context snapshots
+- [x] Context Compare
+- [x] what happened / why it matters Inspector
+- [x] multi-tool fixture + story validation
+- [ ] validate with several real-world Pi runs
+- [ ] better story segmentation for long runs and multiple user follow-ups
+- [ ] usage/token extraction when present in provider messages
+
+### v0.3 — Agent Time Machine
+
+- Branch / active-leaf replay
 - Context pressure + Compaction
-- richer tool district
+- before/after compaction comparison
+- "why did the Agent forget?" scenarios
 
-### v0.3
+### v0.4 — Take Control
 
-- live Pi SDK/RPC connection
-- Replay My Agent
-- first control/debug gameplay mechanics
+- prediction / intervention mechanics
+- context-management challenges
+- first debug gameplay loops

@@ -1,6 +1,6 @@
 {
   "name": "pi-city",
-  "version": "0.1.0",
+  "version": "0.2.0-alpha.1",
   "private": true,
   "description": "A playable visualization of how AI agents actually run.",
   "scripts": {

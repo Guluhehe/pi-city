@@ -2,61 +2,43 @@
 
 ## v0.0.x — Technical / visual spikes
 
-Validated:
-
-- industrial harbor world direction
-- physical logistics instead of particle flow
-- guided camera
-- cutaway buildings
-- Session vs Context visual metaphor
-- Model decision gates
-- living-city visual language
+Validated the industrial harbor, physical logistics, guided camera, cutaway buildings, Session-vs-Context metaphor, Model decision gates, and living-city visual language.
 
 ## v0.1 — Replay a Real Pi Run
 
-### Engine — implemented
+Implemented the Pi runtime/session importer, tolerant JSONL parsing, Semantic Trace Schema, evidence levels, deterministic replay frames, tool correlation, runtime + Session merge, Session Tree, Context reconstruction, Inspector, and a Three.js harbor driven by semantic World Cues.
 
-- Pi session/runtime JSONL detection
-- tolerant JSONL parser
-- Pi Adapter
-- Semantic Trace Schema v1
-- observed / derived / synthetic evidence levels
-- deterministic replay reducer + frames
-- tool correlation via `toolCallId`
-- runtime and Session fixtures
+## v0.2 — Real Run Explorer — current
 
-### Product shell — implemented
+### Implemented in alpha
 
-- local file import
-- generated timeline
-- replay/scrubbing
-- event Inspector
-- raw Pi evidence view
-- compact World view driven by semantic district state
+- Run Analyzer: title, status, duration, turns, model/tool counts, tool distribution, evidence quality
+- Story Builder: compresses low-level events into request / inspect / change / execute / answer / completion steps
+- Context Snapshots: reconstructs evidence available at each Model Call
+- Context Compare: highlights added, retained, and removed evidence between model decisions
+- Inspector explanations: separate **what happened** from **why it matters**
+- Multi-tool fixture that covers read + grep + edit + bash
+- synchronized navigation between Story/Context/Compare and the raw replay index
 
-### Integrated in this iteration
+### Next validation
 
-- data-driven Three.js harbor connected to replay frames through World Cues
-- Session Tree panel driven by imported `id` / `parentId`
-- Context panel that labels reconstructed vs directly instrumented context
-- combined runtime + Session replay
-- imported file metadata and import diagnostics
+- import several real Pi runtime logs of materially different shapes
+- improve segmentation of long turns and multiple user follow-ups
+- extract usage/token metadata when present
+- distinguish validation commands from generic bash execution
+- make Story steps drive higher-level camera sequences in the harbor
 
-### Remaining v0.1 validation
+## v0.3 — Agent Time Machine
 
-- validate against real exported Pi sessions/runtime logs
-- tune camera/logistics against long multi-tool traces
-- improve import pairing/correlation for complex sessions
-
-## v0.2
-
-- Branch / Session Tree exploration
-- Context pressure + Compaction exhibit
-- richer multi-tool scenarios
 - branch-aware replay
+- active leaf movement
+- Context pressure
+- Compaction before/after
+- "why did the Agent forget?" explanations
 
-## v0.3
+## v0.4 — Take Control
 
-- live Pi SDK/RPC event stream
-- Replay My Agent
-- first control/debug gameplay mechanics
+- predict next action
+- replay reality
+- intervene in context/tool decisions
+- debug challenges rather than XP/badge gamification

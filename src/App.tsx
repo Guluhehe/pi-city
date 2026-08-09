@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import demoRuntime from '../fixtures/auth-bug/runtime.jsonl?raw';
 import { importPiJsonl } from './adapters/pi/import';
+import { activeContextSnapshot, buildContextSnapshots, compareContextSnapshots, type ContextItem } from './analysis/context';
+import { analyzeRun, formatDuration } from './analysis/run';
+import { buildStory, type StoryStep } from './analysis/story';
 import { explainEvent } from './semantic-trace/explain';
 import { buildTraceFrames } from './semantic-trace/reducer';
 import { mergePiTraces } from './semantic-trace/merge';
@@ -18,6 +21,7 @@ const districtNames = {
 } as const;
 
 type District = keyof typeof districtNames;
+type Tab = 'overview' | 'world' | 'story' | 'session' | 'context' | 'compare' | 'events';
 
 function load(text: string): SemanticTrace {
   return importPiJsonl(text).trace;
@@ -30,15 +34,19 @@ function shortJson(value: unknown): string {
 export function App() {
   const [trace, setTrace] = useState<SemanticTrace>(() => load(demoRuntime));
   const frames = useMemo(() => buildTraceFrames(trace), [trace]);
+  const run = useMemo(() => analyzeRun(trace), [trace]);
+  const story = useMemo(() => buildStory(trace), [trace]);
+  const contextSnapshots = useMemo(() => buildContextSnapshots(trace), [trace]);
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
-  const [tab, setTab] = useState<'world' | 'session' | 'context' | 'timeline' | 'raw'>('world');
+  const [tab, setTab] = useState<Tab>('overview');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setIndex(0);
     setPlaying(false);
+    setTab('overview');
   }, [trace.id]);
 
   useEffect(() => {
@@ -59,6 +67,8 @@ export function App() {
   const explanation = frame ? explainEvent(frame.event) : undefined;
   const worldCue = frame ? toWorldCue(frame.event) : undefined;
   const activeDistrict: District = worldCue?.district ?? explanation?.district ?? 'system';
+  const evidence = frame?.event.evidence;
+  const activeStory = story.find((step) => index >= step.startIndex && index <= step.endIndex);
 
   async function onFiles(files?: FileList | null) {
     if (!files?.length) return;
@@ -77,7 +87,18 @@ export function App() {
     }
   }
 
-  const evidence = frame?.event.evidence;
+  function watchRun() {
+    setIndex(0);
+    setTab('world');
+    setPlaying(true);
+  }
+
+  function openCompare() {
+    const target = contextSnapshots.length > 1 ? contextSnapshots[1] : contextSnapshots[0];
+    if (target) setIndex(target.eventIndex);
+    setPlaying(false);
+    setTab('compare');
+  }
 
   return (
     <main className="app-shell">
@@ -96,36 +117,36 @@ export function App() {
       <section className="hero-copy">
         <div>
           <span className="status-pill">{trace.source === 'pi-runtime' ? 'Runtime replay' : trace.source === 'pi-session' ? 'Session reconstruction' : 'Combined replay'}</span>
-          <h2>{explanation?.title ?? 'Drop a Pi run into the city'}</h2>
-          <p>{explanation?.plain ?? 'Pi City converts raw runtime evidence into a replayable semantic trace.'}</p>
+          <h2>{run.title}</h2>
+          <p>{explanation ? `${explanation.title} — ${explanation.plain}` : 'Pi City converts raw runtime evidence into a replayable semantic trace.'}</p>
         </div>
         <div className="metrics">
-          <Metric label="Session" value={frame?.state.sessionEntries ?? 0} />
-          <Metric label="Contexts" value={frame?.state.contextBuilds ?? 0} />
-          <Metric label="Model calls" value={frame?.state.modelCalls ?? 0} />
-          <Metric label="Tool calls" value={frame?.state.toolCalls ?? 0} />
+          <Metric label="Turns" value={run.turns} />
+          <Metric label="Model calls" value={run.modelCalls} />
+          <Metric label="Tool calls" value={run.toolCalls} />
+          <Metric label="Session nodes" value={run.sessionEntries} />
         </div>
       </section>
 
       <nav className="mode-tabs">
+        <button className={tab === 'overview' ? 'active' : ''} onClick={() => setTab('overview')}>Overview</button>
         <button className={tab === 'world' ? 'active' : ''} onClick={() => setTab('world')}>World</button>
+        <button className={tab === 'story' ? 'active' : ''} onClick={() => setTab('story')}>Story</button>
         <button className={tab === 'session' ? 'active' : ''} onClick={() => setTab('session')}>Session</button>
         <button className={tab === 'context' ? 'active' : ''} onClick={() => setTab('context')}>Context</button>
-        <button className={tab === 'timeline' ? 'active' : ''} onClick={() => setTab('timeline')}>Timeline</button>
-        <button className={tab === 'raw' ? 'active' : ''} onClick={() => setTab('raw')}>Evidence</button>
+        <button className={tab === 'compare' ? 'active' : ''} onClick={openCompare}>Compare</button>
+        <button className={tab === 'events' ? 'active' : ''} onClick={() => setTab('events')}>Events</button>
       </nav>
 
       <section className="workspace">
         <div className="stage-card">
+          {tab === 'overview' && <RunOverview run={run} story={story} onWatch={watchRun} />}
           {tab === 'world' && <PiCityScene event={frame?.event} />}
+          {tab === 'story' && <StoryView trace={trace} story={story} activeIndex={index} onSelect={(value) => { setIndex(value); setPlaying(false); }} />}
           {tab === 'session' && <SessionTree trace={trace} activeArtifactId={frame?.event.artifactId} />}
-          {tab === 'context' && <ContextView trace={trace} frames={frames} activeIndex={index} />}
-          {tab === 'timeline' && (
-            <TimelineList frames={frames} active={index} onSelect={(value) => { setIndex(value); setPlaying(false); }} />
-          )}
-          {tab === 'raw' && (
-            <pre className="raw-panel">{shortJson(frame?.event.sourceEvent ?? frame?.event)}</pre>
-          )}
+          {tab === 'context' && <ContextView trace={trace} snapshots={contextSnapshots} activeIndex={index} onSelect={(value) => { setIndex(value); setPlaying(false); }} />}
+          {tab === 'compare' && <ContextCompareView snapshots={contextSnapshots} activeIndex={index} onSelect={(value) => { setIndex(value); setPlaying(false); }} />}
+          {tab === 'events' && <TimelineList frames={frames} active={index} onSelect={(value) => { setIndex(value); setPlaying(false); }} />}
         </div>
 
         <aside className="inspector">
@@ -137,8 +158,23 @@ export function App() {
             {evidence && <span className={`evidence ${evidence.level}`}>{evidence.level}</span>}
           </div>
 
+          {explanation && (
+            <div className="explanation-stack">
+              <section>
+                <span>What happened</span>
+                <strong>{explanation.title}</strong>
+                <p>{explanation.plain}</p>
+              </section>
+              <section className="why-card">
+                <span>Why it matters</span>
+                <p>{explanation.why}</p>
+              </section>
+            </div>
+          )}
+
           <dl>
             <dt>District</dt><dd>{districtNames[activeDistrict]}</dd>
+            <dt>Story step</dt><dd>{activeStory?.title ?? '—'}</dd>
             <dt>Source</dt><dd>{evidence?.source ?? '—'}</dd>
             <dt>Turn</dt><dd>{frame?.event.turnId ?? '—'}</dd>
             <dt>Tool call</dt><dd>{frame?.event.toolCallId ?? '—'}</dd>
@@ -148,6 +184,10 @@ export function App() {
 
           <div className="payload-title">Semantic payload</div>
           <pre className="payload">{shortJson(frame?.event.payload ?? {})}</pre>
+          <details className="raw-evidence">
+            <summary>Raw source evidence</summary>
+            <pre>{shortJson(frame?.event.sourceEvent ?? frame?.event)}</pre>
+          </details>
         </aside>
       </section>
 
@@ -169,7 +209,7 @@ export function App() {
       </section>
 
       {trace.warnings.length > 0 && <div className="warning">{trace.warnings.join(' ')}</div>}
-      <footer>Pi City v0.1 · semantic replay engine</footer>
+      <footer>Pi City v0.2 · Real Run Explorer</footer>
     </main>
   );
 }
@@ -178,35 +218,104 @@ function Metric({ label, value }: { label: string; value: number }) {
   return <div className="metric"><span>{label}</span><strong>{value}</strong></div>;
 }
 
-function World({ active, eventType, artifact, action }: { active: District; eventType?: string; artifact?: string; action?: string }) {
+function RunOverview({ run, story, onWatch }: { run: ReturnType<typeof analyzeRun>; story: StoryStep[]; onWatch: () => void }) {
   return (
-    <div className="world-map">
-      <div className="sea"><span>Harbor water</span><i className="ship" /></div>
-      <DistrictCard id="arrival" name="Arrival Harbor" subtitle="requests enter" active={active} />
-      <DistrictCard id="session" name="Session Archive" subtitle="history persists" active={active} />
-      <DistrictCard id="context" name="Context Works" subtitle="context is assembled" active={active} />
-      <DistrictCard id="model" name="Model Core" subtitle="next action is chosen" active={active} />
-      <DistrictCard id="tool" name="Tool District" subtitle="actions execute" active={active} />
-      <div className="world-cue"><strong>{artifact ?? 'none'}</strong><span>{action ?? 'signal'}</span></div>
-      <div className="world-event">{eventType ?? 'CITY_IDLE'}</div>
+    <div className="run-overview">
+      <div className="overview-hero">
+        <div>
+          <div className="eyebrow">RUN OVERVIEW</div>
+          <h3>{run.status === 'completed' ? 'Completed run' : 'Run still in progress'}</h3>
+          <p>Pi City has compressed the raw trace into a human-readable runtime story. Start with the story; drill into semantic events only when you need evidence.</p>
+        </div>
+        <button className="primary overview-cta" onClick={onWatch}>Watch the run →</button>
+      </div>
+
+      <div className="overview-grid">
+        <OverviewStat label="Duration" value={formatDuration(run.durationMs)} />
+        <OverviewStat label="Turns" value={String(run.turns)} />
+        <OverviewStat label="Model calls" value={String(run.modelCalls)} />
+        <OverviewStat label="Tool calls" value={String(run.toolCalls)} />
+        <OverviewStat label="Tool results" value={String(run.toolResults)} />
+        <OverviewStat label="Context builds" value={String(run.contextBuilds)} />
+      </div>
+
+      <div className="overview-columns">
+        <section className="overview-panel">
+          <header><span>Tool activity</span><strong>{run.tools.reduce((sum, tool) => sum + tool.count, 0)} calls</strong></header>
+          {run.tools.length === 0 ? <p className="muted-copy">No external tools were called.</p> : (
+            <div className="tool-summary-list">
+              {run.tools.map((tool) => <div key={tool.name}><strong>{tool.name}</strong><span>{tool.count} call{tool.count === 1 ? '' : 's'}{tool.errors ? ` · ${tool.errors} error${tool.errors === 1 ? '' : 's'}` : ''}</span></div>)}
+            </div>
+          )}
+        </section>
+        <section className="overview-panel">
+          <header><span>Evidence quality</span><strong>{run.evidence.observed + run.evidence.derived + run.evidence.synthetic} events</strong></header>
+          <div className="evidence-bars">
+            <EvidenceBar label="Observed" value={run.evidence.observed} total={run.evidence.observed + run.evidence.derived + run.evidence.synthetic} kind="observed" />
+            <EvidenceBar label="Derived" value={run.evidence.derived} total={run.evidence.observed + run.evidence.derived + run.evidence.synthetic} kind="derived" />
+            <EvidenceBar label="Synthetic" value={run.evidence.synthetic} total={run.evidence.observed + run.evidence.derived + run.evidence.synthetic} kind="synthetic" />
+          </div>
+        </section>
+      </div>
+
+      <section className="overview-panel story-preview">
+        <header><span>Story Pi City inferred</span><strong>{story.length} steps</strong></header>
+        <div className="story-preview-row">
+          {story.slice(0, 6).map((step, i) => <div key={step.id}><span>{String(i + 1).padStart(2, '0')}</span><strong>{step.title}</strong></div>)}
+        </div>
+      </section>
     </div>
   );
 }
 
-function DistrictCard({ id, name, subtitle, active }: { id: Exclude<District, 'system'>; name: string; subtitle: string; active: District }) {
+function OverviewStat({ label, value }: { label: string; value: string }) {
+  return <div className="overview-stat"><span>{label}</span><strong>{value}</strong></div>;
+}
+
+function EvidenceBar({ label, value, total, kind }: { label: string; value: number; total: number; kind: 'observed' | 'derived' | 'synthetic' }) {
+  const width = total ? Math.round((value / total) * 100) : 0;
+  return <div className="evidence-bar"><div><span>{label}</span><strong>{value}</strong></div><i><b className={kind} style={{ width: `${width}%` }} /></i></div>;
+}
+
+function StoryView({ trace, story, activeIndex, onSelect }: { trace: SemanticTrace; story: StoryStep[]; activeIndex: number; onSelect: (index: number) => void }) {
   return (
-    <div className={`district ${id} ${active === id ? 'active' : ''}`}>
-      <div className="district-icon">{id === 'arrival' ? '◉' : id === 'session' ? '▥' : id === 'context' ? '⌘' : id === 'model' ? '◇' : '⚙'}</div>
-      <strong>{name}</strong>
-      <span>{subtitle}</span>
-      {active === id && <i className="pulse" />}
+    <div className="story-view">
+      <div className="view-header"><span>Human-readable run story</span><strong>{story.length} steps</strong></div>
+      <div className="story-list">
+        {story.map((step, i) => {
+          const active = activeIndex >= step.startIndex && activeIndex <= step.endIndex;
+          const eventTypes = step.eventIndices.map((eventIndex) => trace.events[eventIndex]?.type).filter(Boolean);
+          return (
+            <article key={step.id} className={`story-step ${active ? 'active' : ''}`}>
+              <button className="story-main" onClick={() => onSelect(step.startIndex)}>
+                <span className={`story-icon ${step.kind}`}>{storyIcon(step.kind)}</span>
+                <span className="story-copy"><small>STEP {String(i + 1).padStart(2, '0')}</small><strong>{step.title}</strong><p>{step.summary}</p></span>
+                <span className="story-count">{step.eventIndices.length} events</span>
+              </button>
+              {step.tools.length > 0 && <div className="story-tools">{step.tools.map((tool, toolIndex) => <span key={`${tool.callId ?? tool.name}-${toolIndex}`}>{tool.name}{tool.callId ? <small>{tool.callId}</small> : null}</span>)}</div>}
+              <div className="story-events">{[...new Set(eventTypes)].join(' · ')}</div>
+            </article>
+          );
+        })}
+      </div>
     </div>
   );
+}
+
+function storyIcon(kind: StoryStep['kind']): string {
+  if (kind === 'request') return '↘';
+  if (kind === 'inspect') return '⌕';
+  if (kind === 'change') return '✎';
+  if (kind === 'execute') return '⚙';
+  if (kind === 'answer') return '↗';
+  if (kind === 'complete') return '✓';
+  return '◇';
 }
 
 function TimelineList({ frames, active, onSelect }: { frames: ReturnType<typeof buildTraceFrames>; active: number; onSelect: (index: number) => void }) {
   return (
     <div className="timeline-list">
+      <div className="view-header"><span>Semantic event layer</span><strong>{frames.length} events</strong></div>
       {frames.map((frame) => {
         const info = explainEvent(frame.event);
         return (
@@ -219,7 +328,6 @@ function TimelineList({ frames, active, onSelect }: { frames: ReturnType<typeof 
     </div>
   );
 }
-
 
 function SessionTree({ trace, activeArtifactId }: { trace: SemanticTrace; activeArtifactId?: string }) {
   const rawEntries = Array.isArray(trace.metadata.sessionEntries)
@@ -270,7 +378,7 @@ function SessionTree({ trace, activeArtifactId }: { trace: SemanticTrace; active
   );
 }
 
-function ContextView({ trace, frames, activeIndex }: { trace: SemanticTrace; frames: ReturnType<typeof buildTraceFrames>; activeIndex: number }) {
+function ContextView({ trace, snapshots, activeIndex, onSelect }: { trace: SemanticTrace; snapshots: ReturnType<typeof buildContextSnapshots>; activeIndex: number; onSelect: (index: number) => void }) {
   if (trace.source === 'pi-session') {
     return (
       <div className="empty-view context-empty">
@@ -282,31 +390,70 @@ function ContextView({ trace, frames, activeIndex }: { trace: SemanticTrace; fra
     );
   }
 
-  const prior = frames.slice(0, activeIndex + 1).map((frame) => frame.event);
-  const requests = prior.filter((event) => event.type === 'REQUEST_ARRIVED');
-  const toolResults = prior.filter((event) => event.type === 'TOOL_RESULT_ATTACHED');
-  const toolCalls = prior.filter((event) => event.type === 'TOOL_CALL_CREATED');
-  const lastContext = [...prior].reverse().find((event) => event.type === 'CONTEXT_COMPILED');
+  const snapshot = activeContextSnapshot(snapshots, activeIndex);
+  if (!snapshot) {
+    return <div className="empty-view"><div className="empty-icon">⌘</div><h3>No model context yet</h3><p>Move the timeline to the first Model Call. Pi City will reconstruct the evidence available at that decision point.</p></div>;
+  }
 
   return (
     <div className="context-view">
-      <div className="view-header"><span>Reconstructed current-turn view</span><strong>DERIVED</strong></div>
-      <div className="derived-banner">Pi RPC exposes <code>turn_start</code>, tool/message lifecycle, and settled state, but not the exact compiled prompt as a first-class RPC event. This panel therefore shows evidence available before the current model call, not a byte-for-byte provider request.</div>
-      <div className="context-stack">
-        <ContextCard label="User requests" count={requests.length} items={requests.map((event) => event.payload.message)} />
-        <ContextCard label="Tool calls" count={toolCalls.length} items={toolCalls.map((event) => ({ tool: event.payload.toolName, args: event.payload.args }))} />
-        <ContextCard label="Tool results" count={toolResults.length} items={toolResults.map((event) => ({ tool: event.payload.toolName, result: event.payload.result }))} />
-      </div>
-      <div className="context-footer">Latest context semantic event: <code>{lastContext?.id ?? 'not reached yet'}</code></div>
+      <div className="view-header"><span>Reconstructed model-call context</span><strong>CALL #{snapshot.number} · DERIVED</strong></div>
+      <div className="context-call-switcher">{snapshots.map((item) => <button key={item.eventId} className={item.number === snapshot.number ? 'active' : ''} onClick={() => onSelect(item.eventIndex)}>Model #{item.number}</button>)}</div>
+      <div className="derived-banner">This is a semantic reconstruction of evidence available before the model call. It is intentionally not presented as the byte-for-byte provider prompt.</div>
+      <ContextItemGrid items={snapshot.items} />
     </div>
   );
 }
 
-function ContextCard({ label, count, items }: { label: string; count: number; items: unknown[] }) {
+function ContextCompareView({ snapshots, activeIndex, onSelect }: { snapshots: ReturnType<typeof buildContextSnapshots>; activeIndex: number; onSelect: (index: number) => void }) {
+  if (!snapshots.length) return <div className="empty-view"><div className="empty-icon">⇄</div><h3>No model calls to compare</h3><p>Context Compare appears when runtime evidence contains model-call boundaries.</p></div>;
+  const current = activeContextSnapshot(snapshots, activeIndex) ?? snapshots[0];
+  const previous = current.number > 1 ? snapshots[current.number - 2] : undefined;
+  const diff = compareContextSnapshots(current, previous);
+
   return (
-    <section className="context-card">
-      <header><strong>{label}</strong><span>{count}</span></header>
-      {items.length === 0 ? <p>None yet</p> : <pre>{JSON.stringify(items.at(-1), null, 2)}</pre>}
+    <div className="compare-view">
+      <div className="view-header"><span>What changed before the next decision?</span><strong>CONTEXT COMPARE</strong></div>
+      <div className="context-call-switcher">{snapshots.map((item) => <button key={item.eventId} className={item.number === current.number ? 'active' : ''} onClick={() => onSelect(item.eventIndex)}>Model #{item.number}</button>)}</div>
+      {!previous ? (
+        <div className="empty-compare"><strong>Model call #1 is the baseline.</strong><p>Select a later model call to see exactly what evidence was added between decisions.</p></div>
+      ) : (
+        <>
+          <div className="compare-summary"><strong>+{diff.added.length} new</strong><span>{diff.retained.length} retained</span>{diff.removed.length > 0 && <span>−{diff.removed.length} removed</span>}</div>
+          <div className="compare-columns">
+            <ContextSnapshotColumn label={`Before · Model #${previous.number}`} items={previous.items} />
+            <ContextSnapshotColumn label={`After · Model #${current.number}`} items={current.items} addedKeys={new Set(diff.added.map((item) => item.key))} />
+          </div>
+          <section className="change-explanation">
+            <div className="eyebrow">WHY COULD THE AGENT CHANGE ITS MIND?</div>
+            <h3>{diff.added.some((item) => item.kind === 'tool-result') ? 'New external evidence entered the model-visible view.' : 'The model-visible evidence changed between calls.'}</h3>
+            <p>{diff.added.length ? `Pi City reconstructed ${diff.added.length} newly available context item${diff.added.length === 1 ? '' : 's'} before Model #${current.number}.` : 'No new reconstructed evidence was detected between these calls.'}</p>
+          </section>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ContextItemGrid({ items }: { items: ContextItem[] }) {
+  const groups: Array<[ContextItem['kind'], string]> = [['request', 'User requests'], ['tool-call', 'Tool calls'], ['tool-result', 'Tool results']];
+  return <div className="context-stack">{groups.map(([kind, label]) => <ContextSnapshotColumn key={kind} label={label} items={items.filter((item) => item.kind === kind)} />)}</div>;
+}
+
+function ContextSnapshotColumn({ label, items, addedKeys }: { label: string; items: ContextItem[]; addedKeys?: Set<string> }) {
+  return (
+    <section className="context-card context-snapshot-card">
+      <header><strong>{label}</strong><span>{items.length}</span></header>
+      <div className="context-items">
+        {items.length === 0 ? <p>None</p> : items.map((item) => (
+          <div key={item.key} className={`context-item ${addedKeys?.has(item.key) ? 'added' : ''}`}>
+            <span className={`context-kind ${item.kind}`}>{item.kind}</span>
+            <strong>{item.label}</strong>
+            <small>{item.detail}</small>
+            {addedKeys?.has(item.key) && <b>NEW</b>}
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
