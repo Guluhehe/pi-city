@@ -22,12 +22,33 @@ export type SemanticEventType =
   | 'MODEL_CHANGED'
   | 'THINKING_LEVEL_CHANGED';
 
-export interface SemanticEvent<T = unknown> {
+export type EvidenceLevel = 'observed' | 'derived' | 'synthetic';
+export type EvidenceSource = 'pi-runtime' | 'pi-session' | 'demo';
+
+export interface SemanticEvidence {
+  level: EvidenceLevel;
+  source: EvidenceSource;
+  note?: string;
+}
+
+export interface SemanticEvent<T = Record<string, unknown>> {
   id: string;
   type: SemanticEventType;
   timestamp?: number;
   turnId?: string;
   artifactId?: string;
+  toolCallId?: string;
+  parentId?: string | null;
+  evidence: SemanticEvidence;
   sourceEvent?: unknown;
   payload: T;
+}
+
+export interface SemanticTrace {
+  id: string;
+  source: EvidenceSource;
+  createdAt: number;
+  events: SemanticEvent[];
+  warnings: string[];
+  metadata: Record<string, unknown>;
 }
