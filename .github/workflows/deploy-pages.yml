@@ -1,11 +1,20 @@
-name: Deploy Pi City Live Beta to Pages
+name: Deploy Pi City to Pages
 
 on:
   push:
     branches: [main]
     paths:
-      - 'site-live-beta/**'
+      - 'src/**'
+      - 'public/**'
+      - 'fixtures/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - 'tsconfig*.json'
+      - 'index.html'
       - '.github/workflows/deploy-pages.yml'
+      - 'site-live-beta/**'
   workflow_dispatch:
 
 permissions:
@@ -18,20 +27,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Core checks
+        run: npm run check:core && npm test && npm run typecheck
+      - name: Build Vite app
+        run: npm run build
+        env:
+          VITE_BASE: /pi-city/
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
   deploy:
+    needs: build
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-      - name: Upload static site
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site-live-beta
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

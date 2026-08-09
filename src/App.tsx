@@ -4,6 +4,7 @@ import { importPiJsonl } from './adapters/pi/import';
 import { activeContextSnapshot, buildContextSnapshots, compareContextSnapshots, type ContextItem } from './analysis/context';
 import { analyzeRun, formatDuration } from './analysis/run';
 import { buildStory, type StoryStep } from './analysis/story';
+import { CinematicCity } from './product/CinematicCity';
 import { explainEvent } from './semantic-trace/explain';
 import { buildTraceFrames } from './semantic-trace/reducer';
 import { mergePiTraces } from './semantic-trace/merge';
@@ -22,6 +23,7 @@ const districtNames = {
 
 type District = keyof typeof districtNames;
 type Tab = 'overview' | 'journey' | 'world' | 'story' | 'session' | 'context' | 'compare' | 'events';
+type Surface = 'city' | 'explorer';
 
 function load(text: string): SemanticTrace {
   return importPiJsonl(text).trace;
@@ -32,6 +34,14 @@ function shortJson(value: unknown): string {
 }
 
 export function App() {
+  const [surface, setSurface] = useState<Surface>('city');
+  if (surface === 'city') {
+    return <CinematicCity onOpenExplorer={() => setSurface('explorer')} />;
+  }
+  return <EvidenceExplorer onBackToCity={() => setSurface('city')} />;
+}
+
+function EvidenceExplorer({ onBackToCity }: { onBackToCity: () => void }) {
   const [trace, setTrace] = useState<SemanticTrace>(() => load(demoRuntime));
   const frames = useMemo(() => buildTraceFrames(trace), [trace]);
   const run = useMemo(() => analyzeRun(trace), [trace]);
@@ -127,6 +137,7 @@ export function App() {
           <h1>PI CITY</h1>
         </div>
         <div className="top-actions">
+          <button className="ghost" onClick={onBackToCity}>← Back to city</button>
           {tab === 'journey' && <button className="ghost" onClick={() => { setPlaying(false); setTab('overview'); }}>Exit journey</button>}
           <button className="ghost" onClick={() => setTrace(load(demoRuntime))}>Demo run</button>
           <button className="primary" onClick={() => inputRef.current?.click()}>Import Pi JSONL</button>
@@ -210,8 +221,10 @@ export function App() {
       )}
 
       {tab === 'journey' && transport}
-      {trace.warnings.length > 0 && <div className="warning">{trace.warnings.join(' ')}</div>}
-      <footer>Pi City v0.10 Canonical Frames · Photo Mode + GLB-safe composition + Realtime Runtime</footer>
+      {trace.warnings.length > 0 && (
+        <div className="warning">{trace.warnings.map((warning) => warning.message).join(' ')}</div>
+      )}
+      <footer>Pi City · Evidence Explorer · Semantic Trace pipeline</footer>
     </main>
   );
 }

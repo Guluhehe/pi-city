@@ -5,27 +5,33 @@
   "description": "A playable visualization of how AI agents actually run.",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run export:experience && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "check:core": "tsc -p tsconfig.core.json",
     "test": "tsx --test tests/**/*.test.ts",
+    "export:experience": "tsx scripts/export_experience_data.ts",
     "check:live": "python3 scripts/check_live_beta.py",
-    "check:frames": "python3 scripts/check_canonical_frames.py"
+    "setup:visual": "python3 -m venv .venv-visual && .venv-visual/bin/pip install -r requirements-visual.txt",
+    "check:frames": "bash scripts/run_canonical_frames.sh",
+    "check:all": "npm run check:core && npm test && npm run typecheck && npm run build && npm run check:frames"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
-    "@react-three/fiber": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "three": "latest"
+    "@react-three/fiber": "9.7.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "three": "0.185.1"
   },
   "devDependencies": {
-    "@types/react": "latest",
-    "@types/react-dom": "latest",
-    "@types/three": "latest",
-    "typescript": "latest",
-    "vite": "latest",
-    "tsx": "latest"
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@types/three": "0.185.4",
+    "typescript": "7.0.2",
+    "vite": "8.2.1",
+    "tsx": "4.23.11"
   },
   "type": "module"
 }

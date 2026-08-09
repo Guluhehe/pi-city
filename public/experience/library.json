@@ -1,0 +1,755 @@
+{
+  "schemaVersion": 1,
+  "districts": {
+    "arrival": [
+      -11.5,
+      0.35,
+      4.8
+    ],
+    "session": [
+      -5.2,
+      0.35,
+      0.7
+    ],
+    "context": [
+      1,
+      0.35,
+      -4.6
+    ],
+    "model": [
+      7.1,
+      0.35,
+      -0.15
+    ],
+    "tool": [
+      13,
+      0.35,
+      4.3
+    ]
+  },
+  "models": {
+    "arrival": "arrival-harbor.glb",
+    "session": "session-archive.glb",
+    "context": "context-works.glb",
+    "model": "model-core.glb",
+    "tool": "tool-works.glb"
+  },
+  "shots": {
+    "world": {
+      "id": "world",
+      "offset": [
+        19,
+        14,
+        24
+      ],
+      "lookShift": [
+        0,
+        1,
+        0
+      ],
+      "fov": 37,
+      "exposure": 1.06,
+      "bloom": 0.22,
+      "aperture": 0.000022,
+      "maxBlur": 0.0032,
+      "matte": 0.4
+    },
+    "arrival-wide": {
+      "id": "arrival-wide",
+      "offset": [
+        14.2,
+        7.4,
+        13.1
+      ],
+      "lookShift": [
+        3,
+        1.12,
+        -0.45
+      ],
+      "fov": 40,
+      "exposure": 1.11,
+      "bloom": 0.19,
+      "aperture": 0.000013,
+      "maxBlur": 0.0021,
+      "matte": 0.56
+    },
+    "session-close": {
+      "id": "session-close",
+      "offset": [
+        7,
+        4.7,
+        6.9
+      ],
+      "lookShift": [
+        -0.35,
+        1.25,
+        -0.35
+      ],
+      "fov": 32,
+      "exposure": 1.03,
+      "bloom": 0.2,
+      "aperture": 0.00003,
+      "maxBlur": 0.0038,
+      "matte": 0.12
+    },
+    "context-cut": {
+      "id": "context-cut",
+      "offset": [
+        6.6,
+        3.9,
+        5.2
+      ],
+      "lookShift": [
+        -0.45,
+        -0.2,
+        -0.72
+      ],
+      "fov": 30,
+      "exposure": 1.13,
+      "bloom": 0.25,
+      "aperture": 0.000037,
+      "maxBlur": 0.0045,
+      "matte": 0.045
+    },
+    "context-sealed": {
+      "id": "context-sealed",
+      "offset": [
+        6.4,
+        3.7,
+        5
+      ],
+      "lookShift": [
+        -0.2,
+        -0.5,
+        -0.9
+      ],
+      "fov": 30,
+      "exposure": 1.16,
+      "bloom": 0.31,
+      "aperture": 0.000043,
+      "maxBlur": 0.005,
+      "matte": 0.045
+    },
+    "model-decision": {
+      "id": "model-decision",
+      "offset": [
+        8.5,
+        5,
+        6.8
+      ],
+      "lookShift": [
+        -1.2,
+        0.3,
+        -0.35
+      ],
+      "fov": 32,
+      "exposure": 0.98,
+      "bloom": 0.4,
+      "aperture": 0.000041,
+      "maxBlur": 0.0048,
+      "matte": 0.045
+    },
+    "model-gate": {
+      "id": "model-gate",
+      "offset": [
+        4.85,
+        3,
+        4.15
+      ],
+      "lookShift": [
+        0.72,
+        1.2,
+        0.05
+      ],
+      "fov": 27,
+      "exposure": 1,
+      "bloom": 0.38,
+      "aperture": 0.000048,
+      "maxBlur": 0.0058,
+      "matte": 0.05
+    },
+    "tool-follow": {
+      "id": "tool-follow",
+      "offset": [
+        6.7,
+        4,
+        6
+      ],
+      "lookShift": [
+        -0.45,
+        1.05,
+        0.35
+      ],
+      "fov": 31,
+      "exposure": 1.05,
+      "bloom": 0.26,
+      "aperture": 0.00003,
+      "maxBlur": 0.004,
+      "matte": 0.08
+    },
+    "tool-close": {
+      "id": "tool-close",
+      "offset": [
+        5.2,
+        3.3,
+        4.8
+      ],
+      "lookShift": [
+        0.2,
+        1,
+        0.15
+      ],
+      "fov": 28,
+      "exposure": 1.06,
+      "bloom": 0.3,
+      "aperture": 0.000042,
+      "maxBlur": 0.0052,
+      "matte": 0.07
+    },
+    "uturn": {
+      "id": "uturn",
+      "offset": [
+        9.6,
+        6.3,
+        8.7
+      ],
+      "lookShift": [
+        0.5,
+        0.82,
+        -0.7
+      ],
+      "fov": 35,
+      "exposure": 1.05,
+      "bloom": 0.25,
+      "aperture": 0.000025,
+      "maxBlur": 0.0036,
+      "matte": 0.22
+    },
+    "model-answer": {
+      "id": "model-answer",
+      "offset": [
+        5.25,
+        3.35,
+        4.25
+      ],
+      "lookShift": [
+        0.05,
+        1.52,
+        -0.3
+      ],
+      "fov": 28,
+      "exposure": 1.03,
+      "bloom": 0.37,
+      "aperture": 0.000043,
+      "maxBlur": 0.0054,
+      "matte": 0.06
+    },
+    "pullback": {
+      "id": "pullback",
+      "offset": [
+        21,
+        14.8,
+        25.5
+      ],
+      "lookShift": [
+        1,
+        0.9,
+        -0.2
+      ],
+      "fov": 39,
+      "exposure": 1.08,
+      "bloom": 0.18,
+      "aperture": 0.000012,
+      "maxBlur": 0.002,
+      "matte": 0.48
+    }
+  },
+  "eventShot": {
+    "REQUEST_ARRIVED": "arrival-wide",
+    "SESSION_NODE_ADDED": "session-close",
+    "CONTEXT_COMPILE_STARTED": "context-cut",
+    "CONTEXT_COMPILED": "context-sealed",
+    "MODEL_REQUEST_STARTED": "model-decision",
+    "MODEL_STREAMING": "model-decision",
+    "TOOL_CALL_CREATED": "model-gate",
+    "TOOL_EXECUTION_STARTED": "tool-follow",
+    "TOOL_EXECUTION_UPDATED": "tool-follow",
+    "TOOL_EXECUTION_COMPLETED": "tool-close",
+    "TOOL_RESULT_ATTACHED": "uturn",
+    "MODEL_RESPONSE_COMPLETED": "model-answer",
+    "AGENT_SETTLED": "pullback"
+  },
+  "canonicalFrames": {
+    "arrival": {
+      "key": "arrival",
+      "scenarioId": "auth",
+      "frameIndex": 0,
+      "district": "arrival",
+      "shotId": "arrival-wide",
+      "eyebrow": "FRAME 01 · ARRIVAL HARBOR",
+      "title": "Scale before mechanism",
+      "body": "A small request approaches a much larger living system."
+    },
+    "context": {
+      "key": "context",
+      "scenarioId": "auth",
+      "frameIndex": 10,
+      "district": "context",
+      "shotId": "context-sealed",
+      "eyebrow": "FRAME 02 · CONTEXT WORKS",
+      "title": "Evidence becomes a visible production process",
+      "body": "Returned tool evidence is selected, sorted, and sealed into a new model-visible Context."
+    },
+    "model": {
+      "key": "model",
+      "scenarioId": "auth",
+      "frameIndex": 11,
+      "district": "model",
+      "shotId": "model-decision",
+      "eyebrow": "FRAME 03 · MODEL CORE",
+      "title": "Decision under changed evidence",
+      "body": "The same model receives a different Context and can now choose a different next action."
+    }
+  },
+  "scenarios": {
+    "auth": {
+      "id": "auth",
+      "title": "Fix the authentication bug in src/auth.ts",
+      "story": [
+        [
+          "Understand the request",
+          "arrival"
+        ],
+        [
+          "Build the first Context",
+          "context"
+        ],
+        [
+          "Inspect evidence",
+          "tool"
+        ],
+        [
+          "Rebuild with new evidence",
+          "context"
+        ],
+        [
+          "Answer the user",
+          "model"
+        ]
+      ],
+      "frames": [
+        {
+          "type": "REQUEST_ARRIVED",
+          "district": "arrival",
+          "chapter": "Understand the request",
+          "what": "A request vessel approaches Arrival Harbor.",
+          "why": "The user message is the first information object in this run.",
+          "why2": "The city begins with evidence, not with a model call.",
+          "evidence": "observed · user message",
+          "artifact": "request-vessel",
+          "cam": "arrival-wide",
+          "durationMs": 4800
+        },
+        {
+          "type": "SESSION_NODE_ADDED",
+          "district": "session",
+          "chapter": "Understand the request",
+          "what": "The request is filed into Session Archive.",
+          "why": "Session preserves what happened as durable history.",
+          "why2": "History and Context are different objects.",
+          "evidence": "observed · session entry",
+          "artifact": "session-entry",
+          "cam": "session-close",
+          "durationMs": 3400
+        },
+        {
+          "type": "CONTEXT_COMPILE_STARTED",
+          "district": "context",
+          "chapter": "Build the first Context",
+          "what": "Context Works receives candidate history.",
+          "why": "The runtime prepares the model-visible view for this turn.",
+          "why2": "Not every piece of history must enter every model call.",
+          "evidence": "derived · context compilation",
+          "artifact": "session-entry",
+          "cam": "context-cut",
+          "durationMs": 5000
+        },
+        {
+          "type": "CONTEXT_COMPILED",
+          "district": "context",
+          "chapter": "Build the first Context",
+          "what": "Selected evidence is sealed into Context #1.",
+          "why": "This is the information the next model decision can use.",
+          "why2": "The capsule is a view, not the full archive.",
+          "evidence": "derived · Context #1",
+          "artifact": "context-capsule",
+          "cam": "context-sealed",
+          "durationMs": 3900
+        },
+        {
+          "type": "MODEL_REQUEST_STARTED",
+          "district": "model",
+          "chapter": "Inspect evidence",
+          "what": "Context #1 enters Model Core.",
+          "why": "The model reasons over its current evidence and chooses a next action.",
+          "why2": "The model can decide; the harness will execute.",
+          "evidence": "derived · model call #1",
+          "artifact": "context-capsule",
+          "cam": "model-decision",
+          "durationMs": 5200,
+          "gate": 0
+        },
+        {
+          "type": "TOOL_CALL_CREATED",
+          "district": "model",
+          "chapter": "Inspect evidence",
+          "what": "The READ gate opens.",
+          "why": "The model requests more evidence instead of answering immediately.",
+          "why2": "Decision: inspect src/auth.ts.",
+          "evidence": "observed · toolCall read",
+          "artifact": "work-order",
+          "cam": "model-gate",
+          "durationMs": 3000,
+          "gate": 0
+        },
+        {
+          "type": "TOOL_EXECUTION_STARTED",
+          "district": "tool",
+          "chapter": "Inspect evidence",
+          "what": "A work-order cart reaches Tool Works.",
+          "why": "The harness executes read(src/auth.ts).",
+          "why2": "The tool changes what evidence the Agent has access to.",
+          "evidence": "observed · tool_execution_start",
+          "artifact": "work-order",
+          "cam": "tool-follow",
+          "durationMs": 4300,
+          "tool": 0
+        },
+        {
+          "type": "TOOL_EXECUTION_COMPLETED",
+          "district": "tool",
+          "chapter": "Inspect evidence",
+          "what": "Tool Works produces the auth.ts result.",
+          "why": "Execution completed, but the Agent has not answered yet.",
+          "why2": "A result must still return into the runtime.",
+          "evidence": "observed · tool_execution_end",
+          "artifact": "tool-result",
+          "cam": "tool-close",
+          "durationMs": 3400,
+          "tool": 0
+        },
+        {
+          "type": "TOOL_RESULT_ATTACHED",
+          "district": "session",
+          "chapter": "Inspect evidence",
+          "what": "The result cart turns around and returns to Session.",
+          "why": "Tool Result is new evidence, not the final answer.",
+          "why2": "This U-turn is the most important loop in Pi City.",
+          "evidence": "observed · toolResult",
+          "artifact": "tool-result",
+          "cam": "uturn",
+          "durationMs": 5600,
+          "aha": "uturn"
+        },
+        {
+          "type": "CONTEXT_COMPILE_STARTED",
+          "district": "context",
+          "chapter": "Rebuild with new evidence",
+          "what": "Context Works starts a second assembly pass.",
+          "why": "The runtime now has both the earlier history and auth.ts evidence.",
+          "why2": "Same Agent, richer evidence.",
+          "evidence": "derived · context compilation #2",
+          "artifact": "tool-result",
+          "cam": "context-cut",
+          "durationMs": 4500
+        },
+        {
+          "type": "CONTEXT_COMPILED",
+          "district": "context",
+          "chapter": "Rebuild with new evidence",
+          "what": "Context #2 is sealed with the tool result inside.",
+          "why": "The next model call sees something the first call could not see.",
+          "why2": "The difference is inspectable rather than magical.",
+          "evidence": "derived · Context #2",
+          "artifact": "context-capsule",
+          "cam": "context-sealed",
+          "durationMs": 5200,
+          "aha": "context"
+        },
+        {
+          "type": "MODEL_REQUEST_STARTED",
+          "district": "model",
+          "chapter": "Answer the user",
+          "what": "Context #2 enters Model Core.",
+          "why": "The same model can now choose differently because its evidence changed.",
+          "why2": "Decision: ANSWER.",
+          "evidence": "derived · model call #2",
+          "artifact": "context-capsule",
+          "cam": "model-decision",
+          "durationMs": 5200,
+          "gate": 3
+        },
+        {
+          "type": "MODEL_RESPONSE_COMPLETED",
+          "district": "model",
+          "chapter": "Answer the user",
+          "what": "Model Core produces the grounded response.",
+          "why": "The answer is based on the returned file evidence.",
+          "why2": "The loop can now settle without another tool call.",
+          "evidence": "observed · assistant message",
+          "artifact": "answer",
+          "cam": "model-answer",
+          "durationMs": 3600,
+          "gate": 3
+        },
+        {
+          "type": "SESSION_NODE_ADDED",
+          "district": "session",
+          "chapter": "Answer the user",
+          "what": "The assistant response is added to Session history.",
+          "why": "The final response becomes durable history for future turns.",
+          "why2": "Session grows even after the model is done thinking.",
+          "evidence": "observed · assistant session entry",
+          "artifact": "answer",
+          "cam": "session-close",
+          "durationMs": 3000
+        },
+        {
+          "type": "AGENT_SETTLED",
+          "district": "model",
+          "chapter": "Answer the user",
+          "what": "The Agent settles and the harbor returns to ambient motion.",
+          "why": "No additional tool work is requested.",
+          "why2": "One runtime loop has completed.",
+          "evidence": "observed · agent_settled",
+          "artifact": "answer",
+          "cam": "pullback",
+          "durationMs": 4800,
+          "gate": 3
+        }
+      ],
+      "before": [
+        "User request",
+        "Current instructions"
+      ],
+      "after": [
+        "User request",
+        "Current instructions",
+        "+ Tool call: read(src/auth.ts)",
+        "+ Tool result: auth.ts content"
+      ],
+      "modelTotal": 2,
+      "toolTotal": 1,
+      "totalDurationMs": 64900
+    },
+    "multi": {
+      "id": "multi",
+      "title": "Diagnose, edit, and verify the auth flow",
+      "story": [
+        [
+          "Understand the request",
+          "arrival"
+        ],
+        [
+          "Build the first Context",
+          "context"
+        ],
+        [
+          "Inspect evidence",
+          "read · grep"
+        ],
+        [
+          "Change and verify",
+          "edit · bash"
+        ],
+        [
+          "Answer the user",
+          "model"
+        ]
+      ],
+      "frames": [
+        {
+          "type": "REQUEST_ARRIVED",
+          "district": "arrival",
+          "chapter": "Understand the request",
+          "what": "A coding task arrives at the harbor.",
+          "why": "The goal establishes the run.",
+          "why2": "A larger run will involve several workshops.",
+          "evidence": "observed · user message",
+          "artifact": "request-vessel",
+          "cam": "arrival-wide",
+          "durationMs": 4200
+        },
+        {
+          "type": "CONTEXT_COMPILED",
+          "district": "context",
+          "chapter": "Build the first Context",
+          "what": "Context #1 is assembled.",
+          "why": "The first model call sees the task and current instructions.",
+          "why2": "No code evidence has returned yet.",
+          "evidence": "derived · context #1",
+          "artifact": "context-capsule",
+          "cam": "context-sealed",
+          "durationMs": 3800
+        },
+        {
+          "type": "MODEL_REQUEST_STARTED",
+          "district": "model",
+          "chapter": "Inspect evidence",
+          "what": "Model Core chooses to inspect.",
+          "why": "The Agent needs external code evidence.",
+          "why2": "Decision: READ / GREP.",
+          "evidence": "derived · model call #1",
+          "artifact": "work-order",
+          "cam": "model-decision",
+          "durationMs": 4400,
+          "gate": 0
+        },
+        {
+          "type": "TOOL_EXECUTION_STARTED",
+          "district": "tool",
+          "chapter": "Inspect evidence",
+          "what": "Read and grep activate the inspection workshop.",
+          "why": "Several raw tool calls belong to one semantic phase.",
+          "why2": "The city groups mechanism into an understandable story.",
+          "evidence": "observed · read + grep",
+          "artifact": "work-order",
+          "cam": "tool-follow",
+          "durationMs": 4400,
+          "tool": 0
+        },
+        {
+          "type": "TOOL_RESULT_ATTACHED",
+          "district": "session",
+          "chapter": "Inspect evidence",
+          "what": "Inspection evidence returns to Session.",
+          "why": "Those tool results can enter a later Context.",
+          "why2": "Result ≠ answer.",
+          "evidence": "observed · tool results",
+          "artifact": "tool-result",
+          "cam": "uturn",
+          "durationMs": 4800,
+          "aha": "uturn"
+        },
+        {
+          "type": "CONTEXT_COMPILED",
+          "district": "context",
+          "chapter": "Rebuild with new evidence",
+          "what": "A richer Context is assembled from read and grep results.",
+          "why": "The next model call now has enough evidence to propose a change.",
+          "why2": "The evidence changed before the behavior changed.",
+          "evidence": "derived · context #2",
+          "artifact": "context-capsule",
+          "cam": "context-sealed",
+          "durationMs": 4400,
+          "aha": "context"
+        },
+        {
+          "type": "MODEL_REQUEST_STARTED",
+          "district": "model",
+          "chapter": "Rebuild with new evidence",
+          "what": "Model Core chooses EDIT.",
+          "why": "The model moves from inspection to intervention.",
+          "why2": "Decision: EDIT.",
+          "evidence": "derived · model call #2",
+          "artifact": "work-order",
+          "cam": "model-gate",
+          "durationMs": 4000,
+          "gate": 1
+        },
+        {
+          "type": "TOOL_EXECUTION_STARTED",
+          "district": "tool",
+          "chapter": "Rebuild with new evidence",
+          "what": "The edit workshop changes the code.",
+          "why": "The harness performs the model-requested change.",
+          "why2": "Changing code is not verification.",
+          "evidence": "observed · edit",
+          "artifact": "work-order",
+          "cam": "tool-follow",
+          "durationMs": 4200,
+          "tool": 1
+        },
+        {
+          "type": "TOOL_EXECUTION_STARTED",
+          "district": "tool",
+          "chapter": "Rebuild with new evidence",
+          "what": "The bash workshop runs verification.",
+          "why": "Tests produce another piece of evidence.",
+          "why2": "Decision quality depends on what returns.",
+          "evidence": "observed · bash",
+          "artifact": "work-order",
+          "cam": "tool-follow",
+          "durationMs": 4400,
+          "tool": 2
+        },
+        {
+          "type": "TOOL_RESULT_ATTACHED",
+          "district": "session",
+          "chapter": "Rebuild with new evidence",
+          "what": "Edit and verification results return to history.",
+          "why": "The final model call can reason over both change and evidence.",
+          "why2": "Again, the result turns back into the loop.",
+          "evidence": "observed · edit + bash results",
+          "artifact": "tool-result",
+          "cam": "uturn",
+          "durationMs": 4200
+        },
+        {
+          "type": "CONTEXT_COMPILED",
+          "district": "context",
+          "chapter": "Answer the user",
+          "what": "Context #3 contains inspection, change, and verification.",
+          "why": "This is a substantially different model-visible world.",
+          "why2": "Same model, different evidence.",
+          "evidence": "derived · context #3",
+          "artifact": "context-capsule",
+          "cam": "context-sealed",
+          "durationMs": 4600,
+          "aha": "context"
+        },
+        {
+          "type": "MODEL_REQUEST_STARTED",
+          "district": "model",
+          "chapter": "Answer the user",
+          "what": "The ANSWER gate opens.",
+          "why": "The Agent now has evidence that the change worked.",
+          "why2": "Decision: ANSWER.",
+          "evidence": "derived · model call #3",
+          "artifact": "answer",
+          "cam": "model-answer",
+          "durationMs": 4300,
+          "gate": 3
+        },
+        {
+          "type": "AGENT_SETTLED",
+          "district": "model",
+          "chapter": "Answer the user",
+          "what": "The run settles.",
+          "why": "Inspection, change, and verification have all been incorporated.",
+          "why2": "The tool chain becomes one readable story.",
+          "evidence": "observed · settled",
+          "artifact": "answer",
+          "cam": "pullback",
+          "durationMs": 4300,
+          "gate": 3
+        }
+      ],
+      "before": [
+        "User request",
+        "Read result",
+        "Grep result"
+      ],
+      "after": [
+        "User request",
+        "Read result",
+        "Grep result",
+        "+ Edit result",
+        "+ Bash verification"
+      ],
+      "modelTotal": 3,
+      "toolTotal": 4,
+      "totalDurationMs": 56000
+    }
+  }
+}

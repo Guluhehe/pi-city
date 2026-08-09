@@ -1,10 +1,6 @@
 # GitHub Pages deployment
 
-Pi City v0.6 uses GitHub Pages as the primary online-beta deployment path.
-
-## Why Pages
-
-The live beta is already a static site. It does not need a server process, database, framework build, Vercel, or Netlify. Keeping deployment in GitHub means the same repository owns source, assets, history, and the test URL.
+Pi City deploys the **Vite application** to GitHub Pages.
 
 ## Deployment contract
 
@@ -13,23 +9,14 @@ main
   ↓
 .github/workflows/deploy-pages.yml
   ↓
-actions/upload-pages-artifact
+npm ci → check:core → test → typecheck → build
   ↓
-site-live-beta/
+actions/upload-pages-artifact (dist/)
   ↓
 GitHub Pages
 ```
 
-The workflow deploys the directory exactly as-is. There is no build step and therefore no npm-registry dependency in the deployment path.
-
-## First publish
-
-After importing the local Git repository to GitHub:
-
-1. Open **Settings → Pages** in the repository.
-2. Choose **GitHub Actions** as the publishing source if needed.
-3. Open **Actions → Deploy Pi City Live Beta to Pages** and run it, or push a change under `site-live-beta/` to `main`.
-4. Open the deployment URL shown by the workflow environment.
+The workflow sets `VITE_BASE=/pi-city/` so assets resolve under the project subpath.
 
 Expected project-site shape for `Guluhehe/pi-city`:
 
@@ -37,28 +24,33 @@ Expected project-site shape for `Guluhehe/pi-city`:
 https://guluhehe.github.io/pi-city/
 ```
 
-## Subpath compatibility
+## Local production preview
 
-GitHub project Pages are commonly served below a repository subpath. Pi City therefore uses relative URLs such as:
-
-```text
-./assets/models/context-works.glb
-./assets/mattes/industrial-harbor-concept.jpg
+```bash
+npm ci
+VITE_BASE=/pi-city/ npm run build
+npm run preview
 ```
 
-Do not replace these with `/assets/...` absolute-root paths.
+Then open the preview URL (Vite will serve under `/pi-city/`).
 
-## What to validate online
+## Legacy static prototypes
 
-The first online pass is primarily a visual/interaction review:
+`site-live-beta/`, `site-visual-beta/`, and `site-beta/` remain in the repository as historical prototypes. They are no longer the Pages deployment source. See `site-live-beta/README.md`.
 
-- landing composition and concept-matte blend
-- WebGL model load and material response
-- dusk/fog/water balance
-- camera motion and 60–90 second pacing
-- Tool Result U-turn readability
-- Context Compare timing
-- post-run Explore mode
-- desktop viewport performance
+## Clean setup checklist
 
-Only after this pass should visual assets or camera timing be tuned further.
+```bash
+npm ci
+npm run check:core
+npm test
+npm run typecheck
+npm run build
+npm run setup:visual   # once, for GLB geometry checks
+npm run check:frames
+```
+
+Supported toolchain:
+
+- Node.js 20+
+- Python 3.11+ (only required for `check:frames` / `setup:visual`)

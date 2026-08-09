@@ -1,5 +1,6 @@
 node_modules/
 dist/
+.venv-visual/
 .env
 .env.*
 .DS_Store

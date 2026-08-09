@@ -25,6 +25,9 @@ export type SemanticEventType =
 export type EvidenceLevel = 'observed' | 'derived' | 'synthetic';
 export type EvidenceSource = 'pi-runtime' | 'pi-session' | 'pi-combined' | 'demo';
 
+/** Current Semantic Trace envelope version. Bump when fields/invariants change. */
+export const SEMANTIC_TRACE_SCHEMA_VERSION = 1 as const;
+
 export interface SemanticEvidence {
   level: EvidenceLevel;
   source: EvidenceSource;
@@ -44,11 +47,42 @@ export interface SemanticEvent<T = Record<string, unknown>> {
   payload: T;
 }
 
+export interface TraceWarning {
+  code: string;
+  message: string;
+  line?: number;
+}
+
+export interface TraceMetadata {
+  [key: string]: unknown;
+  rawEventCount?: number;
+  rawEntryCount?: number;
+  fileName?: string;
+  importKind?: string;
+  sessionHeader?: unknown;
+  sessionEntries?: unknown;
+  runtime?: TraceMetadata;
+  session?: TraceMetadata;
+  combinedSources?: EvidenceSource[];
+}
+
 export interface SemanticTrace {
+  schemaVersion: typeof SEMANTIC_TRACE_SCHEMA_VERSION;
+  adapterVersion: string;
   id: string;
   source: EvidenceSource;
+  sourceHash?: string;
   createdAt: number;
   events: SemanticEvent[];
-  warnings: string[];
-  metadata: Record<string, unknown>;
+  warnings: TraceWarning[];
+  metadata: TraceMetadata;
+}
+
+/** Normalize legacy string warnings produced before structured TraceWarning. */
+export function asTraceWarnings(warnings: Array<string | TraceWarning>): TraceWarning[] {
+  return warnings.map((warning) =>
+    typeof warning === 'string'
+      ? { code: 'legacy', message: warning }
+      : warning,
+  );
 }

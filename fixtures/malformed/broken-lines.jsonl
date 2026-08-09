@@ -1,0 +1,15 @@
+{"type":"agent_start"}
+this is not json
+{"type":"message_start","message":{"role":"user","content":"Fix auth","timestamp":1786276800000}}
+{"type":"message_end","message":{"role":"user","content":"Fix auth","timestamp":1786276800000}}
+{broken
+{"type":"turn_start","turnIndex":0,"timestamp":1786276800100}
+{"type":"message_start","message":{"role":"assistant","content":[],"timestamp":1786276800200}}
+{"type":"message_update","assistantMessageEvent":{"type":"toolcall_end","contentIndex":0,"toolCall":{"type":"toolCall","id":"call_read_auth","name":"read","arguments":{"path":"src/auth.ts"}}}}
+{"type":"message_end","message":{"role":"assistant","content":[{"type":"toolCall","id":"call_read_auth","name":"read","arguments":{"path":"src/auth.ts"}}],"stopReason":"toolUse","timestamp":1786276800300}}
+{"type":"tool_execution_start","toolCallId":"call_read_auth","toolName":"read","args":{"path":"src/auth.ts"}}
+{"type":"tool_execution_end","toolCallId":"call_read_auth","toolName":"read","result":{"content":[{"type":"text","text":"ok"}]},"isError":false}
+{"type":"message_start","message":{"role":"toolResult","toolCallId":"call_read_auth","toolName":"read","content":[{"type":"text","text":"ok"}],"isError":false,"timestamp":1786276800400}}
+{"type":"message_end","message":{"role":"toolResult","toolCallId":"call_read_auth","toolName":"read","content":[{"type":"text","text":"ok"}],"isError":false,"timestamp":1786276800400}}
+{"type":"turn_end","turnIndex":0}
+{"type":"agent_end"}

@@ -1,4 +1,6 @@
 import type { SemanticEvent, SemanticTrace } from './schema';
+import { SEMANTIC_TRACE_SCHEMA_VERSION } from './schema';
+import { PI_ADAPTER_VERSION } from '../adapters/pi/version';
 
 function runtimeToolKey(event: SemanticEvent): string | undefined {
   if (!event.toolCallId) return undefined;
@@ -41,6 +43,8 @@ export function mergePiTraces(runtime: SemanticTrace, session: SemanticTrace): S
     .map(({ event }, index) => ({ ...event, id: `combined-${String(index + 1).padStart(4, '0')}-${event.id}` }));
 
   return {
+    schemaVersion: SEMANTIC_TRACE_SCHEMA_VERSION,
+    adapterVersion: PI_ADAPTER_VERSION,
     id: `pi-combined-${Date.now()}`,
     source: 'pi-combined',
     createdAt: Date.now(),

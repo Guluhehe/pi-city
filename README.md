@@ -89,6 +89,8 @@ The bundled auth-bug journey is intentionally paced at about **65 seconds** at 1
 
 ## Architecture
 
+The path from the current replay demo to a maintainable game-based learning system is documented in [`docs/architecture-evolution.md`](docs/architecture-evolution.md). **Milestone A — One Core** is in progress: Vite is the maintained product runtime and Pages deploy target; declarative shot/scenario data lives in `src/experience/`.
+
 ```text
 Pi Runtime JSONL ---------┐
                           ├─> Pi Adapter ─> Semantic Trace ─> Replay Frames
@@ -96,16 +98,17 @@ Pi Session JSONL ---------┘                         │
                                                    ├─> Run Analyzer
                                                    ├─> Story Builder
                                                    ├─> Context Snapshots / Diff
+                                                   ├─> Experience (shots / lessons)
                                                    ├─> World
                                                    └─> Inspector
 ```
 
-The future Three.js harbor plugs into `Replay Frames`; it should not need to understand Pi RPC event names.
+The Three.js harbor consumes Semantic events + shared ShotSpecs; it does not need to understand Pi RPC event names.
 
 ## Run locally
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -115,26 +118,32 @@ Useful checks:
 
 ```bash
 npm run check:core
-npm run check:live
 npm test
+npm run typecheck
 npm run build
+npm run setup:visual   # once
+npm run check:frames
 ```
+
+Requires Node.js 20+. Visual geometry checks also need Python 3 + `npm run setup:visual`.
 
 ## Repository layout
 
 ```text
 fixtures/auth-bug/       Minimal tool-loop Runtime + Session fixture
 fixtures/multi-tool/      Multi-tool inspect/change/verify fixture
+fixtures/malformed/       Damaged JSONL for import reliability tests
 src/
   adapters/pi/            JSONL detection + Pi normalization
   semantic-trace/         Runtime-neutral schema, reducer, explanations
   analysis/               Run summary, Story Timeline, Context snapshots/diff
-  world/                  Three.js / R3F harbor runtime (next integration)
-  timeline/               Replay controls
-  inspector/              Evidence explanation
-  App.tsx                 v0.2 Real Run Explorer shell
+  experience/             Shared shots, scenarios, canonical frames
+  world/                  Three.js / R3F harbor runtime
+  App.tsx                 Real Run Explorer shell
+public/experience/        Exported library.json for visual checks
 
 docs/
+  architecture-evolution.md
   product-vision.md
   world-model.md
   semantic-trace.md
@@ -246,20 +255,18 @@ See `docs/integrated-alpha.md` for the world-first journey contract and the thre
 
 ## Deployable builds
 
-`site-beta/` is the zero-dependency v0.3 fallback.
+GitHub Pages now deploys the Vite build (`dist/`). See [`docs/github-pages.md`](docs/github-pages.md).
 
-`site-visual-beta/` is the v0.5 asset-based visual build.
+Legacy static prototypes remain archived in-repo:
 
-`site-live-beta/` is the v0.10 deployable **Canonical Frames Beta**: the weathered GLB harbor plus shot-specific composition, event-driven Bokeh depth of field, foreground framing, cinematic Watch mode, spatial Explore hotspots, runtime import, Context Compare, and deterministic Photo Mode checkpoints for Arrival / Context / Model.
+- `site-beta/` — zero-dependency v0.3 fallback
+- `site-visual-beta/` — v0.5 asset-based visual build
+- `site-live-beta/` — v0.10 cinematic Canonical Frames prototype (no longer the Pages source)
 
-Preview locally:
+Preview the archived live beta:
 
 ```bash
 python3 -m http.server 8080 -d site-live-beta
 ```
 
-Then open `http://localhost:8080`. The static page imports Three.js ES modules from jsDelivr.
-
-For the online beta, this repository includes `.github/workflows/deploy-pages.yml`; after the repo is on GitHub, set **Settings → Pages → Source: GitHub Actions** if needed, then push `main` or manually run the workflow. The expected project-site shape for `Guluhehe/pi-city` is `https://guluhehe.github.io/pi-city/`.
-
-See `docs/live-visual-beta.md` and `docs/github-pages.md`.
+The next product gap to close is bringing Photo Mode / duration-driven Watch / spatial Explore from that prototype into the Vite shell while keeping the Semantic Trace pipeline as the only normalizer.

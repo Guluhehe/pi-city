@@ -3,8 +3,15 @@ import type {
   SemanticEvent,
   SemanticEventType,
   SemanticTrace,
+  TraceWarning,
 } from '../../semantic-trace/schema';
+import { SEMANTIC_TRACE_SCHEMA_VERSION } from '../../semantic-trace/schema';
 import type { PiContentBlock, PiMessage, PiRuntimeEvent, PiSessionEntry } from './types';
+import { PI_ADAPTER_VERSION } from './version';
+
+function warn(code: string, message: string): TraceWarning {
+  return { code, message };
+}
 
 let sequence = 0;
 
@@ -77,7 +84,7 @@ function turnId(event: PiRuntimeEvent, currentTurn: number): string {
 export function normalizePiRuntime(events: PiRuntimeEvent[]): SemanticTrace {
   sequence = 0;
   const semantic: SemanticEvent[] = [];
-  const warnings: string[] = [];
+  const warnings: TraceWarning[] = [];
   let currentTurn = -1;
   let lastTimestamp = Date.now();
 
@@ -277,9 +284,11 @@ export function normalizePiRuntime(events: PiRuntimeEvent[]): SemanticTrace {
     }
   }
 
-  if (!semantic.length) warnings.push('No supported Pi runtime events were found.');
+  if (!semantic.length) warnings.push(warn('empty-runtime', 'No supported Pi runtime events were found.'));
 
   return {
+    schemaVersion: SEMANTIC_TRACE_SCHEMA_VERSION,
+    adapterVersion: PI_ADAPTER_VERSION,
     id: `pi-runtime-${Date.now()}`,
     source: 'pi-runtime',
     createdAt: Date.now(),
@@ -292,7 +301,7 @@ export function normalizePiRuntime(events: PiRuntimeEvent[]): SemanticTrace {
 export function normalizePiSession(entries: PiSessionEntry[]): SemanticTrace {
   sequence = 0;
   const semantic: SemanticEvent[] = [];
-  const warnings: string[] = [];
+  const warnings: TraceWarning[] = [];
   let previousParent: string | null | undefined;
 
   entries.forEach((entry, index) => {
@@ -488,9 +497,11 @@ export function normalizePiSession(entries: PiSessionEntry[]): SemanticTrace {
     );
   }
 
-  if (!semantic.length) warnings.push('No supported Pi session entries were found.');
+  if (!semantic.length) warnings.push(warn('empty-session', 'No supported Pi session entries were found.'));
 
   return {
+    schemaVersion: SEMANTIC_TRACE_SCHEMA_VERSION,
+    adapterVersion: PI_ADAPTER_VERSION,
     id: `pi-session-${Date.now()}`,
     source: 'pi-session',
     createdAt: Date.now(),

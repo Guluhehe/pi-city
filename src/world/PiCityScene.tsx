@@ -9,26 +9,31 @@ import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { SemanticEvent } from '../semantic-trace/schema';
 import type { RuntimeState } from '../semantic-trace/reducer';
+import { DISTRICT_MODELS, DISTRICT_POSITIONS, type ExperienceDistrict } from '../experience/districts';
+import { EXPLORE_CAMERA_OFFSET } from '../experience/explore';
+import { shotById, shotForEventType, type ShotId, type ShotSpec as SharedShotSpec } from '../experience/shots';
 import { toWorldCue, type WorldDistrict } from './cues';
 
+export type CameraPresentation = 'watch' | 'photo' | 'explore';
+
+export interface PiCitySceneProps {
+  event?: SemanticEvent;
+  state?: RuntimeState;
+  shotId?: ShotId;
+  presentation?: CameraPresentation;
+  exploreDistrict?: ExperienceDistrict | null;
+  hideChrome?: boolean;
+}
+
+const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
+
 const DISTRICTS: Record<Exclude<WorldDistrict, 'system'>, [number, number, number]> = {
-  arrival: [-11.5, 0.35, 4.8],
-  session: [-5.2, 0.35, 0.7],
-  context: [1.0, 0.35, -4.6],
-  model: [7.1, 0.35, -0.15],
-  tool: [13.0, 0.35, 4.3],
+  arrival: [...DISTRICT_POSITIONS.arrival],
+  session: [...DISTRICT_POSITIONS.session],
+  context: [...DISTRICT_POSITIONS.context],
+  model: [...DISTRICT_POSITIONS.model],
+  tool: [...DISTRICT_POSITIONS.tool],
 };
-
-const CAMERA_OFFSETS: Record<string, THREE.Vector3> = {
-  world: new THREE.Vector3(19, 14, 24),
-  follow: new THREE.Vector3(8.4, 6.2, 9.5),
-  close: new THREE.Vector3(7.1, 5.5, 8.2),
-  cutaway: new THREE.Vector3(7.3, 5.7, 8.5),
-  hold: new THREE.Vector3(8.5, 6.4, 9.2),
-  decision: new THREE.Vector3(7.0, 5.3, 7.8),
-  pullback: new THREE.Vector3(21, 15.5, 26),
-};
-
 
 type ShotSpec = {
   offset: THREE.Vector3;
@@ -41,54 +46,30 @@ type ShotSpec = {
   matte: number;
 };
 
-function shotForEvent(event?: SemanticEvent): ShotSpec {
-  const base: ShotSpec = {
-    offset: new THREE.Vector3(9.0, 6.3, 10.4),
-    lookShift: new THREE.Vector3(0, 1.25, 0),
-    fov: 34,
-    exposure: 1.06,
-    bloom: 0.22,
-    aperture: 0.000022,
-    maxBlur: 0.0032,
-    matte: 0.12,
+function toRuntimeShot(shared: SharedShotSpec): ShotSpec {
+  return {
+    offset: new THREE.Vector3(...shared.offset),
+    lookShift: new THREE.Vector3(...shared.lookShift),
+    fov: shared.fov,
+    exposure: shared.exposure,
+    bloom: shared.bloom,
+    aperture: shared.aperture,
+    maxBlur: shared.maxBlur,
+    matte: shared.matte,
   };
-  if (!event) return { ...base, offset: new THREE.Vector3(19, 14, 24), lookShift: new THREE.Vector3(0, 1.0, 0), fov: 37, matte: 0.40 };
-  switch (event.type) {
-    case 'REQUEST_ARRIVED':
-      return { ...base, offset: new THREE.Vector3(14.2, 7.4, 13.1), lookShift: new THREE.Vector3(3.0, 1.12, -0.45), fov: 40, exposure: 1.11, bloom: 0.19, aperture: 0.000013, maxBlur: 0.0021, matte: 0.56 };
-    case 'SESSION_NODE_ADDED':
-      return { ...base, offset: new THREE.Vector3(7.0, 4.7, 6.9), lookShift: new THREE.Vector3(-0.35, 1.25, -0.35), fov: 32, exposure: 1.03, bloom: 0.20, aperture: 0.000030, maxBlur: 0.0038, matte: 0.12 };
-    case 'CONTEXT_COMPILE_STARTED':
-      return { ...base, offset: new THREE.Vector3(6.6, 3.9, 5.2), lookShift: new THREE.Vector3(-0.45, -0.20, -0.72), fov: 30, exposure: 1.13, bloom: 0.25, aperture: 0.000037, maxBlur: 0.0045, matte: 0.045 };
-    case 'CONTEXT_COMPILED':
-      return { ...base, offset: new THREE.Vector3(6.4, 3.7, 5.0), lookShift: new THREE.Vector3(-0.20, -0.50, -0.90), fov: 30, exposure: 1.16, bloom: 0.31, aperture: 0.000043, maxBlur: 0.0050, matte: 0.045 };
-    case 'MODEL_REQUEST_STARTED':
-    case 'MODEL_STREAMING':
-      return { ...base, offset: new THREE.Vector3(8.5, 5.0, 6.8), lookShift: new THREE.Vector3(-1.20, 0.30, -0.35), fov: 32, exposure: 0.98, bloom: 0.40, aperture: 0.000041, maxBlur: 0.0048, matte: 0.045 };
-    case 'TOOL_CALL_CREATED':
-      return { ...base, offset: new THREE.Vector3(4.85, 3.0, 4.15), lookShift: new THREE.Vector3(0.72, 1.20, 0.05), fov: 27, exposure: 1.00, bloom: 0.38, aperture: 0.000048, maxBlur: 0.0058, matte: 0.05 };
-    case 'TOOL_EXECUTION_STARTED':
-    case 'TOOL_EXECUTION_UPDATED':
-      return { ...base, offset: new THREE.Vector3(6.7, 4.0, 6.0), lookShift: new THREE.Vector3(-0.45, 1.05, 0.35), fov: 31, exposure: 1.05, bloom: 0.26, aperture: 0.000030, maxBlur: 0.0040, matte: 0.08 };
-    case 'TOOL_EXECUTION_COMPLETED':
-      return { ...base, offset: new THREE.Vector3(5.2, 3.3, 4.8), lookShift: new THREE.Vector3(0.2, 1.0, 0.15), fov: 28, exposure: 1.06, bloom: 0.30, aperture: 0.000042, maxBlur: 0.0052, matte: 0.07 };
-    case 'TOOL_RESULT_ATTACHED':
-      return { ...base, offset: new THREE.Vector3(9.6, 6.3, 8.7), lookShift: new THREE.Vector3(0.5, 0.82, -0.7), fov: 35, exposure: 1.05, bloom: 0.25, aperture: 0.000025, maxBlur: 0.0036, matte: 0.22 };
-    case 'MODEL_RESPONSE_COMPLETED':
-      return { ...base, offset: new THREE.Vector3(5.25, 3.35, 4.25), lookShift: new THREE.Vector3(0.05, 1.52, -0.30), fov: 28, exposure: 1.03, bloom: 0.37, aperture: 0.000043, maxBlur: 0.0054, matte: 0.06 };
-    case 'AGENT_SETTLED':
-      return { ...base, offset: new THREE.Vector3(21, 14.8, 25.5), lookShift: new THREE.Vector3(1.0, 0.9, -0.2), fov: 39, exposure: 1.08, bloom: 0.18, aperture: 0.000012, maxBlur: 0.0020, matte: 0.48 };
-    default:
-      return base;
-  }
+}
+
+function resolveShot(event?: SemanticEvent, shotId?: ShotId): ShotSpec {
+  if (shotId) return toRuntimeShot(shotById(shotId));
+  return toRuntimeShot(shotForEventType(event?.type));
 }
 
 const MODELS = {
-  arrival: '/assets/models/arrival-harbor.glb',
-  session: '/assets/models/session-archive.glb',
-  context: '/assets/models/context-works.glb',
-  model: '/assets/models/model-core.glb',
-  tool: '/assets/models/tool-works.glb',
+  arrival: assetUrl(`assets/models/${DISTRICT_MODELS.arrival}`),
+  session: assetUrl(`assets/models/${DISTRICT_MODELS.session}`),
+  context: assetUrl(`assets/models/${DISTRICT_MODELS.context}`),
+  model: assetUrl(`assets/models/${DISTRICT_MODELS.model}`),
+  tool: assetUrl(`assets/models/${DISTRICT_MODELS.tool}`),
 } as const;
 
 const WEATHERED = new Set(['stone','stone_dark','stone_light','cream','wood','wood_light','paper','iron','iron_light','oxide','rust','red','bronze','brass','copper','roof','roof_warm']);
@@ -124,28 +105,39 @@ function weatherMaterial(material: THREE.Material) {
   return material;
 }
 
-export function PiCityScene({ event, state }: { event?: SemanticEvent; state?: RuntimeState }) {
+export function PiCityScene({
+  event,
+  state,
+  shotId,
+  presentation = 'watch',
+  exploreDistrict = null,
+  hideChrome = false,
+}: PiCitySceneProps) {
   return (
     <div className="three-world visual-beta-world">
       <Canvas shadows dpr={[1, 1.7]} gl={{ antialias: true, alpha: true }} camera={{ position: [19, 14, 24], fov: 36, near: 0.1, far: 150 }}>
-        <CinematicRenderer event={event} />
-        <CinematicPost event={event} />
+        <CinematicRenderer event={event} shotId={shotId} />
+        <CinematicPost event={event} shotId={shotId} exploreDistrict={exploreDistrict} presentation={presentation} />
         <fog attach="fog" args={['#b88f63', 32, 78]} />
         <hemisphereLight args={['#ffe0ad', '#24363a', 1.25]} />
         <directionalLight position={[-14, 22, 12]} intensity={3.5} color="#ffd09a" castShadow shadow-mapSize={[2048, 2048]} />
         <directionalLight position={[18, 7, -18]} intensity={0.7} color="#7fa4ac" />
-        <Harbor event={event} state={state} />
+        <Harbor event={event} state={state} exploreDistrict={exploreDistrict} presentation={presentation} shotId={shotId} />
       </Canvas>
-      <div className="three-legend visual-beta-legend">
-        <span>{event ? toWorldCue(event).artifact : 'living harbor'}</span>
-        <strong>{event ? toWorldCue(event).action : 'ambient'}</strong>
-      </div>
-      <div className="visual-beta-mark">PI CITY · CINEMATIC PROTOTYPE</div>
+      {!hideChrome && (
+        <>
+          <div className="three-legend visual-beta-legend">
+            <span>{event ? toWorldCue(event).artifact : 'living harbor'}</span>
+            <strong>{event ? toWorldCue(event).action : 'ambient'}</strong>
+          </div>
+          <div className="visual-beta-mark">PI CITY · CINEMATIC</div>
+        </>
+      )}
     </div>
   );
 }
 
-function CinematicRenderer({ event }: { event?: SemanticEvent }) {
+function CinematicRenderer({ event, shotId }: { event?: SemanticEvent; shotId?: ShotId }) {
   const { gl } = useThree();
   useEffect(() => {
     gl.toneMapping = THREE.ACESFilmicToneMapping;
@@ -154,13 +146,23 @@ function CinematicRenderer({ event }: { event?: SemanticEvent }) {
     gl.shadowMap.type = THREE.PCFSoftShadowMap;
   }, [gl]);
   useFrame((_, delta) => {
-    const shot = shotForEvent(event);
+    const shot = resolveShot(event, shotId);
     gl.toneMappingExposure = THREE.MathUtils.damp(gl.toneMappingExposure, shot.exposure, 2.4, delta);
   });
   return null;
 }
 
-function CinematicPost({ event }: { event?: SemanticEvent }) {
+function CinematicPost({
+  event,
+  shotId,
+  exploreDistrict,
+  presentation,
+}: {
+  event?: SemanticEvent;
+  shotId?: ShotId;
+  exploreDistrict?: ExperienceDistrict | null;
+  presentation: CameraPresentation;
+}) {
   const { gl, scene, camera, size } = useThree();
   const composer = useMemo(() => {
     const next = new EffectComposer(gl);
@@ -177,27 +179,51 @@ function CinematicPost({ event }: { event?: SemanticEvent }) {
   }, [composer, size.width, size.height]);
   useEffect(() => () => composer.next.dispose(), [composer]);
   useFrame(() => {
-    const shot = shotForEvent(event);
+    const shot = resolveShot(event, shotId);
     composer.bloom.strength = THREE.MathUtils.lerp(composer.bloom.strength, shot.bloom, .08);
-    const focus = event && toWorldCue(event).district !== 'system'
-      ? new THREE.Vector3(...DISTRICTS[toWorldCue(event).district as Exclude<WorldDistrict, 'system'>]).add(shot.lookShift)
+    const focusDistrict = presentation === 'explore' && exploreDistrict
+      ? exploreDistrict
+      : event && toWorldCue(event).district !== 'system'
+        ? (toWorldCue(event).district as Exclude<WorldDistrict, 'system'>)
+        : null;
+    const focus = focusDistrict
+      ? new THREE.Vector3(...DISTRICTS[focusDistrict]).add(shot.lookShift)
       : new THREE.Vector3(0, 1, 0);
     const focusDistance = camera.position.distanceTo(focus);
-    composer.bokeh.uniforms.focus.value = THREE.MathUtils.lerp(composer.bokeh.uniforms.focus.value, focusDistance, .08);
-    composer.bokeh.uniforms.aperture.value = THREE.MathUtils.lerp(composer.bokeh.uniforms.aperture.value, shot.aperture, .08);
-    composer.bokeh.uniforms.maxblur.value = THREE.MathUtils.lerp(composer.bokeh.uniforms.maxblur.value, shot.maxBlur, .08);
+    const bokehUniforms = composer.bokeh.uniforms as {
+      focus: { value: number };
+      aperture: { value: number };
+      maxblur: { value: number };
+    };
+    bokehUniforms.focus.value = THREE.MathUtils.lerp(bokehUniforms.focus.value, focusDistance, .08);
+    bokehUniforms.aperture.value = THREE.MathUtils.lerp(bokehUniforms.aperture.value, shot.aperture, .08);
+    bokehUniforms.maxblur.value = THREE.MathUtils.lerp(bokehUniforms.maxblur.value, shot.maxBlur, .08);
     composer.next.render();
   }, 1);
   return null;
 }
 
-function Harbor({ event, state }: { event?: SemanticEvent; state?: RuntimeState }) {
+function Harbor({
+  event,
+  state,
+  exploreDistrict,
+  presentation,
+  shotId,
+}: {
+  event?: SemanticEvent;
+  state?: RuntimeState;
+  exploreDistrict?: ExperienceDistrict | null;
+  presentation: CameraPresentation;
+  shotId?: ShotId;
+}) {
   const cue = event ? toWorldCue(event) : undefined;
-  const activeDistrict = cue?.district ?? 'system';
+  const activeDistrict = presentation === 'explore' && exploreDistrict
+    ? exploreDistrict
+    : cue?.district ?? 'system';
   return (
     <>
       <SkyDome />
-      <ConceptMatte event={event} />
+      <ConceptMatte event={event} shotId={shotId} />
       <Water />
       <SunsetAtmosphere />
       <HarborLightField />
@@ -206,7 +232,7 @@ function Harbor({ event, state }: { event?: SemanticEvent; state?: RuntimeState 
       <IndustrialFabric />
       <DistrictNeighborhoods />
       <ForegroundInfrastructure />
-      <CinematicForeground event={event} />
+      <CinematicForeground event={event} shotId={shotId} />
       <HarborWorkers />
       <SmokePlumes />
       <HeroBuilding district="arrival" active={activeDistrict === 'arrival'}>
@@ -216,7 +242,10 @@ function Harbor({ event, state }: { event?: SemanticEvent; state?: RuntimeState 
         <SessionRuntime active={activeDistrict === 'session'} visibleEntries={state?.sessionEntries ?? 0} />
       </HeroBuilding>
       <HeroBuilding district="context" active={activeDistrict === 'context'}>
-        <ContextRuntime active={activeDistrict === 'context'} cutaway={cue?.camera === 'cutaway'} />
+        <ContextRuntime
+          active={activeDistrict === 'context'}
+          cutaway={cue?.camera === 'cutaway' || (presentation === 'explore' && exploreDistrict === 'context')}
+        />
       </HeroBuilding>
       <HeroBuilding district="model" active={activeDistrict === 'model'}>
         <ModelRuntime active={activeDistrict === 'model'} event={event} />
@@ -225,7 +254,12 @@ function Harbor({ event, state }: { event?: SemanticEvent; state?: RuntimeState 
         <ToolRuntime active={activeDistrict === 'tool'} toolName={String(event?.payload.toolName ?? 'read')} />
       </HeroBuilding>
       <ArtifactTransit event={event} />
-      <CameraDirector event={event} />
+      <CameraDirector
+        event={event}
+        shotId={shotId}
+        presentation={presentation}
+        exploreDistrict={exploreDistrict}
+      />
     </>
   );
 }
@@ -282,14 +316,14 @@ function SkyDome() {
   );
 }
 
-function ConceptMatte({ event }: { event?: SemanticEvent }) {
-  const texture=useLoader(THREE.TextureLoader,'/assets/mattes/industrial-harbor-concept.jpg');
+function ConceptMatte({ event, shotId }: { event?: SemanticEvent; shotId?: ShotId }) {
+  const texture=useLoader(THREE.TextureLoader, assetUrl('assets/mattes/industrial-harbor-concept.jpg'));
   const material=useRef<THREE.ShaderMaterial>(null);
   const uniforms=useMemo(()=>({uMap:{value:texture},uOpacity:{value:.28},uHaze:{value:new THREE.Color('#c39a6e')}}),[texture]);
   useEffect(()=>{ texture.colorSpace=THREE.SRGBColorSpace; texture.anisotropy=8; },[texture]);
   useFrame((_,delta)=>{
     if(!material.current)return;
-    const target=shotForEvent(event).matte;
+    const target=resolveShot(event, shotId).matte;
     material.current.uniforms.uOpacity.value=THREE.MathUtils.damp(material.current.uniforms.uOpacity.value,target,2.2,delta);
   });
   return <mesh position={[0,10.5,-34]} scale={[1.28,1.04,1]} renderOrder={-2}>
@@ -460,21 +494,24 @@ function ForegroundInfrastructure() {
 
 function ForegroundMaterial() { return <meshStandardMaterial color="#1f2927" roughness={.93} metalness={.08} />; }
 
-function CinematicForeground({ event }: { event?: SemanticEvent }) {
+function CinematicForeground({ event, shotId }: { event?: SemanticEvent; shotId?: ShotId }) {
   const cue = event ? toWorldCue(event) : undefined;
+  const showArrival = event?.type === 'REQUEST_ARRIVED' || shotId === 'arrival-wide';
+  const showContext = cue?.district === 'context' || shotId === 'context-cut' || shotId === 'context-sealed';
+  const showModel = cue?.district === 'model' || shotId === 'model-decision' || shotId === 'model-gate' || shotId === 'model-answer';
   return (
     <group>
-      <group visible={event?.type === 'REQUEST_ARRIVED'} position={[-6.1, 0, 10.0]} rotation={[0, -.18, 0]}>
+      <group visible={showArrival} position={[-6.1, 0, 10.0]} rotation={[0, -.18, 0]}>
         <mesh position={[-1.4, 2.4, 0]} castShadow><boxGeometry args={[.28, 4.8, .28]} /><ForegroundMaterial /></mesh>
         <mesh position={[-.1, 4.45, 0]} rotation={[0,0,-.08]} castShadow><boxGeometry args={[3.0,.18,.18]} /><ForegroundMaterial /></mesh>
         <mesh position={[1.35, .45, -.2]} castShadow><boxGeometry args={[1.9,.7,.95]} /><ForegroundMaterial /></mesh>
       </group>
-      <group visible={cue?.district === 'context'} position={[5.15, 0, -1.2]} rotation={[0, -.42, 0]}>
+      <group visible={showContext} position={[5.15, 0, -1.2]} rotation={[0, -.42, 0]}>
         {[-1.25, 1.25].map((x) => <mesh key={x} position={[x, 2.1, 0]} castShadow><cylinderGeometry args={[.13,.16,4.2,10]} /><ForegroundMaterial /></mesh>)}
         <mesh position={[0,4.12,0]} castShadow><boxGeometry args={[2.8,.16,.18]} /><ForegroundMaterial /></mesh>
         <mesh position={[0,3.55,.1]} rotation={[0,0,.04]} castShadow><cylinderGeometry args={[.10,.10,3.0,10]} /><ForegroundMaterial /></mesh>
       </group>
-      <group visible={cue?.district === 'model'} position={[11.0, 0, 3.35]} rotation={[0, -.62, 0]}>
+      <group visible={showModel} position={[11.0, 0, 3.35]} rotation={[0, -.62, 0]}>
         <mesh position={[-1.55,2.0,0]} castShadow><boxGeometry args={[.4,4,.55]} /><ForegroundMaterial /></mesh>
         <mesh position={[1.55,2.0,0]} castShadow><boxGeometry args={[.4,4,.55]} /><ForegroundMaterial /></mesh>
         <mesh position={[0,4.0,0]} castShadow><boxGeometry args={[3.5,.38,.55]} /><ForegroundMaterial /></mesh>
@@ -673,24 +710,75 @@ function RequestVessel(){return <group><mesh position={[0,.13,0]} castShadow><bo
 function ContextCapsule(){return <group><mesh castShadow><sphereGeometry args={[.38,20,14]} /><meshStandardMaterial color="#e3bd6d" emissive="#7e5923" emissiveIntensity={.9} metalness={.18} roughness={.3} /></mesh><mesh rotation={[Math.PI/2,0,0]}><torusGeometry args={[.47,.035,8,24]} /><meshStandardMaterial color="#855f35" /></mesh></group>}
 function CargoArtifact({result}:{result:boolean}){return <group><mesh position={[0,.2,0]} castShadow><boxGeometry args={[.86,.34,.55]} /><meshStandardMaterial color={result?'#594032':'#9d7242'} roughness={.82} /></mesh><mesh position={[0,.53,0]} castShadow><boxGeometry args={[.52,.18,.4]} /><meshStandardMaterial color="#d5c394" roughness={.8} /></mesh></group>}
 
-function CameraDirector({ event }: { event?: SemanticEvent }) {
-  const {camera}=useThree();
-  const desired=useRef(new THREE.Vector3(19,14,24));
-  const lookAt=useRef(new THREE.Vector3(0,1,0));
-  useFrame(({clock},delta)=>{
-    const cue=event?toWorldCue(event):undefined;
-    const focus=cue&&cue.district!=='system'?new THREE.Vector3(...DISTRICTS[cue.district]):new THREE.Vector3(0,.8,0);
-    const shot=shotForEvent(event);
-    const driftScale = event?.type === 'REQUEST_ARRIVED' ? .24 : (event?.type === 'CONTEXT_COMPILED' || event?.type === 'MODEL_REQUEST_STARTED') ? .075 : .13;
-    const drift=new THREE.Vector3(
-      Math.sin(clock.elapsedTime*.16)*driftScale,
-      Math.sin(clock.elapsedTime*.11)*driftScale*.36,
-      Math.cos(clock.elapsedTime*.14)*driftScale*.32,
+function CameraDirector({
+  event,
+  shotId,
+  presentation,
+  exploreDistrict,
+}: {
+  event?: SemanticEvent;
+  shotId?: ShotId;
+  presentation: CameraPresentation;
+  exploreDistrict?: ExperienceDistrict | null;
+}) {
+  const { camera } = useThree();
+  const desired = useRef(new THREE.Vector3(19, 14, 24));
+  const lookAt = useRef(new THREE.Vector3(0, 1, 0));
+  useFrame(({ clock }, delta) => {
+    if (presentation === 'explore' && exploreDistrict) {
+      const focus = new THREE.Vector3(...DISTRICTS[exploreDistrict]);
+      const offset = new THREE.Vector3(...EXPLORE_CAMERA_OFFSET[exploreDistrict]);
+      const drift = new THREE.Vector3(
+        Math.sin(clock.elapsedTime * 0.18) * 0.18,
+        Math.sin(clock.elapsedTime * 0.12) * 0.06,
+        Math.cos(clock.elapsedTime * 0.16) * 0.14,
+      );
+      desired.current.copy(focus).add(offset).add(drift);
+      lookAt.current.lerp(focus.clone().add(new THREE.Vector3(0, 1.3, 0)), 1 - Math.pow(0.0015, delta));
+      camera.position.lerp(desired.current, 1 - Math.pow(0.004, delta));
+      if (camera instanceof THREE.PerspectiveCamera) {
+        camera.fov = THREE.MathUtils.damp(camera.fov, 32, 3.2, delta);
+        camera.updateProjectionMatrix();
+      }
+      camera.lookAt(lookAt.current);
+      return;
+    }
+
+    const cue = event ? toWorldCue(event) : undefined;
+    const focus = cue && cue.district !== 'system'
+      ? new THREE.Vector3(...DISTRICTS[cue.district])
+      : new THREE.Vector3(0, 0.8, 0);
+    const shot = resolveShot(event, shotId);
+    const driftScale = presentation === 'photo'
+      ? 0
+      : event?.type === 'REQUEST_ARRIVED'
+        ? 0.24
+        : (event?.type === 'CONTEXT_COMPILED' || event?.type === 'MODEL_REQUEST_STARTED')
+          ? 0.075
+          : 0.13;
+    const drift = new THREE.Vector3(
+      Math.sin(clock.elapsedTime * 0.16) * driftScale,
+      Math.sin(clock.elapsedTime * 0.11) * driftScale * 0.36,
+      Math.cos(clock.elapsedTime * 0.14) * driftScale * 0.32,
     );
     desired.current.copy(focus).add(shot.offset).add(drift);
-    lookAt.current.lerp(focus.clone().add(shot.lookShift),1-Math.pow(.0012,delta));
-    camera.position.lerp(desired.current,1-Math.pow(.0035,delta));
-    if(camera instanceof THREE.PerspectiveCamera){ camera.fov=THREE.MathUtils.damp(camera.fov,shot.fov,3.2,delta); camera.updateProjectionMatrix(); }
+    const lookTarget = focus.clone().add(shot.lookShift);
+    if (presentation === 'photo') {
+      camera.position.copy(desired.current);
+      lookAt.current.copy(lookTarget);
+      if (camera instanceof THREE.PerspectiveCamera) {
+        camera.fov = shot.fov;
+        camera.updateProjectionMatrix();
+      }
+      camera.lookAt(lookAt.current);
+      return;
+    }
+    lookAt.current.lerp(lookTarget, 1 - Math.pow(0.0012, delta));
+    camera.position.lerp(desired.current, 1 - Math.pow(0.0035, delta));
+    if (camera instanceof THREE.PerspectiveCamera) {
+      camera.fov = THREE.MathUtils.damp(camera.fov, shot.fov, 3.2, delta);
+      camera.updateProjectionMatrix();
+    }
     camera.lookAt(lookAt.current);
   });
   return null;
