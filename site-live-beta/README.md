@@ -1,8 +1,8 @@
-# Pi City v0.9 Cinematic Beta
+# Pi City v0.10 Canonical Frames Beta
 
 Static deployable Experience Beta. No build step is required.
 
-V0.9 keeps the v0.8 weathered GLB harbor and runtime semantics, then moves the visual work into **cinematography**: every hero beat now carries explicit composition, FOV, exposure, bloom, matte blend, and depth-of-field parameters. Arrival, Context Works, and Model Core also receive world-space foreground framing so the camera reads through a port, pipe rack, or gate instead of hovering in empty space.
+V0.10 keeps the same runtime semantics and cinematic harbor, then makes the three hero compositions directly reviewable. **Photo Mode** exposes deterministic Arrival / Context / Model frames, supports `?frame=` deep links, and uses GLB projection checks to prevent accidental hero-asset cropping before real-browser art direction.
 
 ## Run locally
 
@@ -40,3 +40,12 @@ Three.js ES modules are loaded from jsDelivr at runtime.
 - slower camera breathing on close reasoning shots; wider parallax on harbor shots
 - ~65 second auth journey and ~56 second multi-tool journey unchanged
 - no new Agent semantics
+
+## Canonical Photo Mode
+
+- Top bar → **Frames**
+- Landing → **View hero frames**
+- `1 / 2 / 3` switch Arrival / Context / Model
+- `H` hides the review overlay for a clean frame
+- `Esc` returns to the landing page
+- Deep link with `?frame=arrival`, `?frame=context`, or `?frame=model`

@@ -211,7 +211,7 @@ export function App() {
 
       {tab === 'journey' && transport}
       {trace.warnings.length > 0 && <div className="warning">{trace.warnings.join(' ')}</div>}
-      <footer>Pi City v0.9 Cinematic Pass · Shot grammar + DOF + Realtime GLB Runtime</footer>
+      <footer>Pi City v0.10 Canonical Frames · Photo Mode + GLB-safe composition + Realtime Runtime</footer>
     </main>
   );
 }

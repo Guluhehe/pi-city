@@ -1,6 +1,6 @@
 {
   "name": "pi-city",
-  "version": "0.9.0-beta.1",
+  "version": "0.10.0-beta.1",
   "private": true,
   "description": "A playable visualization of how AI agents actually run.",
   "scripts": {
@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "check:core": "tsc -p tsconfig.core.json",
     "test": "tsx --test tests/**/*.test.ts",
-    "check:live": "python3 scripts/check_live_beta.py"
+    "check:live": "python3 scripts/check_live_beta.py",
+    "check:frames": "python3 scripts/check_canonical_frames.py"
   },
   "dependencies": {
     "@react-three/fiber": "latest",

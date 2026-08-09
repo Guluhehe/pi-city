@@ -55,16 +55,16 @@ function shotForEvent(event?: SemanticEvent): ShotSpec {
   if (!event) return { ...base, offset: new THREE.Vector3(19, 14, 24), lookShift: new THREE.Vector3(0, 1.0, 0), fov: 37, matte: 0.40 };
   switch (event.type) {
     case 'REQUEST_ARRIVED':
-      return { ...base, offset: new THREE.Vector3(14.2, 7.4, 13.1), lookShift: new THREE.Vector3(1.45, 1.12, -0.45), fov: 40, exposure: 1.10, bloom: 0.18, aperture: 0.000014, maxBlur: 0.0023, matte: 0.50 };
+      return { ...base, offset: new THREE.Vector3(14.2, 7.4, 13.1), lookShift: new THREE.Vector3(3.0, 1.12, -0.45), fov: 40, exposure: 1.11, bloom: 0.19, aperture: 0.000013, maxBlur: 0.0021, matte: 0.56 };
     case 'SESSION_NODE_ADDED':
       return { ...base, offset: new THREE.Vector3(7.0, 4.7, 6.9), lookShift: new THREE.Vector3(-0.35, 1.25, -0.35), fov: 32, exposure: 1.03, bloom: 0.20, aperture: 0.000030, maxBlur: 0.0038, matte: 0.12 };
     case 'CONTEXT_COMPILE_STARTED':
-      return { ...base, offset: new THREE.Vector3(6.3, 3.65, 4.55), lookShift: new THREE.Vector3(-0.85, 1.28, -0.60), fov: 28, exposure: 1.13, bloom: 0.24, aperture: 0.000040, maxBlur: 0.0052, matte: 0.07 };
+      return { ...base, offset: new THREE.Vector3(6.6, 3.9, 5.2), lookShift: new THREE.Vector3(-0.45, -0.20, -0.72), fov: 30, exposure: 1.13, bloom: 0.25, aperture: 0.000037, maxBlur: 0.0045, matte: 0.045 };
     case 'CONTEXT_COMPILED':
-      return { ...base, offset: new THREE.Vector3(5.6, 3.35, 4.25), lookShift: new THREE.Vector3(-0.62, 1.22, -0.72), fov: 27, exposure: 1.15, bloom: 0.28, aperture: 0.000045, maxBlur: 0.0058, matte: 0.06 };
+      return { ...base, offset: new THREE.Vector3(6.4, 3.7, 5.0), lookShift: new THREE.Vector3(-0.20, -0.50, -0.90), fov: 30, exposure: 1.16, bloom: 0.31, aperture: 0.000043, maxBlur: 0.0050, matte: 0.045 };
     case 'MODEL_REQUEST_STARTED':
     case 'MODEL_STREAMING':
-      return { ...base, offset: new THREE.Vector3(5.85, 3.55, 4.45), lookShift: new THREE.Vector3(0.18, 1.58, -0.42), fov: 29, exposure: 0.99, bloom: 0.34, aperture: 0.000042, maxBlur: 0.0050, matte: 0.06 };
+      return { ...base, offset: new THREE.Vector3(8.5, 5.0, 6.8), lookShift: new THREE.Vector3(-1.20, 0.30, -0.35), fov: 32, exposure: 0.98, bloom: 0.40, aperture: 0.000041, maxBlur: 0.0048, matte: 0.045 };
     case 'TOOL_CALL_CREATED':
       return { ...base, offset: new THREE.Vector3(4.85, 3.0, 4.15), lookShift: new THREE.Vector3(0.72, 1.20, 0.05), fov: 27, exposure: 1.00, bloom: 0.38, aperture: 0.000048, maxBlur: 0.0058, matte: 0.05 };
     case 'TOOL_EXECUTION_STARTED':

@@ -1,12 +1,18 @@
 # Pi City
 
-**Current milestone: v0.9 Cinematic Beta — the same world-first Agent replay, now with explicit shot grammar, event-driven depth of field, asymmetric hero composition, and foreground framing for Arrival Harbor, Context Works, and Model Core.**
+**Current milestone: v0.10 Canonical Frames Beta — three deterministic Photo Mode checkpoints for Arrival Harbor, Context Works, and Model Core, backed by actual GLB camera-projection checks.**
 
 **A playable visualization of how AI agents actually run.**
 
 Pi City turns agent runtime behavior into a living harbor city. Requests arrive as cargo, session history grows in an archive, context is assembled in a works facility, model decisions open dispatch gates, and tools operate as workshops.
 
 ## Current milestone
+
+### v0.10 Beta — Canonical Frames
+
+V0.10 turns the three most important visual beats into explicit review surfaces. The deployable beta now has a Photo Mode for **Arrival / Context / Model**, direct `?frame=` deep links, keyboard switching (`1/2/3`), and a clean-frame toggle (`H`). The camera presets were retuned against the actual GLB vertex bounds at 16:9 so the hero assets are intentionally framed before foreground occlusion, DOF, and motion are added.
+
+See [`docs/canonical-frames-v010.md`](docs/canonical-frames-v010.md).
 
 ### v0.9 Beta — Cinematic Pass
 
@@ -244,7 +250,7 @@ See `docs/integrated-alpha.md` for the world-first journey contract and the thre
 
 `site-visual-beta/` is the v0.5 asset-based visual build.
 
-`site-live-beta/` is the v0.9 deployable **Cinematic Beta**: the v0.8 weathered GLB harbor plus shot-specific composition, event-driven Bokeh depth of field, foreground framing, cinematic Watch mode, spatial Explore hotspots, runtime import, and Context Compare.
+`site-live-beta/` is the v0.10 deployable **Canonical Frames Beta**: the weathered GLB harbor plus shot-specific composition, event-driven Bokeh depth of field, foreground framing, cinematic Watch mode, spatial Explore hotspots, runtime import, Context Compare, and deterministic Photo Mode checkpoints for Arrival / Context / Model.
 
 Preview locally:
 

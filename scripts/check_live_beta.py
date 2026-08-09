@@ -51,6 +51,10 @@ for needle in [
     "shotFor",
     "cinematicFG",
     "setCinematicForeground",
+    "CANONICAL",
+    "enterFrameMode",
+    "framePicker",
+    "requestedFrame",
 ]:
     assert needle in HTML, needle
 

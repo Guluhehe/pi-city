@@ -80,7 +80,7 @@ Implemented the Pi runtime/session importer, tolerant JSONL parsing, Semantic Tr
 - animated Arrival Harbor lighthouse sweep
 - no new Agent semantics
 
-## v0.9 — Cinematic Pass — current
+## v0.9 — Cinematic Pass
 
 - [x] shot specification layer for composition / FOV / exposure / bloom / matte / DOF
 - [x] Bokeh depth of field in full and static visual builds
@@ -88,9 +88,19 @@ Implemented the Pi runtime/session importer, tolerant JSONL parsing, Semantic Tr
 - [x] different camera-breathing amplitude for wide vs close shots
 - [x] preserve the existing ~60 second runtime journey and semantics
 - [ ] tune focus / aperture from a normal desktop WebGL render
-- [ ] capture canonical screenshots for Arrival / Context / Model
+- [x] expose deterministic canonical frame presets for Arrival / Context / Model
 
-### Validation gate before v0.10
+## v0.10 — Canonical Frames — current
+
+- [x] Photo Mode entry from landing and top controls
+- [x] direct `?frame=arrival|context|model` deep links
+- [x] keyboard frame switching and clean-overlay toggle
+- [x] project actual GLB geometry through canonical 16:9 cameras
+- [x] retune Context / Model shots to avoid geometric crop risk
+- [ ] capture the three frames in a normal desktop WebGL browser
+- [ ] perform final color / matte / DOF tuning from those captures
+
+### Validation gate before v0.11
 
 - obtain a real public URL or normal desktop WebGL preview
 - tune matte/realtime blend from actual rendered screenshots
