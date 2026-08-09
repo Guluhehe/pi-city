@@ -1,0 +1,87 @@
+{
+  "arrival-harbor": {
+    "file": "/assets/models/arrival-harbor.glb",
+    "geometryCount": 49,
+    "bounds": [
+      [
+        -2.7,
+        -1.07,
+        -1.8
+      ],
+      [
+        4.711668647623766,
+        4.42,
+        1.8
+      ]
+    ],
+    "bytes": 47532
+  },
+  "session-archive": {
+    "file": "/assets/models/session-archive.glb",
+    "geometryCount": 65,
+    "bounds": [
+      [
+        -2.37,
+        -1.85,
+        -1.725
+      ],
+      [
+        2.25,
+        3.550266909792497,
+        2.16
+      ]
+    ],
+    "bytes": 42872
+  },
+  "context-works": {
+    "file": "/assets/models/context-works.glb",
+    "geometryCount": 50,
+    "bounds": [
+      [
+        -2.63,
+        0.0050000000000000044,
+        -1.7
+      ],
+      [
+        2.63,
+        5.39,
+        1.7
+      ]
+    ],
+    "bytes": 48456
+  },
+  "model-core": {
+    "file": "/assets/models/model-core.glb",
+    "geometryCount": 37,
+    "bounds": [
+      [
+        -2.15,
+        0.024999999999999856,
+        -2.15
+      ],
+      [
+        2.15,
+        4.5,
+        2.6
+      ]
+    ],
+    "bytes": 71032
+  },
+  "tool-works": {
+    "file": "/assets/models/tool-works.glb",
+    "geometryCount": 43,
+    "bounds": [
+      [
+        -2.8,
+        0.0050000000000000044,
+        -1.75
+      ],
+      [
+        2.8,
+        4.38,
+        1.75
+      ]
+    ],
+    "bytes": 25832
+  }
+}

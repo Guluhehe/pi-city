@@ -302,3 +302,11 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #d0c3
   .journey-title-card { right: 16px; left: 16px; width: auto; }
   .journey-story-rail { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* v0.4 Visual Prototype — asset-based industrial harbor */
+.visual-beta-world { background: radial-gradient(circle at 18% 12%, #e4b26d 0%, #bb8c5f 28%, #61706b 78%, #34484a 100%); }
+.visual-beta-world::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(255,224,177,.08), rgba(29,40,39,.08) 56%, rgba(15,23,22,.24)); mix-blend-mode: multiply; }
+.visual-beta-legend { border-color: rgba(244,219,169,.2); background: rgba(18,22,19,.72); }
+.visual-beta-mark { position: absolute; left: 16px; bottom: 18px; z-index: 3; padding: 7px 10px; border: 1px solid rgba(239,218,175,.18); border-radius: 999px; color: rgba(246,225,184,.7); background: rgba(20,24,21,.54); backdrop-filter: blur(9px); font: 8px/1 ui-monospace, monospace; letter-spacing: .13em; }
+.visual-beta-world::before { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background-image: url('/assets/noise.png'); background-size: 128px 128px; opacity: .16; mix-blend-mode: soft-light; }
+.visual-beta-world canvas { position: relative; z-index: 1; }

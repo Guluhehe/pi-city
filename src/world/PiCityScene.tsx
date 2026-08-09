@@ -1,66 +1,136 @@
-import { Html } from '@react-three/drei';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { SemanticEvent } from '../semantic-trace/schema';
 import type { RuntimeState } from '../semantic-trace/reducer';
 import { toWorldCue, type WorldDistrict } from './cues';
 
 const DISTRICTS: Record<Exclude<WorldDistrict, 'system'>, [number, number, number]> = {
-  arrival: [-7, 0.45, 3.4],
-  session: [-2.4, 0.5, 0.8],
-  context: [0.7, 0.45, -3.5],
-  model: [4.1, 0.5, 0.2],
-  tool: [8, 0.45, 3.2],
+  arrival: [-11.5, 0.35, 4.8],
+  session: [-5.2, 0.35, 0.7],
+  context: [1.0, 0.35, -4.6],
+  model: [7.1, 0.35, -0.15],
+  tool: [13.0, 0.35, 4.3],
 };
 
 const CAMERA_OFFSETS: Record<string, THREE.Vector3> = {
-  world: new THREE.Vector3(13, 11, 17),
-  follow: new THREE.Vector3(5.8, 4.8, 7),
-  close: new THREE.Vector3(5.6, 4.7, 6.5),
-  cutaway: new THREE.Vector3(5.2, 4.4, 5.8),
-  hold: new THREE.Vector3(6.8, 5.2, 7.2),
-  decision: new THREE.Vector3(5.4, 4.5, 6),
-  pullback: new THREE.Vector3(14, 12, 18),
+  world: new THREE.Vector3(19, 14, 24),
+  follow: new THREE.Vector3(8.4, 6.2, 9.5),
+  close: new THREE.Vector3(7.1, 5.5, 8.2),
+  cutaway: new THREE.Vector3(7.3, 5.7, 8.5),
+  hold: new THREE.Vector3(8.5, 6.4, 9.2),
+  decision: new THREE.Vector3(7.0, 5.3, 7.8),
+  pullback: new THREE.Vector3(21, 15.5, 26),
 };
+
+const MODELS = {
+  arrival: '/assets/models/arrival-harbor.glb',
+  session: '/assets/models/session-archive.glb',
+  context: '/assets/models/context-works.glb',
+  model: '/assets/models/model-core.glb',
+  tool: '/assets/models/tool-works.glb',
+} as const;
 
 export function PiCityScene({ event, state }: { event?: SemanticEvent; state?: RuntimeState }) {
   return (
-    <div className="three-world">
-      <Canvas shadows camera={{ position: [13, 11, 17], fov: 38, near: 0.1, far: 120 }}>
-        <color attach="background" args={['#bda983']} />
-        <fog attach="fog" args={['#bda983', 25, 58]} />
-        <hemisphereLight args={['#ffecc9', '#354249', 1.45]} />
-        <directionalLight position={[-10, 17, 11]} intensity={3.1} color="#ffd19a" castShadow />
+    <div className="three-world visual-beta-world">
+      <Canvas shadows dpr={[1, 1.7]} gl={{ antialias: true, alpha: true }} camera={{ position: [19, 14, 24], fov: 36, near: 0.1, far: 150 }}>
+        <CinematicRenderer />
+        <fog attach="fog" args={['#b88f63', 32, 78]} />
+        <hemisphereLight args={['#ffe0ad', '#24363a', 1.25]} />
+        <directionalLight position={[-14, 22, 12]} intensity={3.5} color="#ffd09a" castShadow shadow-mapSize={[2048, 2048]} />
+        <directionalLight position={[18, 7, -18]} intensity={0.7} color="#7fa4ac" />
         <Harbor event={event} state={state} />
       </Canvas>
-      <div className="three-legend">
-        <span>{event ? toWorldCue(event).artifact : 'ambient harbor'}</span>
-        <strong>{event ? toWorldCue(event).action : 'idle'}</strong>
+      <div className="three-legend visual-beta-legend">
+        <span>{event ? toWorldCue(event).artifact : 'living harbor'}</span>
+        <strong>{event ? toWorldCue(event).action : 'ambient'}</strong>
       </div>
+      <div className="visual-beta-mark">PI CITY · VISUAL PROTOTYPE</div>
     </div>
   );
+}
+
+function CinematicRenderer() {
+  const { gl } = useThree();
+  useEffect(() => {
+    gl.toneMapping = THREE.ACESFilmicToneMapping;
+    gl.toneMappingExposure = 1.08;
+    gl.outputColorSpace = THREE.SRGBColorSpace;
+    gl.shadowMap.enabled = true;
+    gl.shadowMap.type = THREE.PCFSoftShadowMap;
+  }, [gl]);
+  return null;
 }
 
 function Harbor({ event, state }: { event?: SemanticEvent; state?: RuntimeState }) {
   const cue = event ? toWorldCue(event) : undefined;
   const activeDistrict = cue?.district ?? 'system';
-
   return (
     <>
       <Water />
-      <HarborAtmosphere />
-      <Land />
-      <ForegroundDocks />
-      <AmbientCity />
-      <Arrival active={activeDistrict === 'arrival'} />
-      <SessionArchive active={activeDistrict === 'session'} visibleEntries={state?.sessionEntries ?? 0} />
-      <ContextWorks active={activeDistrict === 'context'} cutaway={cue?.camera === 'cutaway'} />
-      <ModelCore active={activeDistrict === 'model'} decision={event?.type === 'TOOL_CALL_CREATED'} />
-      <ToolDistrict active={activeDistrict === 'tool'} toolName={String(event?.payload.toolName ?? 'read')} />
+      <SunsetAtmosphere />
+      <Landmass />
+      <IndustrialFabric />
+      <SmokePlumes />
+      <HeroBuilding district="arrival" active={activeDistrict === 'arrival'}>
+        <ArrivalRuntime active={activeDistrict === 'arrival'} />
+      </HeroBuilding>
+      <HeroBuilding district="session" active={activeDistrict === 'session'}>
+        <SessionRuntime active={activeDistrict === 'session'} visibleEntries={state?.sessionEntries ?? 0} />
+      </HeroBuilding>
+      <HeroBuilding district="context" active={activeDistrict === 'context'}>
+        <ContextRuntime active={activeDistrict === 'context'} cutaway={cue?.camera === 'cutaway'} />
+      </HeroBuilding>
+      <HeroBuilding district="model" active={activeDistrict === 'model'}>
+        <ModelRuntime active={activeDistrict === 'model'} decision={event?.type === 'TOOL_CALL_CREATED'} />
+      </HeroBuilding>
+      <HeroBuilding district="tool" active={activeDistrict === 'tool'}>
+        <ToolRuntime active={activeDistrict === 'tool'} toolName={String(event?.payload.toolName ?? 'read')} />
+      </HeroBuilding>
       <ArtifactTransit event={event} />
       <CameraDirector event={event} />
     </>
+  );
+}
+
+function HeroBuilding({ district, active, children }: { district: keyof typeof MODELS; active: boolean; children?: React.ReactNode }) {
+  const gltf = useLoader(GLTFLoader, MODELS[district]);
+  const scene = useMemo(() => {
+    const cloned = gltf.scene.clone(true);
+    cloned.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) {
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+      }
+    });
+    return cloned;
+  }, [gltf.scene]);
+  const group = useRef<THREE.Group>(null);
+
+  useFrame(({ clock }, delta) => {
+    if (!group.current) return;
+    const target = active ? 1.035 : 1;
+    const scale = THREE.MathUtils.damp(group.current.scale.x, target, 7, delta);
+    group.current.scale.setScalar(scale);
+    group.current.position.y = DISTRICTS[district][1] + (active ? Math.sin(clock.elapsedTime * 2.0) * 0.018 : 0);
+  });
+
+  return (
+    <group ref={group} position={DISTRICTS[district]}>
+      <primitive object={scene} />
+      {active && (
+        <>
+          <pointLight position={[0, 3.2, 1.2]} intensity={2.1} distance={8} color="#efbd6f" />
+          <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[2.7, 2.82, 48]} />
+            <meshBasicMaterial color="#d4b66e" transparent opacity={0.28} />
+          </mesh>
+        </>
+      )}
+      {children}
+    </group>
   );
 }
 
@@ -68,41 +138,51 @@ function Water() {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     if (!ref.current) return;
-    ref.current.position.y = -0.18 + Math.sin(clock.elapsedTime * 0.55) * 0.025;
+    ref.current.position.y = -0.23 + Math.sin(clock.elapsedTime * 0.5) * 0.025;
   });
   return (
-    <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.18, 0]} receiveShadow>
-      <planeGeometry args={[70, 50, 1, 1]} />
-      <meshStandardMaterial color="#3f6267" roughness={0.38} metalness={0.05} />
+    <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.23, 3]} receiveShadow>
+      <planeGeometry args={[100, 65, 1, 1]} />
+      <meshStandardMaterial color="#345a61" roughness={0.28} metalness={0.08} />
     </mesh>
   );
 }
 
-
-function HarborAtmosphere() {
+function SunsetAtmosphere() {
   const birds = useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     if (!birds.current) return;
-    birds.current.rotation.y = clock.elapsedTime * 0.025;
-    birds.current.position.y = 5.7 + Math.sin(clock.elapsedTime * 0.35) * 0.15;
+    birds.current.rotation.y = clock.elapsedTime * 0.018;
+    birds.current.position.y = 8.0 + Math.sin(clock.elapsedTime * 0.25) * 0.12;
   });
   return (
     <group>
-      <mesh position={[-11, 7.6, -13]}>
-        <sphereGeometry args={[3.2, 24, 16]} />
-        <meshBasicMaterial color="#f0c77c" transparent opacity={0.22} />
+      <mesh position={[-20, 13, -24]}>
+        <sphereGeometry args={[5.4, 32, 18]} />
+        <meshBasicMaterial color="#f2bd6e" transparent opacity={0.3} />
       </mesh>
-      <group ref={birds} position={[0, 5.7, 0]}>
-        {[-5, -2.8, 1.3, 4.5].map((x, i) => (
-          <group key={x} position={[x, Math.sin(i) * 0.35, -5 - i * 0.8]} scale={0.25 + i * 0.025}>
-            <mesh rotation={[0, 0, 0.45]} position={[-0.22, 0, 0]}><boxGeometry args={[0.5, 0.025, 0.08]} /><meshBasicMaterial color="#493f34" /></mesh>
-            <mesh rotation={[0, 0, -0.45]} position={[0.22, 0, 0]}><boxGeometry args={[0.5, 0.025, 0.08]} /><meshBasicMaterial color="#493f34" /></mesh>
+      <group ref={birds} position={[0, 8, -6]}>
+        {[-8, -4.5, 0, 5, 9].map((x, i) => (
+          <group key={x} position={[x, Math.sin(i * 1.3) * 0.45, -i * 1.1]} scale={0.32 + i * 0.025}>
+            <mesh rotation={[0, 0, 0.45]} position={[-0.22, 0, 0]}><boxGeometry args={[0.55, 0.025, 0.07]} /><meshBasicMaterial color="#3f3a32" /></mesh>
+            <mesh rotation={[0, 0, -0.45]} position={[0.22, 0, 0]}><boxGeometry args={[0.55, 0.025, 0.07]} /><meshBasicMaterial color="#3f3a32" /></mesh>
           </group>
         ))}
       </group>
-      <DistantCrane position={[-9, 0.2, -5.8]} scale={1.15} />
-      <DistantCrane position={[7, 0.2, -6.5]} scale={0.9} />
-      <DistantCrane position={[11, 0.2, -4.8]} scale={0.7} />
+      <DistantSkyline />
+    </group>
+  );
+}
+
+function DistantSkyline() {
+  return (
+    <group position={[0, 0, -17]}>
+      {Array.from({ length: 24 }).map((_, i) => {
+        const x = -25 + i * 2.15;
+        const h = 1.7 + ((i * 7) % 9) * 0.22;
+        return <mesh key={i} position={[x, h / 2, 0]}><boxGeometry args={[1.35, h, 1.4]} /><meshStandardMaterial color={i % 4 === 0 ? '#4d4b42' : '#625a4b'} roughness={0.98} /></mesh>;
+      })}
+      {[-17, -4, 10, 20].map((x, i) => <DistantCrane key={x} position={[x, 0, i % 2 ? 1.3 : 0]} scale={1.3 - i * 0.1} />)}
     </group>
   );
 }
@@ -110,364 +190,202 @@ function HarborAtmosphere() {
 function DistantCrane({ position, scale }: { position: [number, number, number]; scale: number }) {
   return (
     <group position={position} scale={scale}>
-      <mesh position={[0, 2.0, 0]}><boxGeometry args={[0.16, 4, 0.16]} /><meshStandardMaterial color="#5a5145" roughness={0.85} /></mesh>
-      <mesh position={[1.15, 3.75, 0]} rotation={[0, 0, -0.08]}><boxGeometry args={[2.6, 0.12, 0.12]} /><meshStandardMaterial color="#766344" roughness={0.68} metalness={0.15} /></mesh>
-      <mesh position={[2.25, 3.0, 0]}><boxGeometry args={[0.05, 1.45, 0.05]} /><meshStandardMaterial color="#62543c" /></mesh>
+      <mesh position={[0, 2.3, 0]}><boxGeometry args={[0.16, 4.6, 0.16]} /><meshStandardMaterial color="#4d5049" roughness={0.8} /></mesh>
+      <mesh position={[1.7, 4.35, 0]} rotation={[0, 0, -0.08]}><boxGeometry args={[3.7, 0.12, 0.12]} /><meshStandardMaterial color="#786441" roughness={0.62} metalness={0.18} /></mesh>
+      <mesh position={[3.0, 3.1, 0]}><boxGeometry args={[0.045, 2.4, 0.045]} /><meshStandardMaterial color="#514638" /></mesh>
     </group>
   );
 }
 
-function ForegroundDocks() {
+function Landmass() {
   return (
     <group>
-      <mesh position={[-4.8, 0.15, 5.7]} receiveShadow><boxGeometry args={[6.3, 0.28, 1.2]} /><meshStandardMaterial color="#4e3829" roughness={0.95} /></mesh>
-      <mesh position={[5.7, 0.15, 5.5]} receiveShadow><boxGeometry args={[7.8, 0.28, 1.35]} /><meshStandardMaterial color="#4e3829" roughness={0.95} /></mesh>
-      {[-7.2, -5.8, -4.4, -3, 3.2, 4.7, 6.2, 7.7, 9.1].map((x) => (
-        <mesh key={x} position={[x, 0.0, 6.05]}><cylinderGeometry args={[0.08, 0.1, 1.25, 8]} /><meshStandardMaterial color="#3f3025" roughness={0.98} /></mesh>
-      ))}
-      {[-6.5, -5.5, 4, 5.1, 6.2, 7.3].map((x, i) => (
-        <mesh key={`${x}-${i}`} position={[x, 0.6, i % 2 ? 5.2 : 5.5]} castShadow>
-          <boxGeometry args={[0.55, 0.55, 0.55]} />
-          <meshStandardMaterial color={i % 3 === 0 ? '#87633d' : '#69513a'} roughness={0.9} />
-        </mesh>
-      ))}
+      <mesh position={[0.8, 0, -0.4]} receiveShadow><boxGeometry args={[34, 0.55, 15.5]} /><meshStandardMaterial color="#6c604d" roughness={0.96} /></mesh>
+      <mesh position={[-12, -0.02, 5.5]} receiveShadow><boxGeometry args={[9, 0.42, 5]} /><meshStandardMaterial color="#4d392b" roughness={0.98} /></mesh>
+      <mesh position={[13, -0.02, 5.4]} receiveShadow><boxGeometry args={[9, 0.42, 5.4]} /><meshStandardMaterial color="#4d392b" roughness={0.98} /></mesh>
+      <Canal x={-2.1} z={1.6} length={15} />
+      <Canal x={6.0} z={2.7} length={10} />
+      <Bridge position={[-2.1, .28, -.3]} />
+      <Bridge position={[6.0, .28, 1.1]} />
     </group>
   );
 }
 
-function Land() {
+function Canal({ x, z, length }: { x: number; z: number; length: number }) {
+  return <mesh position={[x, 0.18, z]} rotation={[-Math.PI / 2, 0, Math.PI / 2]}><planeGeometry args={[1.3, length]} /><meshStandardMaterial color="#33575d" roughness={0.32} /></mesh>;
+}
+
+function Bridge({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      <mesh receiveShadow><boxGeometry args={[2.4, .22, 1.45]} /><meshStandardMaterial color="#4b4540" roughness={.9} /></mesh>
+      {[-.95,.95].map(x => <mesh key={x} position={[x,.35,0]}><boxGeometry args={[.08,.7,1.5]} /><meshStandardMaterial color="#7b6242" /></mesh>)}
+    </group>
+  );
+}
+
+function IndustrialFabric() {
   return (
     <group>
-      <mesh position={[0.5, 0.05, 0]} receiveShadow>
-        <boxGeometry args={[22, 0.5, 12]} />
-        <meshStandardMaterial color="#6f6551" roughness={0.95} />
-      </mesh>
-      <mesh position={[-8, 0.03, 4.5]} receiveShadow>
-        <boxGeometry args={[8, 0.42, 4]} />
-        <meshStandardMaterial color="#59432f" roughness={0.96} />
-      </mesh>
-      <mesh position={[8.5, 0.03, 4.25]} receiveShadow>
-        <boxGeometry args={[7, 0.42, 4]} />
-        <meshStandardMaterial color="#59432f" roughness={0.96} />
-      </mesh>
+      <DockForeground />
+      <WarehouseRow position={[-1, .28, 5.9]} count={6} />
+      <WarehouseRow position={[3, .28, -8.4]} count={8} small />
+      <TankFarm position={[15, .25, -4.8]} />
+      <PipeRack position={[10.3, .3, -4.0]} />
+      <RailYard />
+      <AmbientBoats />
     </group>
   );
 }
 
-function BuildingShell({
-  position,
-  active,
-  children,
-  label,
-}: {
-  position: [number, number, number];
-  active: boolean;
-  children: React.ReactNode;
-  label: string;
-}) {
+function SmokePlumes() {
+  return (
+    <group>
+      {[[-15, 4.7, -9], [15.7, 5.3, -4.8], [12.3, 4.2, -8.5], [-7.2, 3.8, -12]].map((p, i) => (
+        <SmokeColumn key={i} position={p as [number, number, number]} phase={i * 1.7} />
+      ))}
+    </group>
+  );
+}
+
+function SmokeColumn({ position, phase }: { position: [number, number, number]; phase: number }) {
   const ref = useRef<THREE.Group>(null);
-  useFrame(({ clock }, delta) => {
+  useFrame(({ clock }) => {
     if (!ref.current) return;
-    const target = active ? 1.06 : 1;
-    const next = THREE.MathUtils.damp(ref.current.scale.x, target, 6, delta);
-    ref.current.scale.setScalar(next);
-    ref.current.position.y = position[1] + (active ? Math.sin(clock.elapsedTime * 2.1) * 0.025 : 0);
+    ref.current.rotation.y = Math.sin(clock.elapsedTime * .12 + phase) * .18;
   });
   return (
     <group ref={ref} position={position}>
-      {children}
-      {active && (
-        <Html position={[0, 3.7, 0]} center distanceFactor={14}>
-          <div className="world-label">{label}</div>
-        </Html>
-      )}
+      {Array.from({ length: 6 }).map((_, i) => (
+        <mesh key={i} position={[Math.sin(i * 1.4 + phase) * .22, i * .55, Math.cos(i * 1.2) * .18]} scale={1 + i * .18}>
+          <sphereGeometry args={[.3, 10, 8]} />
+          <meshBasicMaterial color="#69706a" transparent opacity={.13 - i * .012} depthWrite={false} />
+        </mesh>
+      ))}
     </group>
   );
 }
 
-function Arrival({ active }: { active: boolean }) {
-  return (
-    <BuildingShell position={DISTRICTS.arrival} active={active} label="Arrival Harbor">
-      <mesh position={[0, 1.6, 0]} castShadow>
-        <cylinderGeometry args={[0.45, 0.7, 3.2, 16]} />
-        <meshStandardMaterial color="#928169" roughness={0.9} />
-      </mesh>
-      <mesh position={[0, 3.18, 0]} castShadow>
-        <cylinderGeometry args={[0.6, 0.6, 0.35, 16]} />
-        <meshStandardMaterial color="#967245" roughness={0.5} metalness={0.32} />
-      </mesh>
-      <mesh position={[0, 3.52, 0]}>
-        <sphereGeometry args={[0.22, 14, 10]} />
-        <meshStandardMaterial color="#d4b66e" emissive="#8c6b2d" emissiveIntensity={active ? 1.5 : 0.4} />
-      </mesh>
-      <mesh position={[1.2, 0.2, 1.5]} castShadow receiveShadow>
-        <boxGeometry args={[3.3, 0.2, 1]} />
-        <meshStandardMaterial color="#5a402d" roughness={0.92} />
-      </mesh>
-    </BuildingShell>
-  );
-}
-
-function SessionArchive({ active, visibleEntries }: { active: boolean; visibleEntries: number }) {
-  const lift = useRef<THREE.Mesh>(null);
-  useFrame(({ clock }) => {
-    if (lift.current && active) lift.current.position.y = 0.45 + (Math.sin(clock.elapsedTime * 2.4) + 1) * 0.65;
-  });
-  return (
-    <BuildingShell position={DISTRICTS.session} active={active} label="Session Archive">
-      <mesh position={[0, 1.25, 0]} castShadow receiveShadow>
-        <boxGeometry args={[3.1, 2.5, 2.4]} />
-        <meshStandardMaterial color="#8a7b65" roughness={0.9} />
-      </mesh>
-      <mesh position={[0, 2.92, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
-        <coneGeometry args={[1.95, 0.8, 4]} />
-        <meshStandardMaterial color="#354448" roughness={0.75} />
-      </mesh>
-      {Array.from({ length: 12 }).map((_, i) => (
-        <mesh key={i} position={[-1 + (i % 4) * 0.66, 0.55 + Math.floor(i / 4) * 0.38, 1.23]} scale={i < Math.max(1, visibleEntries) ? 1 : 0.12}>
-          <boxGeometry args={[0.42, 0.14, 0.08]} />
-          <meshStandardMaterial color={i < visibleEntries ? '#d9c895' : '#776d5d'} emissive={active && i === Math.max(0, visibleEntries - 1) ? '#6a5325' : '#000000'} emissiveIntensity={active && i === Math.max(0, visibleEntries - 1) ? 0.65 : 0} roughness={0.82} />
-        </mesh>
-      ))}
-      <mesh ref={lift} position={[-1.2, 0.45, -1.3]} castShadow>
-        <boxGeometry args={[0.5, 0.22, 0.5]} />
-        <meshStandardMaterial color="#967245" metalness={0.25} roughness={0.55} />
-      </mesh>
-    </BuildingShell>
-  );
-}
-
-function ContextWorks({ active, cutaway }: { active: boolean; cutaway: boolean }) {
-  const sorters = useRef<THREE.Group>(null);
-  useFrame(({ clock }) => {
-    if (sorters.current && active) sorters.current.rotation.y = Math.sin(clock.elapsedTime * 1.7) * 0.18;
-  });
-  return (
-    <BuildingShell position={DISTRICTS.context} active={active} label="Context Works">
-      <mesh position={[0, 1.1, 0]} castShadow receiveShadow>
-        <boxGeometry args={[3.7, 2.15, 2.8]} />
-        <meshStandardMaterial color="#aa986f" transparent opacity={cutaway ? 0.24 : 0.82} roughness={0.45} />
-      </mesh>
-      <group ref={sorters}>
-        {[-1.0, -0.34, 0.34, 1.0].map((x) => (
-          <mesh key={x} position={[x, 1.25, 0.2]} castShadow>
-            <cylinderGeometry args={[0.16, 0.2, 1.2, 10]} />
-            <meshStandardMaterial color="#967245" roughness={0.52} metalness={0.3} />
-          </mesh>
-        ))}
-      </group>
-      <mesh position={[0, 2.22, -0.55]}>
-        <sphereGeometry args={[active ? 0.34 : 0.2, 16, 12]} />
-        <meshStandardMaterial color="#d4b66e" emissive="#8b6d2f" emissiveIntensity={active ? 0.85 : 0.2} />
-      </mesh>
-    </BuildingShell>
-  );
-}
-
-function ModelCore({ active, decision }: { active: boolean; decision: boolean }) {
-  const wheel = useRef<THREE.Mesh>(null);
-  useFrame(({ clock }) => {
-    if (wheel.current) wheel.current.rotation.z = clock.elapsedTime * (active ? 1.2 : 0.22);
-  });
-  return (
-    <BuildingShell position={DISTRICTS.model} active={active} label="Model Core">
-      <mesh position={[0, 0.7, 0]} castShadow>
-        <cylinderGeometry args={[1.75, 1.95, 1.4, 24]} />
-        <meshStandardMaterial color="#8d7d66" roughness={0.88} />
-      </mesh>
-      <mesh position={[0, 1.55, 0]} scale={[1.15, 0.72, 1.15]} castShadow>
-        <sphereGeometry args={[1.1, 22, 14]} />
-        <meshStandardMaterial color="#354448" roughness={0.7} />
-      </mesh>
-      <mesh ref={wheel} position={[0, 1.55, 1.0]}>
-        <torusGeometry args={[0.5, 0.09, 8, 28]} />
-        <meshStandardMaterial color="#9a7648" metalness={0.32} roughness={0.48} />
-      </mesh>
-      {[-1.05, -0.35, 0.35, 1.05].map((x, i) => (
-        <mesh key={x} position={[x, 0.62, -1.75 - (decision && i === 0 ? 0.38 : 0)]} castShadow>
-          <boxGeometry args={[0.46, 0.75, 0.16]} />
-          <meshStandardMaterial color={decision && i === 0 ? '#d4b66e' : '#967245'} emissive={decision && i === 0 ? '#8c6b2d' : '#000000'} emissiveIntensity={decision && i === 0 ? 1 : 0} />
-        </mesh>
-      ))}
-    </BuildingShell>
-  );
-}
-
-function ToolDistrict({ active, toolName }: { active: boolean; toolName: string }) {
-  const hook = useRef<THREE.Mesh>(null);
-  useFrame(({ clock }) => {
-    if (hook.current && active) hook.current.position.y = 1.6 + (Math.sin(clock.elapsedTime * 2.2) + 1) * 0.3;
-  });
-  return (
-    <BuildingShell position={DISTRICTS.tool} active={active} label={`Tool District · ${toolName}`}>
-      <mesh position={[0, 0.72, 0]} castShadow>
-        <boxGeometry args={[3.8, 1.45, 2.6]} />
-        <meshStandardMaterial color="#5b402d" roughness={0.9} />
-      </mesh>
-      {[-1.2, -0.4, 0.4, 1.2].map((x, i) => {
-        const shops = ['inspect', 'edit', 'bash', 'write'];
-        const normalizedTool = ['read', 'grep', 'find', 'ls'].includes(toolName.toLowerCase()) ? 'inspect' : toolName.toLowerCase();
-        const lit = active && shops[i] === normalizedTool;
-        return (
-          <group key={x}>
-            <mesh position={[x, 0.62, -1]} castShadow>
-              <boxGeometry args={[0.67, 0.9, 0.55]} />
-              <meshStandardMaterial color={lit ? '#b08954' : '#796c59'} emissive={lit ? '#6c4b22' : '#000000'} emissiveIntensity={lit ? 0.8 : 0} />
-            </mesh>
-            <mesh position={[x, 1.16, -1.02]}>
-              <boxGeometry args={[0.46, 0.08, 0.05]} />
-              <meshStandardMaterial color={lit ? '#d7c17f' : '#4d5149'} emissive={lit ? '#7e6128' : '#000000'} emissiveIntensity={lit ? 0.6 : 0} />
-            </mesh>
-          </group>
-        );
-      })}
-      {[-1.15, 0, 1.15].map((x) => (
-        <mesh key={x} position={[x, 2.0, 0.7]} castShadow>
-          <cylinderGeometry args={[0.15, 0.23, 2.15, 10]} />
-          <meshStandardMaterial color="#80715e" roughness={0.9} />
-        </mesh>
-      ))}
-      <mesh position={[0, 2.55, -0.55]} castShadow>
-        <boxGeometry args={[3, 0.15, 0.15]} />
-        <meshStandardMaterial color="#997448" metalness={0.3} roughness={0.5} />
-      </mesh>
-      <mesh ref={hook} position={[0, 1.85, -0.55]}>
-        <cylinderGeometry args={[0.05, 0.05, 1.05, 8]} />
-        <meshStandardMaterial color="#997448" />
-      </mesh>
-    </BuildingShell>
-  );
-}
-
-function AmbientCity() {
-  const houses = useMemo(() => {
-    return Array.from({ length: 90 }).map((_, i) => {
-      const ring = 7 + (i % 7) * 0.72;
-      const angle = (i * 0.87) % (Math.PI * 2);
-      return [
-        Math.cos(angle) * ring + Math.sin(i * 2.1) * 1.3,
-        0.35,
-        Math.sin(angle) * ring * 0.7 + Math.cos(i * 1.4) * 1.15,
-        0.45 + (i % 4) * 0.06,
-        0.6 + (i % 5) * 0.12,
-      ] as const;
-    });
-  }, []);
-
+function DockForeground() {
   return (
     <group>
-      {houses.map(([x, y, z, w, h], i) => (
-        <mesh key={i} position={[x, y + h / 2, z]} castShadow receiveShadow>
-          <boxGeometry args={[w, h, w]} />
-          <meshStandardMaterial color={i % 5 === 0 ? '#5d432f' : '#81735e'} roughness={0.94} />
-        </mesh>
-      ))}
-      <AmbientBoat start={[-13, 0, 8]} speed={0.45} />
-      <AmbientBoat start={[-5, 0, 9.5]} speed={0.35} />
-      <AmbientBoat start={[5, 0, 8.7]} speed={0.28} />
+      <mesh position={[0, .15, 8.3]} receiveShadow><boxGeometry args={[34, .3, 1.9]} /><meshStandardMaterial color="#493326" roughness={.98} /></mesh>
+      {Array.from({ length: 18 }).map((_, i) => <mesh key={i} position={[-16+i*1.9, -.2, 8.8]}><cylinderGeometry args={[.08,.11,1.4,8]} /><meshStandardMaterial color="#332820" roughness={1} /></mesh>)}
+      {[-13,-10,-7,7,10,13].map((x,i)=><mesh key={x} position={[x,.55,7.75]} castShadow><boxGeometry args={[.8,.8,.8]} /><meshStandardMaterial color={i%2 ? '#74543b':'#93693e'} roughness={.9} /></mesh>)}
+      {[-14,-8,9,14].map(x => <DockLamp key={x} x={x} />)}
     </group>
   );
+}
+
+function DockLamp({ x }: { x: number }) {
+  return <group position={[x,0,7.3]}><mesh position={[0,1.35,0]}><cylinderGeometry args={[.035,.045,2.7,8]} /><meshStandardMaterial color="#303633" /></mesh><mesh position={[0,2.72,0]}><sphereGeometry args={[.11,12,8]} /><meshStandardMaterial color="#f0bd69" emissive="#c48532" emissiveIntensity={1.4} /></mesh></group>;
+}
+
+function WarehouseRow({ position, count, small=false }: { position: [number, number, number]; count: number; small?: boolean }) {
+  return <group position={position}>{Array.from({length:count}).map((_,i)=>{
+    const w=small?1.15:1.45, h=small?.8:1.05;
+    const lit=i%3===1;
+    return <group key={i} position={[(i-(count-1)/2)*(w+.18),0,0]}><mesh position={[0,h/2,0]} castShadow><boxGeometry args={[w,h,1.5]} /><meshStandardMaterial color={i%3===0?'#6e5844':'#80715a'} roughness={.96} /></mesh><mesh position={[0,h+.16,0]} rotation={[0,0,i%2?.12:-.12]}><boxGeometry args={[w*1.02,.12,1.7]} /><meshStandardMaterial color="#354543" roughness={.78} /></mesh><mesh position={[0,h*.55,.76]}><boxGeometry args={[w*.46,h*.22,.025]} /><meshStandardMaterial color={lit?'#e2b56c':'#394c4b'} emissive={lit?'#9e6426':'#000'} emissiveIntensity={lit?.9:0} /></mesh></group>
+  })}</group>;
+}
+
+function TankFarm({ position }: { position: [number, number, number] }) {
+  return <group position={position}>{[[0,0],[1.5,0],[0,1.5],[1.5,1.5]].map(([x,z],i)=><group key={i} position={[x,0,z]}><mesh position={[0,.72,0]} castShadow><cylinderGeometry args={[.62,.62,1.35,20]} /><meshStandardMaterial color="#73756b" metalness={.12} roughness={.78} /></mesh><mesh position={[0,1.45,0]}><cylinderGeometry args={[.65,.58,.18,20]} /><meshStandardMaterial color="#4c5653" /></mesh></group>)}</group>;
+}
+
+function PipeRack({ position }: { position: [number, number, number] }) {
+  return <group position={position}>{[-1,0,1].map((z,zi)=><group key={z}>{[-2,0,2].map((x,xi)=><mesh key={x} position={[x,1.1,z]}><boxGeometry args={[.08,2.2,.08]} /><meshStandardMaterial color="#3e4542" /></mesh>)}<mesh position={[0,2.05,z]}><boxGeometry args={[4.2,.08,.08]} /><meshStandardMaterial color="#7f6544" /></mesh><mesh position={[0,1.7,z]}><cylinderGeometry args={[.075,.075,4.1,8]} /><meshStandardMaterial color={zi===1?'#8a593f':'#936f42'} /></mesh></group>)}</group>;
+}
+
+function RailYard() {
+  return <group position={[1,.23,3.5]}>{[-1.1,-.6,.6,1.1].map(z=><group key={z}>{[-12,12].map(x=><mesh key={x} position={[0,.02,z]}><boxGeometry args={[25,.04,.04]} /><meshStandardMaterial color="#383b38" metalness={.35} roughness={.55} /></mesh>)}</group>)}</group>;
+}
+
+function AmbientBoats() {
+  return <>{<AmbientBoat start={[-17, 0, 10.5]} speed={0.38} />}{<AmbientBoat start={[-5, 0, 11.5]} speed={0.29} />}{<AmbientBoat start={[7, 0, 10.2]} speed={0.24} />}</>;
 }
 
 function AmbientBoat({ start, speed }: { start: [number, number, number]; speed: number }) {
-  const ref = useRef<THREE.Group>(null);
-  useFrame(({ clock }) => {
-    if (!ref.current) return;
-    ref.current.position.x = ((start[0] + clock.elapsedTime * speed + 18) % 36) - 18;
-    ref.current.position.z = start[2] + Math.sin(clock.elapsedTime * 0.35 + start[0]) * 0.22;
-  });
-  return (
-    <group ref={ref} position={start}>
-      <mesh position={[0, 0.12, 0]}>
-        <boxGeometry args={[1.1, 0.22, 0.42]} />
-        <meshStandardMaterial color="#4e3628" roughness={0.9} />
-      </mesh>
-      <mesh position={[0.05, 0.38, 0]}>
-        <boxGeometry args={[0.38, 0.28, 0.28]} />
-        <meshStandardMaterial color="#857762" roughness={0.9} />
-      </mesh>
-    </group>
-  );
+  const ref=useRef<THREE.Group>(null);
+  useFrame(({clock})=>{if(!ref.current)return;ref.current.position.x=((start[0]+clock.elapsedTime*speed+22)%44)-22;ref.current.position.z=start[2]+Math.sin(clock.elapsedTime*.3+start[0])*.25;});
+  return <group ref={ref} position={start}><mesh position={[0,.12,0]}><boxGeometry args={[1.4,.22,.5]} /><meshStandardMaterial color="#4a3327" roughness={.9} /></mesh><mesh position={[.12,.4,0]}><boxGeometry args={[.48,.34,.32]} /><meshStandardMaterial color="#82735e" roughness={.9} /></mesh><mesh position={[-.28,.65,0]}><boxGeometry args={[.035,.8,.035]} /><meshStandardMaterial color="#383c38" /></mesh></group>;
+}
+
+function ArrivalRuntime({ active }: { active: boolean }) {
+  return active ? <pointLight position={[-1.55, 4.1, .15]} intensity={2.6} distance={7} color="#f1c06d" /> : null;
+}
+
+function SessionRuntime({ active, visibleEntries }: { active: boolean; visibleEntries: number }) {
+  const lift = useRef<THREE.Group>(null);
+  useFrame(({clock})=>{if(lift.current&&active) lift.current.position.y=.45+(Math.sin(clock.elapsedTime*2.4)+1)*.55;});
+  return <group>{Array.from({length:12}).map((_,i)=><mesh key={i} position={[-1.42+(i%5)*.7,.72+Math.floor(i/5)*.38,1.83]} scale={i<Math.max(1,visibleEntries)?1:.06}><boxGeometry args={[.42,.13,.08]} /><meshStandardMaterial color={i<visibleEntries?'#dccb91':'#746b5c'} emissive={active&&i===Math.max(0,visibleEntries-1)?'#7a5e27':'#000'} emissiveIntensity={.8} /></mesh>)}<group ref={lift} position={[-2.15,.45,-.8]}><mesh><boxGeometry args={[.55,.22,.55]} /><meshStandardMaterial color="#a17342" metalness={.25} roughness={.5} /></mesh></group></group>;
+}
+
+function ContextRuntime({ active, cutaway }: { active: boolean; cutaway: boolean }) {
+  const sorter=useRef<THREE.Group>(null);
+  useFrame(({clock})=>{if(sorter.current&&active) sorter.current.rotation.y=clock.elapsedTime*.6;});
+  return <group ref={sorter}>{[-1.25,-.42,.42,1.25].map(x=><mesh key={x} position={[x,1.25,.25]}><torusGeometry args={[.31,.045,8,24]} /><meshStandardMaterial color="#c18e4c" emissive={active?'#5b3e18':'#000'} emissiveIntensity={active?.45:0} metalness={.35} roughness={.42} /></mesh>)}{cutaway&&<mesh position={[0,1.25,-.85]}><sphereGeometry args={[.35,18,12]} /><meshStandardMaterial color="#e0ba69" emissive="#8e6326" emissiveIntensity={1.2} /></mesh>}</group>;
+}
+
+function ModelRuntime({ active, decision }: { active: boolean; decision: boolean }) {
+  const wheel=useRef<THREE.Group>(null);
+  useFrame(({clock})=>{if(wheel.current)wheel.current.rotation.z=clock.elapsedTime*(active?1.0:.16)});
+  return <group>{<group ref={wheel} position={[0,1.95,1.95]}><mesh><torusGeometry args={[.72,.065,8,28]} /><meshStandardMaterial color="#d2a45f" emissive={active?'#71501d':'#000'} emissiveIntensity={active?.6:0} /></mesh></group>}{[-1.25,-.42,.42,1.25].map((x,i)=><mesh key={x} position={[x,.88,1.98+(decision&&i===0?.18:0)]}><boxGeometry args={[.38,.66,.06]} /><meshStandardMaterial color={decision&&i===0?'#e0ba69':'#8c704c'} emissive={decision&&i===0?'#b27427':'#000'} emissiveIntensity={decision&&i===0?1.4:0} /></mesh>)}</group>;
+}
+
+function ToolRuntime({ active, toolName }: { active: boolean; toolName: string }) {
+  const normalized=['read','grep','find','ls'].includes(toolName.toLowerCase())?'inspect':toolName.toLowerCase();
+  const names=['inspect','edit','bash','write'];
+  return <group>{[-2,-.67,.67,2].map((x,i)=>{const lit=active&&names[i]===normalized;return <pointLight key={x} position={[x,1.25,1.55]} intensity={lit?2.2:0} distance={3.2} color="#f0b85e" />})}</group>;
 }
 
 function routeForEvent(event?: SemanticEvent): [THREE.Vector3, THREE.Vector3] | undefined {
   if (!event) return undefined;
-  const sea = new THREE.Vector3(-13, 0.05, 5.2);
-  const arrival = new THREE.Vector3(...DISTRICTS.arrival);
-  const session = new THREE.Vector3(...DISTRICTS.session);
-  const context = new THREE.Vector3(...DISTRICTS.context);
-  const model = new THREE.Vector3(...DISTRICTS.model);
-  const tool = new THREE.Vector3(...DISTRICTS.tool);
-
-  switch (event.type) {
-    case 'REQUEST_ARRIVED': return [sea, arrival];
-    case 'SESSION_NODE_ADDED': {
-      const role = String(event.payload.role ?? '');
-      if (role === 'assistant') return [model, session];
-      if (role === 'toolResult') return undefined;
-      return [arrival, session];
-    }
-    case 'CONTEXT_COMPILE_STARTED': return [session, context];
-    case 'MODEL_REQUEST_STARTED': return [context, model];
-    case 'TOOL_EXECUTION_STARTED': return [model, tool];
-    case 'TOOL_RESULT_ATTACHED': return [tool, session];
-    case 'AGENT_SETTLED': return [model, arrival];
-    default: return undefined;
+  const sea=new THREE.Vector3(-18, .05, 10.6);
+  const arrival=new THREE.Vector3(...DISTRICTS.arrival);
+  const session=new THREE.Vector3(...DISTRICTS.session);
+  const context=new THREE.Vector3(...DISTRICTS.context);
+  const model=new THREE.Vector3(...DISTRICTS.model);
+  const tool=new THREE.Vector3(...DISTRICTS.tool);
+  switch(event.type){
+    case 'REQUEST_ARRIVED': return [sea,arrival];
+    case 'SESSION_NODE_ADDED': {const role=String(event.payload.role??'');if(role==='assistant')return [model,session];if(role==='toolResult')return undefined;return [arrival,session];}
+    case 'CONTEXT_COMPILE_STARTED': return [session,context];
+    case 'CONTEXT_COMPILED': return [context,context.clone().add(new THREE.Vector3(1.8,.2,.5))];
+    case 'MODEL_REQUEST_STARTED': return [context,model];
+    case 'TOOL_CALL_CREATED': return [model,model.clone().add(new THREE.Vector3(1.4,.2,.6))];
+    case 'TOOL_EXECUTION_STARTED': return [model,tool];
+    case 'TOOL_RESULT_ATTACHED': return [tool,session];
+    case 'AGENT_SETTLED': return [model,arrival];
+    default:return undefined;
   }
 }
 
 function ArtifactTransit({ event }: { event?: SemanticEvent }) {
-  const cue = event ? toWorldCue(event) : undefined;
-  const route = useMemo(() => routeForEvent(event), [event?.id]);
-  const ref = useRef<THREE.Group>(null);
-  const progress = useRef(0);
-
-  useEffect(() => { progress.current = 0; }, [event?.id]);
-
-  useFrame((_, delta) => {
-    if (!ref.current || !route) return;
-    progress.current = Math.min(1, progress.current + delta * 0.42);
-    const eased = progress.current * progress.current * (3 - 2 * progress.current);
-    ref.current.position.lerpVectors(route[0], route[1], eased);
-    ref.current.position.y += Math.sin(Math.PI * eased) * 0.45 + 0.2;
-    ref.current.lookAt(route[1]);
-  });
-
-  if (!cue || cue.artifact === 'none' || !route) return null;
-
-  return (
-    <group ref={ref}>
-      {cue.artifact === 'request-vessel' ? (
-        <>
-          <mesh position={[0, 0.1, 0]} castShadow><boxGeometry args={[1.2, 0.25, 0.46]} /><meshStandardMaterial color="#4e3728" /></mesh>
-          <mesh position={[0.1, 0.42, 0]} castShadow><boxGeometry args={[0.42, 0.3, 0.3]} /><meshStandardMaterial color="#8a7b66" /></mesh>
-        </>
-      ) : cue.artifact === 'context-capsule' ? (
-        <mesh castShadow><sphereGeometry args={[0.33, 16, 12]} /><meshStandardMaterial color="#d4b66e" emissive="#7c5d26" emissiveIntensity={0.7} /></mesh>
-      ) : (
-        <>
-          <mesh position={[0, 0.2, 0]} castShadow><boxGeometry args={[0.72, 0.3, 0.48]} /><meshStandardMaterial color={cue.artifact === 'tool-result' ? '#5d422f' : '#9a7648'} /></mesh>
-          <mesh position={[0, 0.52, 0]} castShadow><boxGeometry args={[0.45, 0.2, 0.34]} /><meshStandardMaterial color="#d4c6a5" /></mesh>
-        </>
-      )}
-    </group>
-  );
+  const cue=event?toWorldCue(event):undefined;
+  const route=useMemo(()=>routeForEvent(event),[event?.id]);
+  const ref=useRef<THREE.Group>(null);const progress=useRef(0);
+  useEffect(()=>{progress.current=0},[event?.id]);
+  useFrame((_,delta)=>{if(!ref.current||!route)return;progress.current=Math.min(1,progress.current+delta*.38);const t=progress.current*progress.current*(3-2*progress.current);ref.current.position.lerpVectors(route[0],route[1],t);ref.current.position.y+=Math.sin(Math.PI*t)*.55+.28;ref.current.lookAt(route[1]);});
+  if(!cue||cue.artifact==='none'||!route)return null;
+  return <group ref={ref}>{cue.artifact==='request-vessel'?<RequestVessel/>:cue.artifact==='context-capsule'?<ContextCapsule/>:<CargoArtifact result={cue.artifact==='tool-result'} />}</group>;
 }
 
-function CameraDirector({ event }: { event?: SemanticEvent }) {
-  const { camera } = useThree();
-  const desired = useRef(new THREE.Vector3(13, 11, 17));
-  const lookAt = useRef(new THREE.Vector3(0, 1, 0));
+function RequestVessel(){return <group><mesh position={[0,.13,0]} castShadow><boxGeometry args={[1.65,.28,.55]} /><meshStandardMaterial color="#4a3025" roughness={.9} /></mesh><mesh position={[.18,.48,0]} castShadow><boxGeometry args={[.52,.38,.34]} /><meshStandardMaterial color="#8b7a63" roughness={.88} /></mesh><mesh position={[-.35,.85,0]}><boxGeometry args={[.035,.9,.035]} /><meshStandardMaterial color="#343a37" /></mesh></group>}
+function ContextCapsule(){return <group><mesh castShadow><sphereGeometry args={[.38,20,14]} /><meshStandardMaterial color="#e3bd6d" emissive="#7e5923" emissiveIntensity={.9} metalness={.18} roughness={.3} /></mesh><mesh rotation={[Math.PI/2,0,0]}><torusGeometry args={[.47,.035,8,24]} /><meshStandardMaterial color="#855f35" /></mesh></group>}
+function CargoArtifact({result}:{result:boolean}){return <group><mesh position={[0,.2,0]} castShadow><boxGeometry args={[.86,.34,.55]} /><meshStandardMaterial color={result?'#594032':'#9d7242'} roughness={.82} /></mesh><mesh position={[0,.53,0]} castShadow><boxGeometry args={[.52,.18,.4]} /><meshStandardMaterial color="#d5c394" roughness={.8} /></mesh></group>}
 
-  useFrame((_, delta) => {
-    const cue = event ? toWorldCue(event) : undefined;
-    const focus = cue && cue.district !== 'system'
-      ? new THREE.Vector3(...DISTRICTS[cue.district])
-      : new THREE.Vector3(0, 0.7, 0);
-    const offset = CAMERA_OFFSETS[cue?.camera ?? 'world'] ?? CAMERA_OFFSETS.world;
+function CameraDirector({ event }: { event?: SemanticEvent }) {
+  const {camera}=useThree();
+  const desired=useRef(new THREE.Vector3(19,14,24));
+  const lookAt=useRef(new THREE.Vector3(0,1,0));
+  useFrame((_,delta)=>{
+    const cue=event?toWorldCue(event):undefined;
+    const focus=cue&&cue.district!=='system'?new THREE.Vector3(...DISTRICTS[cue.district]):new THREE.Vector3(0,.8,0);
+    const offset=CAMERA_OFFSETS[cue?.camera??'world']??CAMERA_OFFSETS.world;
     desired.current.copy(focus).add(offset);
-    lookAt.current.lerp(focus.clone().add(new THREE.Vector3(0, 1.1, 0)), 1 - Math.pow(0.001, delta));
-    camera.position.lerp(desired.current, 1 - Math.pow(0.004, delta));
+    lookAt.current.lerp(focus.clone().add(new THREE.Vector3(0,1.4,0)),1-Math.pow(.001,delta));
+    camera.position.lerp(desired.current,1-Math.pow(.004,delta));
     camera.lookAt(lookAt.current);
   });
   return null;
