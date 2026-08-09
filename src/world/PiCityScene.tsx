@@ -2,6 +2,11 @@ import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { SemanticEvent } from '../semantic-trace/schema';
 import type { RuntimeState } from '../semantic-trace/reducer';
 import { toWorldCue, type WorldDistrict } from './cues';
@@ -23,6 +28,60 @@ const CAMERA_OFFSETS: Record<string, THREE.Vector3> = {
   decision: new THREE.Vector3(7.0, 5.3, 7.8),
   pullback: new THREE.Vector3(21, 15.5, 26),
 };
+
+
+type ShotSpec = {
+  offset: THREE.Vector3;
+  lookShift: THREE.Vector3;
+  fov: number;
+  exposure: number;
+  bloom: number;
+  aperture: number;
+  maxBlur: number;
+  matte: number;
+};
+
+function shotForEvent(event?: SemanticEvent): ShotSpec {
+  const base: ShotSpec = {
+    offset: new THREE.Vector3(9.0, 6.3, 10.4),
+    lookShift: new THREE.Vector3(0, 1.25, 0),
+    fov: 34,
+    exposure: 1.06,
+    bloom: 0.22,
+    aperture: 0.000022,
+    maxBlur: 0.0032,
+    matte: 0.12,
+  };
+  if (!event) return { ...base, offset: new THREE.Vector3(19, 14, 24), lookShift: new THREE.Vector3(0, 1.0, 0), fov: 37, matte: 0.40 };
+  switch (event.type) {
+    case 'REQUEST_ARRIVED':
+      return { ...base, offset: new THREE.Vector3(14.2, 7.4, 13.1), lookShift: new THREE.Vector3(1.45, 1.12, -0.45), fov: 40, exposure: 1.10, bloom: 0.18, aperture: 0.000014, maxBlur: 0.0023, matte: 0.50 };
+    case 'SESSION_NODE_ADDED':
+      return { ...base, offset: new THREE.Vector3(7.0, 4.7, 6.9), lookShift: new THREE.Vector3(-0.35, 1.25, -0.35), fov: 32, exposure: 1.03, bloom: 0.20, aperture: 0.000030, maxBlur: 0.0038, matte: 0.12 };
+    case 'CONTEXT_COMPILE_STARTED':
+      return { ...base, offset: new THREE.Vector3(6.3, 3.65, 4.55), lookShift: new THREE.Vector3(-0.85, 1.28, -0.60), fov: 28, exposure: 1.13, bloom: 0.24, aperture: 0.000040, maxBlur: 0.0052, matte: 0.07 };
+    case 'CONTEXT_COMPILED':
+      return { ...base, offset: new THREE.Vector3(5.6, 3.35, 4.25), lookShift: new THREE.Vector3(-0.62, 1.22, -0.72), fov: 27, exposure: 1.15, bloom: 0.28, aperture: 0.000045, maxBlur: 0.0058, matte: 0.06 };
+    case 'MODEL_REQUEST_STARTED':
+    case 'MODEL_STREAMING':
+      return { ...base, offset: new THREE.Vector3(5.85, 3.55, 4.45), lookShift: new THREE.Vector3(0.18, 1.58, -0.42), fov: 29, exposure: 0.99, bloom: 0.34, aperture: 0.000042, maxBlur: 0.0050, matte: 0.06 };
+    case 'TOOL_CALL_CREATED':
+      return { ...base, offset: new THREE.Vector3(4.85, 3.0, 4.15), lookShift: new THREE.Vector3(0.72, 1.20, 0.05), fov: 27, exposure: 1.00, bloom: 0.38, aperture: 0.000048, maxBlur: 0.0058, matte: 0.05 };
+    case 'TOOL_EXECUTION_STARTED':
+    case 'TOOL_EXECUTION_UPDATED':
+      return { ...base, offset: new THREE.Vector3(6.7, 4.0, 6.0), lookShift: new THREE.Vector3(-0.45, 1.05, 0.35), fov: 31, exposure: 1.05, bloom: 0.26, aperture: 0.000030, maxBlur: 0.0040, matte: 0.08 };
+    case 'TOOL_EXECUTION_COMPLETED':
+      return { ...base, offset: new THREE.Vector3(5.2, 3.3, 4.8), lookShift: new THREE.Vector3(0.2, 1.0, 0.15), fov: 28, exposure: 1.06, bloom: 0.30, aperture: 0.000042, maxBlur: 0.0052, matte: 0.07 };
+    case 'TOOL_RESULT_ATTACHED':
+      return { ...base, offset: new THREE.Vector3(9.6, 6.3, 8.7), lookShift: new THREE.Vector3(0.5, 0.82, -0.7), fov: 35, exposure: 1.05, bloom: 0.25, aperture: 0.000025, maxBlur: 0.0036, matte: 0.22 };
+    case 'MODEL_RESPONSE_COMPLETED':
+      return { ...base, offset: new THREE.Vector3(5.25, 3.35, 4.25), lookShift: new THREE.Vector3(0.05, 1.52, -0.30), fov: 28, exposure: 1.03, bloom: 0.37, aperture: 0.000043, maxBlur: 0.0054, matte: 0.06 };
+    case 'AGENT_SETTLED':
+      return { ...base, offset: new THREE.Vector3(21, 14.8, 25.5), lookShift: new THREE.Vector3(1.0, 0.9, -0.2), fov: 39, exposure: 1.08, bloom: 0.18, aperture: 0.000012, maxBlur: 0.0020, matte: 0.48 };
+    default:
+      return base;
+  }
+}
 
 const MODELS = {
   arrival: '/assets/models/arrival-harbor.glb',
@@ -70,6 +129,7 @@ export function PiCityScene({ event, state }: { event?: SemanticEvent; state?: R
     <div className="three-world visual-beta-world">
       <Canvas shadows dpr={[1, 1.7]} gl={{ antialias: true, alpha: true }} camera={{ position: [19, 14, 24], fov: 36, near: 0.1, far: 150 }}>
         <CinematicRenderer event={event} />
+        <CinematicPost event={event} />
         <fog attach="fog" args={['#b88f63', 32, 78]} />
         <hemisphereLight args={['#ffe0ad', '#24363a', 1.25]} />
         <directionalLight position={[-14, 22, 12]} intensity={3.5} color="#ffd09a" castShadow shadow-mapSize={[2048, 2048]} />
@@ -80,7 +140,7 @@ export function PiCityScene({ event, state }: { event?: SemanticEvent; state?: R
         <span>{event ? toWorldCue(event).artifact : 'living harbor'}</span>
         <strong>{event ? toWorldCue(event).action : 'ambient'}</strong>
       </div>
-      <div className="visual-beta-mark">PI CITY · VISUAL PROTOTYPE</div>
+      <div className="visual-beta-mark">PI CITY · CINEMATIC PROTOTYPE</div>
     </div>
   );
 }
@@ -94,9 +154,40 @@ function CinematicRenderer({ event }: { event?: SemanticEvent }) {
     gl.shadowMap.type = THREE.PCFSoftShadowMap;
   }, [gl]);
   useFrame((_, delta) => {
-    const target = event?.type === 'CONTEXT_COMPILED' ? 1.14 : event?.type === 'MODEL_REQUEST_STARTED' ? 1.02 : 1.08;
-    gl.toneMappingExposure = THREE.MathUtils.damp(gl.toneMappingExposure, target, 2.4, delta);
+    const shot = shotForEvent(event);
+    gl.toneMappingExposure = THREE.MathUtils.damp(gl.toneMappingExposure, shot.exposure, 2.4, delta);
   });
+  return null;
+}
+
+function CinematicPost({ event }: { event?: SemanticEvent }) {
+  const { gl, scene, camera, size } = useThree();
+  const composer = useMemo(() => {
+    const next = new EffectComposer(gl);
+    next.addPass(new RenderPass(scene, camera));
+    const bloom = new UnrealBloomPass(new THREE.Vector2(size.width, size.height), .22, .5, .9);
+    next.addPass(bloom);
+    const bokeh = new BokehPass(scene, camera, { focus: 12, aperture: .00002, maxblur: .003 });
+    next.addPass(bokeh);
+    next.addPass(new OutputPass());
+    return { next, bloom, bokeh };
+  }, [gl, scene, camera]);
+  useEffect(() => {
+    composer.next.setSize(size.width, size.height);
+  }, [composer, size.width, size.height]);
+  useEffect(() => () => composer.next.dispose(), [composer]);
+  useFrame(() => {
+    const shot = shotForEvent(event);
+    composer.bloom.strength = THREE.MathUtils.lerp(composer.bloom.strength, shot.bloom, .08);
+    const focus = event && toWorldCue(event).district !== 'system'
+      ? new THREE.Vector3(...DISTRICTS[toWorldCue(event).district as Exclude<WorldDistrict, 'system'>]).add(shot.lookShift)
+      : new THREE.Vector3(0, 1, 0);
+    const focusDistance = camera.position.distanceTo(focus);
+    composer.bokeh.uniforms.focus.value = THREE.MathUtils.lerp(composer.bokeh.uniforms.focus.value, focusDistance, .08);
+    composer.bokeh.uniforms.aperture.value = THREE.MathUtils.lerp(composer.bokeh.uniforms.aperture.value, shot.aperture, .08);
+    composer.bokeh.uniforms.maxblur.value = THREE.MathUtils.lerp(composer.bokeh.uniforms.maxblur.value, shot.maxBlur, .08);
+    composer.next.render();
+  }, 1);
   return null;
 }
 
@@ -115,6 +206,7 @@ function Harbor({ event, state }: { event?: SemanticEvent; state?: RuntimeState 
       <IndustrialFabric />
       <DistrictNeighborhoods />
       <ForegroundInfrastructure />
+      <CinematicForeground event={event} />
       <HarborWorkers />
       <SmokePlumes />
       <HeroBuilding district="arrival" active={activeDistrict === 'arrival'}>
@@ -197,8 +289,8 @@ function ConceptMatte({ event }: { event?: SemanticEvent }) {
   useEffect(()=>{ texture.colorSpace=THREE.SRGBColorSpace; texture.anisotropy=8; },[texture]);
   useFrame((_,delta)=>{
     if(!material.current)return;
-    const wide=!event||event.type==='REQUEST_ARRIVED'||event.type==='AGENT_SETTLED';
-    material.current.uniforms.uOpacity.value=THREE.MathUtils.damp(material.current.uniforms.uOpacity.value,wide ? .42 : .11,2.2,delta);
+    const target=shotForEvent(event).matte;
+    material.current.uniforms.uOpacity.value=THREE.MathUtils.damp(material.current.uniforms.uOpacity.value,target,2.2,delta);
   });
   return <mesh position={[0,10.5,-34]} scale={[1.28,1.04,1]} renderOrder={-2}>
     <planeGeometry args={[34,28]} />
@@ -361,6 +453,32 @@ function ForegroundInfrastructure() {
         <mesh position={[.45,1.3,0]}><boxGeometry args={[.06,1.45,.06]} /><meshStandardMaterial color="#363b38" /></mesh>
       </group>
       {[-15.2,-9.6,4.8,16.4].map((x,i)=><mesh key={x} position={[x,.08,7.75+i*.35]} rotation={[-Math.PI/2,0,0]}><ringGeometry args={[.12,.2,16]} /><meshStandardMaterial color="#282d2b" roughness={.72} metalness={.2} /></mesh>)}
+    </group>
+  );
+}
+
+
+function ForegroundMaterial() { return <meshStandardMaterial color="#1f2927" roughness={.93} metalness={.08} />; }
+
+function CinematicForeground({ event }: { event?: SemanticEvent }) {
+  const cue = event ? toWorldCue(event) : undefined;
+  return (
+    <group>
+      <group visible={event?.type === 'REQUEST_ARRIVED'} position={[-6.1, 0, 10.0]} rotation={[0, -.18, 0]}>
+        <mesh position={[-1.4, 2.4, 0]} castShadow><boxGeometry args={[.28, 4.8, .28]} /><ForegroundMaterial /></mesh>
+        <mesh position={[-.1, 4.45, 0]} rotation={[0,0,-.08]} castShadow><boxGeometry args={[3.0,.18,.18]} /><ForegroundMaterial /></mesh>
+        <mesh position={[1.35, .45, -.2]} castShadow><boxGeometry args={[1.9,.7,.95]} /><ForegroundMaterial /></mesh>
+      </group>
+      <group visible={cue?.district === 'context'} position={[5.15, 0, -1.2]} rotation={[0, -.42, 0]}>
+        {[-1.25, 1.25].map((x) => <mesh key={x} position={[x, 2.1, 0]} castShadow><cylinderGeometry args={[.13,.16,4.2,10]} /><ForegroundMaterial /></mesh>)}
+        <mesh position={[0,4.12,0]} castShadow><boxGeometry args={[2.8,.16,.18]} /><ForegroundMaterial /></mesh>
+        <mesh position={[0,3.55,.1]} rotation={[0,0,.04]} castShadow><cylinderGeometry args={[.10,.10,3.0,10]} /><ForegroundMaterial /></mesh>
+      </group>
+      <group visible={cue?.district === 'model'} position={[11.0, 0, 3.35]} rotation={[0, -.62, 0]}>
+        <mesh position={[-1.55,2.0,0]} castShadow><boxGeometry args={[.4,4,.55]} /><ForegroundMaterial /></mesh>
+        <mesh position={[1.55,2.0,0]} castShadow><boxGeometry args={[.4,4,.55]} /><ForegroundMaterial /></mesh>
+        <mesh position={[0,4.0,0]} castShadow><boxGeometry args={[3.5,.38,.55]} /><ForegroundMaterial /></mesh>
+      </group>
     </group>
   );
 }
@@ -562,22 +680,17 @@ function CameraDirector({ event }: { event?: SemanticEvent }) {
   useFrame(({clock},delta)=>{
     const cue=event?toWorldCue(event):undefined;
     const focus=cue&&cue.district!=='system'?new THREE.Vector3(...DISTRICTS[cue.district]):new THREE.Vector3(0,.8,0);
-    let offset=(CAMERA_OFFSETS[cue?.camera??'world']??CAMERA_OFFSETS.world).clone();
-    if(event?.type==='REQUEST_ARRIVED') offset.set(10.5,7.4,13.8);
-    if(event?.type==='SESSION_NODE_ADDED') offset.set(6.8,5.0,7.4);
-    if(event?.type==='CONTEXT_COMPILED') offset.set(5.6,4.5,6.2);
-    if(event?.type==='MODEL_REQUEST_STARTED') offset.set(6.2,4.8,6.0);
-    if(event?.type==='TOOL_EXECUTION_STARTED') offset.set(7.2,4.9,7.8);
-    if(event?.type==='TOOL_RESULT_ATTACHED') offset.set(9.0,6.2,9.8);
-    // tiny breathing move keeps the camera cinematic without feeling hand-held.
-    offset.x += Math.sin(clock.elapsedTime*.18)*.16;
-    offset.y += Math.sin(clock.elapsedTime*.13)*.08;
-    desired.current.copy(focus).add(offset);
-    const lift=event?.type==='CONTEXT_COMPILED' ? .95 : 1.35;
-    lookAt.current.lerp(focus.clone().add(new THREE.Vector3(0,lift,0)),1-Math.pow(.0012,delta));
+    const shot=shotForEvent(event);
+    const driftScale = event?.type === 'REQUEST_ARRIVED' ? .24 : (event?.type === 'CONTEXT_COMPILED' || event?.type === 'MODEL_REQUEST_STARTED') ? .075 : .13;
+    const drift=new THREE.Vector3(
+      Math.sin(clock.elapsedTime*.16)*driftScale,
+      Math.sin(clock.elapsedTime*.11)*driftScale*.36,
+      Math.cos(clock.elapsedTime*.14)*driftScale*.32,
+    );
+    desired.current.copy(focus).add(shot.offset).add(drift);
+    lookAt.current.lerp(focus.clone().add(shot.lookShift),1-Math.pow(.0012,delta));
     camera.position.lerp(desired.current,1-Math.pow(.0035,delta));
-    const targetFov=event?.type==='CONTEXT_COMPILED'?31:event?.type==='REQUEST_ARRIVED'?38:34;
-    if(camera instanceof THREE.PerspectiveCamera){ camera.fov=THREE.MathUtils.damp(camera.fov,targetFov,3.2,delta); camera.updateProjectionMatrix(); }
+    if(camera instanceof THREE.PerspectiveCamera){ camera.fov=THREE.MathUtils.damp(camera.fov,shot.fov,3.2,delta); camera.updateProjectionMatrix(); }
     camera.lookAt(lookAt.current);
   });
   return null;

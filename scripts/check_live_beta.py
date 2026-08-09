@@ -47,6 +47,10 @@ for needle in [
     "pi-weather-v2",
     "hazePlane",
     "lightField",
+    "BokehPass",
+    "shotFor",
+    "cinematicFG",
+    "setCinematicForeground",
 ]:
     assert needle in HTML, needle
 

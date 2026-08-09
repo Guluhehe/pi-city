@@ -69,7 +69,7 @@ Implemented the Pi runtime/session importer, tolerant JSONL parsing, Semantic Tr
 - spatial Explore hotspots projected over real 3D districts
 - gentle district observation camera
 
-## v0.8 — Art Pass — current
+## v0.8 — Art Pass
 
 - UV-free shader weathering for GLB masonry / timber / metal
 - thinner transparent industrial glass
@@ -80,7 +80,17 @@ Implemented the Pi runtime/session importer, tolerant JSONL parsing, Semantic Tr
 - animated Arrival Harbor lighthouse sweep
 - no new Agent semantics
 
-### Validation gate before v0.9
+## v0.9 — Cinematic Pass — current
+
+- [x] shot specification layer for composition / FOV / exposure / bloom / matte / DOF
+- [x] Bokeh depth of field in full and static visual builds
+- [x] foreground framing for Arrival / Context / Model hero scenes
+- [x] different camera-breathing amplitude for wide vs close shots
+- [x] preserve the existing ~60 second runtime journey and semantics
+- [ ] tune focus / aperture from a normal desktop WebGL render
+- [ ] capture canonical screenshots for Arrival / Context / Model
+
+### Validation gate before v0.10
 
 - obtain a real public URL or normal desktop WebGL preview
 - tune matte/realtime blend from actual rendered screenshots

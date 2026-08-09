@@ -1,8 +1,8 @@
-# Pi City v0.8 Art Pass Beta
+# Pi City v0.9 Cinematic Beta
 
 Static deployable Experience Beta. No build step is required.
 
-V0.8 keeps the low-chrome cinematic **Watch** journey and spatial **Explore** mode, then adds a visual-integration pass: weathered GLB materials, thinner industrial glass, feathered/hazed matte blending, distant practical-light depth, district infill, and a realtime lighthouse sweep.
+V0.9 keeps the v0.8 weathered GLB harbor and runtime semantics, then moves the visual work into **cinematography**: every hero beat now carries explicit composition, FOV, exposure, bloom, matte blend, and depth-of-field parameters. Arrival, Context Works, and Model Core also receive world-space foreground framing so the camera reads through a port, pipe rack, or gate instead of hovering in empty space.
 
 ## Run locally
 
@@ -16,22 +16,7 @@ Then open `http://localhost:8080`.
 
 ## Publish with GitHub Pages
 
-The repository includes `.github/workflows/deploy-pages.yml`.
-
-After the repository is pushed to GitHub:
-
-1. Open **Settings → Pages**.
-2. Set **Source** to **GitHub Actions** if GitHub has not already selected it.
-3. Push to `main`, or run the **Deploy Pi City Live Beta to Pages** workflow manually.
-4. The workflow publishes the contents of `site-live-beta/` as the Pages site.
-
-For a repository named `pi-city` under user `Guluhehe`, the default project-site URL is expected to be under:
-
-```text
-https://guluhehe.github.io/pi-city/
-```
-
-The site uses relative local asset URLs so it works correctly from the `/pi-city/` project subpath.
+The repository includes `.github/workflows/deploy-pages.yml`. The site uses relative asset URLs and works under a project subpath such as `/pi-city/`.
 
 ## Deployment contents
 
@@ -41,4 +26,17 @@ The site uses relative local asset URLs so it works correctly from the `/pi-city
 - `assets/noise.png` — film-grain overlay
 - `.nojekyll` — disables Jekyll processing
 
-Three.js ES modules are loaded from jsDelivr at runtime. All Pi City models and matte assets are served from GitHub Pages itself.
+Three.js ES modules are loaded from jsDelivr at runtime.
+
+## Cinematic pass
+
+- explicit shot grammar per runtime beat
+- asymmetric hero composition instead of centered building shots
+- Bokeh depth of field with focus following the active district
+- event-specific exposure / bloom / matte blend
+- foreground crane framing for Arrival Harbor
+- foreground pipe-rack framing for Context Works
+- gate/portal framing for Model Core
+- slower camera breathing on close reasoning shots; wider parallax on harbor shots
+- ~65 second auth journey and ~56 second multi-tool journey unchanged
+- no new Agent semantics

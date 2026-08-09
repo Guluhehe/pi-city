@@ -1,6 +1,6 @@
 # Pi City
 
-**Current milestone: v0.8 Art Pass Beta — the same ~60 second world-first Agent replay with weathered hero materials, soft matte blending, atmospheric depth, denser district fabric, cinematic Watch and spatial Explore modes.**
+**Current milestone: v0.9 Cinematic Beta — the same world-first Agent replay, now with explicit shot grammar, event-driven depth of field, asymmetric hero composition, and foreground framing for Arrival Harbor, Context Works, and Model Core.**
 
 **A playable visualization of how AI agents actually run.**
 
@@ -8,6 +8,11 @@ Pi City turns agent runtime behavior into a living harbor city. Requests arrive 
 
 ## Current milestone
 
+### v0.9 Beta — Cinematic Pass
+
+V0.9 does not add Agent semantics. It turns cinematography into a first-class system: every hero beat can control composition shift, FOV, exposure, bloom, matte contribution, and depth-of-field. Arrival Harbor is staged as a wide scale-establishing shot, Context Works is framed through a realtime pipe rack so the user peers into the production line, and Model Core is compressed behind a gate-like foreground frame. Watch mode uses stronger cinematic focus separation; Explore mode remains easier to inspect.
+
+See [`docs/cinematography-v09.md`](docs/cinematography-v09.md).
 
 ### v0.8 Beta — Art Pass
 
@@ -239,7 +244,7 @@ See `docs/integrated-alpha.md` for the world-first journey contract and the thre
 
 `site-visual-beta/` is the v0.5 asset-based visual build.
 
-`site-live-beta/` is the v0.8 deployable **Art Pass Beta**: cinematic Watch mode, chapter bumpers, projected 3D Explore hotspots, runtime import, Context Compare, weathered GLB Hero Buildings, feathered concept matte, atmospheric depth and realtime runtime machinery.
+`site-live-beta/` is the v0.9 deployable **Cinematic Beta**: the v0.8 weathered GLB harbor plus shot-specific composition, event-driven Bokeh depth of field, foreground framing, cinematic Watch mode, spatial Explore hotspots, runtime import, and Context Compare.
 
 Preview locally:
 
