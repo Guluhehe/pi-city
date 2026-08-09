@@ -141,3 +141,9 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #d0c3
 .world-cue { position: absolute; left: 16px; bottom: 14px; display: flex; gap: 8px; align-items: center; border: 1px solid rgba(242,232,202,.2); border-radius: 999px; padding: 6px 10px; background: rgba(18,22,19,.32); font: 10px ui-monospace, monospace; }
 .world-cue strong { color: #dbc27f; font-weight: 600; }
 .world-cue span { color: rgba(241,237,220,.55); }
+.three-world { position: relative; height: 560px; overflow: hidden; background: #bda983; }
+.three-world canvas { display: block; width: 100% !important; height: 100% !important; }
+.world-label { white-space: nowrap; background: rgba(16,20,17,.86); border: 1px solid rgba(223,202,145,.45); color: #eee7d7; padding: 6px 9px; border-radius: 999px; font: 10px/1 ui-sans-serif, system-ui; letter-spacing: .05em; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+.three-legend { position: absolute; left: 14px; bottom: 14px; display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 999px; background: rgba(17,21,18,.78); border: 1px solid rgba(239,226,190,.22); backdrop-filter: blur(9px); font: 10px ui-monospace, monospace; }
+.three-legend span { color: #d8c386; }
+.three-legend strong { color: #e8e5dc; font-weight: 500; }

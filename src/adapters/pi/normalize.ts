@@ -82,7 +82,7 @@ export function normalizePiRuntime(events: PiRuntimeEvent[]): SemanticTrace {
   let lastTimestamp = Date.now();
 
   events.forEach((event, index) => {
-    const ts = timestampOf(event.timestamp, lastTimestamp + index);
+    const ts = timestampOf(event.timestamp) ?? timestampOf(event.message?.timestamp) ?? lastTimestamp + index;
     if (ts) lastTimestamp = ts;
     const sourceEvent = event;
     const push = (

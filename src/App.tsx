@@ -3,8 +3,10 @@ import demoRuntime from '../fixtures/auth-bug/runtime.jsonl?raw';
 import { importPiJsonl } from './adapters/pi/import';
 import { explainEvent } from './semantic-trace/explain';
 import { buildTraceFrames } from './semantic-trace/reducer';
+import { mergePiTraces } from './semantic-trace/merge';
 import type { SemanticTrace } from './semantic-trace/schema';
 import { toWorldCue } from './world/cues';
+import { PiCityScene } from './world/PiCityScene';
 
 const districtNames = {
   arrival: 'Arrival Harbor',
@@ -58,15 +60,18 @@ export function App() {
   const worldCue = frame ? toWorldCue(frame.event) : undefined;
   const activeDistrict: District = worldCue?.district ?? explanation?.district ?? 'system';
 
-  async function onFile(file?: File) {
-    if (!file) return;
+  async function onFiles(files?: FileList | null) {
+    if (!files?.length) return;
     try {
-      const text = await file.text();
-      const result = importPiJsonl(text);
-      setTrace({
-        ...result.trace,
-        metadata: { ...result.trace.metadata, fileName: file.name, importKind: result.kind },
-      });
+      const imports = await Promise.all(Array.from(files).map(async (file) => {
+        const result = importPiJsonl(await file.text());
+        result.trace.metadata = { ...result.trace.metadata, fileName: file.name, importKind: result.kind };
+        return result;
+      }));
+      const runtime = imports.find((item) => item.kind === 'runtime')?.trace;
+      const session = imports.find((item) => item.kind === 'session')?.trace;
+      if (runtime && session) setTrace(mergePiTraces(runtime, session));
+      else setTrace(imports[0].trace);
     } catch (error) {
       window.alert(error instanceof Error ? error.message : String(error));
     }
@@ -84,13 +89,13 @@ export function App() {
         <div className="top-actions">
           <button className="ghost" onClick={() => setTrace(load(demoRuntime))}>Demo run</button>
           <button className="primary" onClick={() => inputRef.current?.click()}>Import Pi JSONL</button>
-          <input ref={inputRef} type="file" accept=".jsonl,.json,.txt" hidden onChange={(event) => onFile(event.target.files?.[0])} />
+          <input ref={inputRef} type="file" accept=".jsonl,.json,.txt" multiple hidden onChange={(event) => onFiles(event.target.files)} />
         </div>
       </header>
 
       <section className="hero-copy">
         <div>
-          <span className="status-pill">{trace.source === 'pi-runtime' ? 'Runtime replay' : 'Session reconstruction'}</span>
+          <span className="status-pill">{trace.source === 'pi-runtime' ? 'Runtime replay' : trace.source === 'pi-session' ? 'Session reconstruction' : 'Combined replay'}</span>
           <h2>{explanation?.title ?? 'Drop a Pi run into the city'}</h2>
           <p>{explanation?.plain ?? 'Pi City converts raw runtime evidence into a replayable semantic trace.'}</p>
         </div>
@@ -112,7 +117,7 @@ export function App() {
 
       <section className="workspace">
         <div className="stage-card">
-          {tab === 'world' && <World active={activeDistrict} eventType={frame?.event.type} artifact={worldCue?.artifact} action={worldCue?.action} />}
+          {tab === 'world' && <PiCityScene event={frame?.event} />}
           {tab === 'session' && <SessionTree trace={trace} activeArtifactId={frame?.event.artifactId} />}
           {tab === 'context' && <ContextView trace={trace} frames={frames} activeIndex={index} />}
           {tab === 'timeline' && (

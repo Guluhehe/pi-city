@@ -23,7 +23,7 @@ export type SemanticEventType =
   | 'THINKING_LEVEL_CHANGED';
 
 export type EvidenceLevel = 'observed' | 'derived' | 'synthetic';
-export type EvidenceSource = 'pi-runtime' | 'pi-session' | 'demo';
+export type EvidenceSource = 'pi-runtime' | 'pi-session' | 'pi-combined' | 'demo';
 
 export interface SemanticEvidence {
   level: EvidenceLevel;

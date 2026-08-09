@@ -34,13 +34,19 @@ Validated:
 - raw Pi evidence view
 - compact World view driven by semantic district state
 
-### Next integration
+### Integrated in this iteration
 
-- reconnect Three.js harbor to replay frames
+- data-driven Three.js harbor connected to replay frames through World Cues
 - Session Tree panel driven by imported `id` / `parentId`
-- Context panel that clearly labels reconstructed vs directly instrumented context
+- Context panel that labels reconstructed vs directly instrumented context
+- combined runtime + Session replay
+- imported file metadata and import diagnostics
+
+### Remaining v0.1 validation
+
 - validate against real exported Pi sessions/runtime logs
-- preserve imported file metadata and import diagnostics
+- tune camera/logistics against long multi-tool traces
+- improve import pairing/correlation for complex sessions
 
 ## v0.2
 

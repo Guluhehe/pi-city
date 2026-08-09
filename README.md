@@ -21,7 +21,7 @@ The harbor rendering spikes proved the visual language. v0.1 is now focused on t
 - Correlate tool lifecycle with `toolCallId`.
 - Distinguish **Observed / Derived / Synthetic** replay evidence.
 - Build deterministic replay frames with cumulative runtime state.
-- Import a local file in the browser.
+- Import one Pi file, or select a runtime + Session pair for a combined replay.
 - Scrub a generated timeline.
 - Inspect semantic payload and raw Pi evidence.
 - Switch between a compact world view, timeline, and evidence view.
@@ -49,7 +49,7 @@ Pi Session JSONL ---------┘                         │
                                                    └─> Inspector
 ```
 
-The future Three.js harbor plugs into `Replay Frames`; it should not need to understand Pi RPC event names.
+The procedural Three.js harbor now plugs into `Replay Frames` through `WorldCue`; it does not need to understand Pi RPC event names.
 
 ## Run locally
 
@@ -58,7 +58,7 @@ npm install
 npm run dev
 ```
 
-Then open the Vite URL shown in the terminal. The app starts with the bundled auth-bug runtime fixture. Use **Import Pi JSONL** to load another Session or runtime log.
+Then open the Vite URL shown in the terminal. The app starts with the bundled auth-bug runtime fixture. Use **Import Pi JSONL** to load another Session or runtime log. You can also select a runtime JSONL and its Session JSONL together; Pi City merges live lifecycle evidence with durable Session nodes.
 
 Useful checks:
 
@@ -75,7 +75,7 @@ fixtures/auth-bug/       Runtime + Session fixtures
 src/
   adapters/pi/            JSONL detection + Pi normalization
   semantic-trace/         Runtime-neutral schema, reducer, explanations
-  world/                  Three.js / R3F harbor runtime (next integration)
+  world/                  Data-driven Three.js / R3F harbor runtime
   timeline/               Replay controls
   inspector/              Evidence explanation
   App.tsx                 v0.1 import/replay shell
@@ -138,10 +138,11 @@ Do not upload only the files through the GitHub website if you want to keep the 
 - [x] evidence-level model
 - [x] deterministic replay frames
 - [x] file import + timeline + inspector shell
-- [ ] reconnect the Three.js harbor to real replay frames
+- [x] reconnect the Three.js harbor to real replay frames
 - [x] Session tree view
 - [x] Context reconstruction/detail view
 - [ ] real Pi sample validation beyond fixtures
+- [x] combine runtime + Session evidence into one replay
 
 ### v0.2
 
