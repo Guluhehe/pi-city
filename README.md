@@ -180,3 +180,16 @@ Do not upload only the files through the GitHub website if you want to keep the 
 ## Integrated Alpha
 
 See `docs/integrated-alpha.md` for the world-first journey contract and the three required aha moments.
+
+
+## Online Beta
+
+`site-beta/` is the zero-dependency deployment build for Pi City v0.3. It preserves the world-first guided replay, Story Rail, Inspector, Aha moments, Context Compare, and basic Pi runtime JSONL import in a self-contained static site.
+
+Preview it locally:
+
+```bash
+python3 -m http.server 8080 -d site-beta
+```
+
+The production React/Three.js application remains the main implementation. The static beta exists so product experience can be tested online before the final GLB/Three.js asset pipeline is complete.
