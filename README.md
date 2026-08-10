@@ -1,6 +1,6 @@
 # Pi City
 
-**Current milestone: v0.10 Canonical Frames Beta — three deterministic Photo Mode checkpoints for Arrival Harbor, Context Works, and Model Core, backed by actual GLB camera-projection checks.**
+**Current milestone: v0.11 Trustworthy Public Beta — guided lessons only when traces are compatible, unmatched imports keep Evidence Explorer truth, deployment-neutral CI, redacted real fixtures, and browser acceptance.**
 
 **A playable visualization of how AI agents actually run.**
 
@@ -8,9 +8,15 @@ Pi City turns agent runtime behavior into a living harbor city. Requests arrive 
 
 ## Current milestone
 
+### v0.11 Beta — Trustworthy Public Beta
+
+V0.11 closes the Milestone A honesty gap. Guided cinematic playback is selected only when an imported Pi run is compatible with a declared lesson scenario. Incompatible runs open the Evidence Explorer with an explicit truth-preserving notice instead of receiving fabricated auth narration. Visible model/tool totals come from `analyzeRun(trace)`. GitHub is the repository and CI home; hosting stays provider-neutral. Redacted real Session fixtures and Playwright smoke coverage gate the beta.
+
+See [`docs/deployment.md`](docs/deployment.md), [`docs/browser-acceptance-v011.md`](docs/browser-acceptance-v011.md), and [`docs/plans/2026-08-10-v011-trustworthy-public-beta.md`](docs/plans/2026-08-10-v011-trustworthy-public-beta.md).
+
 ### v0.10 Beta — Canonical Frames
 
-V0.10 turns the three most important visual beats into explicit review surfaces. The deployable beta now has a Photo Mode for **Arrival / Context / Model**, direct `?frame=` deep links, keyboard switching (`1/2/3`), and a clean-frame toggle (`H`). The camera presets were retuned against the actual GLB vertex bounds at 16:9 so the hero assets are intentionally framed before foreground occlusion, DOF, and motion are added.
+V0.10 turns the three most important visual beats into explicit review surfaces. The Vite product shell has a Photo Mode for **Arrival / Context / Model**, direct `?frame=` deep links, keyboard switching (`1/2/3`), and a clean-frame toggle (`H`). The camera presets were retuned against the actual GLB vertex bounds at 16:9 so the hero assets are intentionally framed before foreground occlusion, DOF, and motion are added.
 
 See [`docs/canonical-frames-v010.md`](docs/canonical-frames-v010.md).
 
@@ -66,6 +72,9 @@ The bundled auth-bug journey is intentionally paced at about **65 seconds** at 1
 - Distinguish **Observed / Derived / Synthetic** replay evidence.
 - Build deterministic replay frames with cumulative runtime state.
 - Import a local file in the browser.
+- Select a guided cinematic scenario only when the trace is compatible.
+- Fall back to Evidence Explorer for incompatible imports without inventing narration.
+- Redact secrets, paths, emails, and raw file contents before committing real fixtures.
 - Scrub a generated timeline.
 - Inspect semantic payload and raw Pi evidence.
 - Switch between synchronized World, Story, Session, Context, Compare, and Events views.
@@ -74,6 +83,8 @@ The bundled auth-bug journey is intentionally paced at about **65 seconds** at 1
 - Reconstruct model-call Context snapshots and compare newly added evidence.
 - Explain both **what happened** and **why it matters** in the Inspector.
 - Handle multi-tool turns without exposing every runtime event as a top-level story step.
+- Landing, Watch, Photo Mode, Explore, and Evidence Explorer in the Vite product shell.
+- Browser smoke coverage for the cinematic shell and import routing.
 
 ## Product principles
 
@@ -89,7 +100,7 @@ The bundled auth-bug journey is intentionally paced at about **65 seconds** at 1
 
 ## Architecture
 
-The path from the current replay demo to a maintainable game-based learning system is documented in [`docs/architecture-evolution.md`](docs/architecture-evolution.md). **Milestone A — One Core** is in progress: Vite is the maintained product runtime and Pages deploy target; declarative shot/scenario data lives in `src/experience/`.
+The path from the current replay demo to a maintainable game-based learning system is documented in [`docs/architecture-evolution.md`](docs/architecture-evolution.md). **Milestone A — One Core** is effectively closed for the product shell: Vite is the maintained runtime; GitHub runs deployment-neutral CI; hosting stays provider-neutral; declarative shot/scenario data lives in `src/experience/`.
 
 ```text
 Pi Runtime JSONL ---------┐
@@ -121,8 +132,11 @@ npm run check:core
 npm test
 npm run typecheck
 npm run build
+npm run test:e2e
 npm run setup:visual   # once
 npm run check:frames
+npm run check:ci       # core + unit tests + types + build
+npm run check:all      # check:ci + canonical frame geometry checks
 ```
 
 Requires Node.js 20+. Visual geometry checks also need Python 3 + `npm run setup:visual`.
@@ -132,18 +146,23 @@ Requires Node.js 20+. Visual geometry checks also need Python 3 + `npm run setup
 ```text
 fixtures/auth-bug/       Minimal tool-loop Runtime + Session fixture
 fixtures/multi-tool/      Multi-tool inspect/change/verify fixture
+fixtures/real-read/       Redacted real Pi Session (inspect/read-heavy)
+fixtures/real-multi/      Redacted real Pi Session (change/verify mix)
 fixtures/malformed/       Damaged JSONL for import reliability tests
 src/
-  adapters/pi/            JSONL detection + Pi normalization
+  adapters/pi/            JSONL detection + Pi normalization + redaction
   semantic-trace/         Runtime-neutral schema, reducer, explanations
   analysis/               Run summary, Story Timeline, Context snapshots/diff
-  experience/             Shared shots, scenarios, canonical frames
+  experience/             Shared shots, scenarios, compatibility, canonical frames
+  product/                Cinematic Landing / Watch / Photo / Explore shell
   world/                  Three.js / R3F harbor runtime
-  App.tsx                 Real Run Explorer shell
+  App.tsx                 Surface router + Evidence Explorer
 public/experience/        Exported library.json for visual checks
 
 docs/
   architecture-evolution.md
+  deployment.md
+  browser-acceptance-v011.md
   product-vision.md
   world-model.md
   semantic-trace.md
@@ -261,7 +280,7 @@ Legacy static prototypes remain archived in-repo:
 
 - `site-beta/` — zero-dependency v0.3 fallback
 - `site-visual-beta/` — v0.5 asset-based visual build
-- `site-live-beta/` — v0.10 cinematic Canonical Frames prototype (no longer the Pages source)
+- `site-live-beta/` — v0.10 cinematic Canonical Frames prototype (archive only)
 
 Preview the archived live beta:
 
@@ -269,4 +288,4 @@ Preview the archived live beta:
 python3 -m http.server 8080 -d site-live-beta
 ```
 
-The next product gap to close is bringing Photo Mode / duration-driven Watch / spatial Explore from that prototype into the Vite shell while keeping the Semantic Trace pipeline as the only normalizer.
+The maintained product surfaces (Landing, Watch, Photo Mode, Explore, Evidence Explorer) already live in the Vite shell. Next work should deepen real-runtime fixtures, optional hosting adapters, and Branch / Compaction exhibits without reopening a second product runtime.

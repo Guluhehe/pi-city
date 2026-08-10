@@ -90,19 +90,30 @@ Implemented the Pi runtime/session importer, tolerant JSONL parsing, Semantic Tr
 - [ ] tune focus / aperture from a normal desktop WebGL render
 - [x] expose deterministic canonical frame presets for Arrival / Context / Model
 
-## v0.10 — Canonical Frames — current
+## v0.10 — Canonical Frames
 
 - [x] Photo Mode entry from landing and top controls
 - [x] direct `?frame=arrival|context|model` deep links
 - [x] keyboard frame switching and clean-overlay toggle
 - [x] project actual GLB geometry through canonical 16:9 cameras
 - [x] retune Context / Model shots to avoid geometric crop risk
-- [ ] capture the three frames in a normal desktop WebGL browser
-- [ ] perform final color / matte / DOF tuning from those captures
+- [x] capture the three frames in a Chromium WebGL acceptance pass
+- [ ] perform final color / matte / DOF tuning across non-Apple GPUs
 
-### Validation gate before v0.11
+## v0.11 — Trustworthy Public Beta — current
 
-- obtain a real public URL or normal desktop WebGL preview
-- tune matte/realtime blend from actual rendered screenshots
-- tune material-weathering strength per browser/GPU
-- test at least two real Pi runtime logs before adding Branch / Compaction
+- [x] deployment-neutral GitHub CI (`check:ci`) without required hosting
+- [x] explicit scenario compatibility; no silent auth narration for unmatched traces
+- [x] import routing to guided city lessons or Evidence Explorer
+- [x] factual model/tool totals from `analyzeRun(trace)`
+- [x] safe redaction boundary + approved real Session fixtures
+- [x] Playwright browser smoke coverage for Landing / Watch / Photo / Explore / import
+- [x] root and subpath production builds verified
+- [ ] choose and enable an optional public host adapter when ready
+- [ ] capture additional real **runtime** JSONL fixtures for guided lessons
+
+### Validation gate before Branch / Compaction
+
+- keep Guided lessons scenario-compatible only
+- prefer runtime JSONL for cinematic lessons; Session remains explorer-grade evidence
+- optional host adapters stay inactive until deliberately chosen

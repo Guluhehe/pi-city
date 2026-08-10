@@ -1,56 +1,55 @@
-# GitHub Pages deployment
+# GitHub Pages deployment (optional)
 
-Pi City deploys the **Vite application** to GitHub Pages.
+Pi City's source of truth is the Vite app. GitHub is the canonical repository and CI platform. GitHub Pages is only an optional static host if you choose to enable it — the repository itself does not imply a fixed public site URL.
 
-## Deployment contract
+Canonical deployment contracts live in [`deployment.md`](deployment.md). This page documents the optional Pages adapter only.
+
+## Optional Pages adapter contract
 
 ```text
 main
   ↓
-.github/workflows/deploy-pages.yml
+.github/workflows/deploy-pages.yml  (draft / opt-in only)
   ↓
 npm ci → check:core → test → typecheck → build
   ↓
 actions/upload-pages-artifact (dist/)
   ↓
-GitHub Pages
+GitHub Pages (if enabled)
 ```
 
-The workflow sets `VITE_BASE=/pi-city/` so assets resolve under the project subpath.
-
-Expected project-site shape for `Guluhehe/pi-city`:
-
-```text
-https://guluhehe.github.io/pi-city/
-```
+Set `VITE_BASE` to match the host path (for a project Pages site under `/pi-city/`, use `VITE_BASE=/pi-city/`). The deployment-neutral CI workflow does not set a host-specific base.
 
 ## Local production preview
 
 ```bash
 npm ci
-VITE_BASE=/pi-city/ npm run build
+npm run build
 npm run preview
 ```
 
-Then open the preview URL (Vite will serve under `/pi-city/`).
+For a subpath host, build with the matching base:
+
+```bash
+VITE_BASE=/pi-city/ npm run build
+```
 
 ## Legacy static prototypes
 
-`site-live-beta/`, `site-visual-beta/`, and `site-beta/` remain in the repository as historical prototypes. They are no longer the Pages deployment source. See `site-live-beta/README.md`.
+`site-live-beta/`, `site-visual-beta/`, and `site-beta/` remain in the repository as historical prototypes. They are no longer a required deployment source. See `site-live-beta/README.md`.
 
 ## Clean setup checklist
 
 ```bash
 npm ci
-npm run check:core
-npm test
-npm run typecheck
-npm run build
+npm run check:ci
 npm run setup:visual   # once, for GLB geometry checks
 npm run check:frames
+npm run test:e2e
 ```
 
 Supported toolchain:
 
 - Node.js 20+
 - Python 3.11+ (only required for `check:frames` / `setup:visual`)
+- Playwright Chromium (only required for `test:e2e`)

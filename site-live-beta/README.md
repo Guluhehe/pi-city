@@ -2,7 +2,7 @@
 
 This directory is a **historical deployable prototype** for the v0.6–v0.10 cinematic harbor experience.
 
-As of Milestone A (One Core), the maintained product runtime is the Vite application in `src/`. GitHub Pages now builds and deploys `dist/` from that app.
+As of Milestone A (One Core), the maintained product runtime is the Vite application in `src/`. Optional static hosting can deploy that app's `dist/` output; this directory is archive only.
 
 Do not add new product logic here. Shot / scenario / canonical-frame data now lives in:
 

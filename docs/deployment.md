@@ -41,3 +41,7 @@ For the optional Pages adapter notes, see [`github-pages.md`](github-pages.md).
 ## CI vs deploy
 
 Pull requests and pushes to `main` run deployment-neutral verification via `.github/workflows/ci.yml` (`npm run check:ci`). That workflow does not deploy and does not set a host-specific `VITE_BASE`.
+
+Browser smoke coverage is local/CI-optional via `npm run test:e2e` / `npm run check:browser`. Geometry frame checks remain in `npm run check:all`.
+
+Guided cinematic lessons require scenario compatibility. Unmatched imports use Evidence Explorer without fabricated narration. See the v0.11 browser acceptance notes in [`browser-acceptance-v011.md`](browser-acceptance-v011.md).

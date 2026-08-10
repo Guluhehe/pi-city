@@ -1,7 +1,7 @@
 # Pi City Architecture Evolution
 
-**Status:** In progress — Milestone A (One Core) underway  
-**Scope:** Evolve the current playable visualization into a maintainable, game-based explanation of how Pi Agents work.  
+**Status:** Milestone A (One Core) accepted for the product shell — v0.11 trustworthy public beta
+**Scope:** Evolve the current playable visualization into a maintainable, game-based explanation of how Pi Agents work.
 **Primary constraint:** Preserve technical truth while adding player agency.
 
 ### Milestone A progress (current)
@@ -9,20 +9,20 @@
 Done:
 
 - Semantic Trace envelope now carries `schemaVersion` + `adapterVersion`
-- Declarative experience modules live in `src/experience/` (shots, scenarios, canonical frames, districts)
-- Vite app consumes the shared shot library; Python frame checks read `public/experience/library.json`
+- Declarative experience modules live in `src/experience/` (shots, scenarios, compatibility, canonical frames, districts)
+- Vite app is the maintained product runtime with Landing, Watch, Photo Mode, Explore, and Evidence Explorer
 - Dependencies are pinned; `package-lock.json` is committed
 - Malformed JSONL fixtures + import completeness reporting
-- GitHub Pages workflow builds and deploys the Vite `dist/` output
+- Deployment-neutral GitHub CI verifies core, tests, types, and `dist/` build
+- Hosting stays provider-neutral; GitHub Pages is an optional adapter only
+- Guided scenarios require explicit compatibility; unmatched traces keep Evidence Explorer truth
+- Redacted real Session fixtures (`fixtures/real-read`, `fixtures/real-multi`)
+- Browser acceptance smoke coverage documented in `docs/browser-acceptance-v011.md`
 
-Recently completed:
+Still open after A:
 
-- Vite product shell now includes Landing, duration-driven Watch (~65s), Photo Mode (`?frame=` / 1·2·3·H), and spatial Explore
-- Evidence Explorer remains available as a secondary surface over the same Semantic Trace pipeline
-
-Still open before A is fully accepted:
-
-- Capture 1–2 real Pi runs as fixtures beyond the synthetic auth/multi sets
+- Optional public host adapter selection (Pages / Vercel / Netlify / CDN)
+- Additional real **runtime** JSONL fixtures for guided cinematic lessons
 - Optional: projected Explore hotspots over the canvas (district bar + copy already ship)
 
 ## Product thesis
@@ -72,7 +72,7 @@ The deployed `site-live-beta/index.html` independently implements runtime normal
 
 This creates semantic and visual drift. The same Pi log can eventually tell a different story in development and production.
 
-**Decision:** The Vite application should become the only maintained product runtime. GitHub Pages should deploy its generated static output. Existing static sites remain historical prototypes, not parallel sources of truth.
+**Decision:** The Vite application is the only maintained product runtime. `npm run build` produces a host-neutral `dist/` artifact. GitHub stores source and runs CI; any static host may optionally serve `dist/`. Existing static sites remain historical prototypes, not parallel sources of truth.
 
 ### 2. Evidence and gameplay are not separate domains
 
