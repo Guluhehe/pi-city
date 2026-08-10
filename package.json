@@ -16,7 +16,9 @@
     "check:frames": "bash scripts/run_canonical_frames.sh",
     "check:ci": "npm run check:core && npm test && npm run typecheck && npm run build",
     "check:all": "npm run check:core && npm test && npm run typecheck && npm run build && npm run check:frames",
-    "redact:fixture": "tsx scripts/redact_pi_fixture.ts"
+    "redact:fixture": "tsx scripts/redact_pi_fixture.ts",
+    "test:e2e": "playwright test",
+    "check:browser": "npm run build && npm run test:e2e"
   },
   "engines": {
     "node": ">=20"
@@ -28,12 +30,13 @@
     "three": "0.185.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "@types/three": "0.185.4",
+    "tsx": "4.23.11",
     "typescript": "7.0.2",
-    "vite": "8.2.1",
-    "tsx": "4.23.11"
+    "vite": "8.2.1"
   },
   "type": "module"
 }
