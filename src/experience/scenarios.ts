@@ -27,7 +27,9 @@ export interface LessonScenario {
   frames: LessonFrame[];
   before: string[];
   after: string[];
+  /** Teaching metadata for the bundled lesson — UI totals must come from analyzeRun(trace). */
   modelTotal: number;
+  /** Teaching metadata for the bundled lesson — UI totals must come from analyzeRun(trace). */
   toolTotal: number;
 }
 

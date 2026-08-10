@@ -75,3 +75,16 @@ export function selectCompatibleScenario(trace: SemanticTrace): LessonScenario |
 
   return best;
 }
+
+export type ImportedTraceDestination =
+  | { surface: 'city'; scenarioId: string }
+  | { surface: 'explorer'; reason: 'no-compatible-scenario' };
+
+/** Decide whether an imported trace can open a guided city lesson. */
+export function routeImportedTrace(trace: SemanticTrace): ImportedTraceDestination {
+  const scenario = selectCompatibleScenario(trace);
+  if (!scenario) {
+    return { surface: 'explorer', reason: 'no-compatible-scenario' };
+  }
+  return { surface: 'city', scenarioId: scenario.id };
+}

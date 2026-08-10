@@ -84,6 +84,16 @@ dt { color: #738073; } dd { margin: 0; color: #d7dacf; overflow-wrap: anywhere; 
 .transport span { color: #899389; font-size: 11px; min-width: 52px; text-align: right; }
 .play { min-width: 76px; background: #d4b66e; color: #17150f; border-color: #d4b66e; font-weight: 700; }
 .warning { margin-top: 12px; border: 1px solid #584a2e; background: #211d14; border-radius: 11px; padding: 10px 12px; color: #cabb91; font-size: 12px; }
+.import-fallback-notice {
+  margin: 0 0 14px;
+  border: 1px solid rgba(201, 168, 108, 0.35);
+  background: linear-gradient(180deg, rgba(48, 40, 24, 0.92), rgba(28, 24, 16, 0.92));
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #e6d7b0;
+  font-size: 13px;
+  line-height: 1.45;
+}
 footer { margin-top: 20px; color: #596259; font-size: 10px; text-transform: uppercase; letter-spacing: .12em; }
 
 @media (max-width: 980px) {

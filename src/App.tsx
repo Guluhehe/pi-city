@@ -35,14 +35,40 @@ function shortJson(value: unknown): string {
 
 export function App() {
   const [surface, setSurface] = useState<Surface>('city');
-  if (surface === 'city') {
-    return <CinematicCity onOpenExplorer={() => setSurface('explorer')} />;
+  const [explorerTrace, setExplorerTrace] = useState<SemanticTrace | null>(null);
+  const [explorerNotice, setExplorerNotice] = useState<string | null>(null);
+
+  function openExplorer(trace?: SemanticTrace, notice?: string) {
+    setExplorerTrace(trace ?? null);
+    setExplorerNotice(notice ?? null);
+    setSurface('explorer');
   }
-  return <EvidenceExplorer onBackToCity={() => setSurface('city')} />;
+
+  if (surface === 'city') {
+    return <CinematicCity onOpenExplorer={openExplorer} />;
+  }
+  return (
+    <EvidenceExplorer
+      onBackToCity={() => {
+        setExplorerNotice(null);
+        setSurface('city');
+      }}
+      initialTrace={explorerTrace}
+      notice={explorerNotice}
+    />
+  );
 }
 
-function EvidenceExplorer({ onBackToCity }: { onBackToCity: () => void }) {
-  const [trace, setTrace] = useState<SemanticTrace>(() => load(demoRuntime));
+function EvidenceExplorer({
+  onBackToCity,
+  initialTrace,
+  notice,
+}: {
+  onBackToCity: () => void;
+  initialTrace?: SemanticTrace | null;
+  notice?: string | null;
+}) {
+  const [trace, setTrace] = useState<SemanticTrace>(() => initialTrace ?? load(demoRuntime));
   const frames = useMemo(() => buildTraceFrames(trace), [trace]);
   const run = useMemo(() => analyzeRun(trace), [trace]);
   const story = useMemo(() => buildStory(trace), [trace]);
@@ -159,6 +185,12 @@ function EvidenceExplorer({ onBackToCity }: { onBackToCity: () => void }) {
             <Metric label="Session nodes" value={run.sessionEntries} />
           </div>
         </section>
+      )}
+
+      {notice && (
+        <div className="import-fallback-notice" role="status">
+          {notice}
+        </div>
       )}
 
       {tab === 'journey' ? (

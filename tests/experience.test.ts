@@ -6,6 +6,7 @@ import { CANONICAL_FRAMES } from '../src/experience/canonical-frames';
 import { mapLessonFramesToTrace } from '../src/experience/lesson-map';
 import {
   evaluateScenarioCompatibility,
+  routeImportedTrace,
   selectCompatibleScenario,
 } from '../src/experience/scenario-compatibility';
 import { getScenario, scenarioDurationMs } from '../src/experience/scenarios';
@@ -97,4 +98,34 @@ test('mapLessonFramesToTrace throws for incompatible traces', () => {
     () => mapLessonFramesToTrace(getScenario('auth'), incompleteTrace),
     /incompatible/i,
   );
+});
+
+test('routes auth fixture to guided city/auth', () => {
+  const trace = importPiJsonl(authRuntime).trace;
+  assert.deepEqual(routeImportedTrace(trace), { surface: 'city', scenarioId: 'auth' });
+});
+
+test('routes multi-tool fixture to guided city/multi', () => {
+  const trace = importPiJsonl(multiRuntime).trace;
+  assert.deepEqual(routeImportedTrace(trace), { surface: 'city', scenarioId: 'multi' });
+});
+
+test('routes session-only and incomplete traces to explorer', () => {
+  assert.deepEqual(routeImportedTrace(importPiJsonl(sessionOnlyFixture).trace), {
+    surface: 'explorer',
+    reason: 'no-compatible-scenario',
+  });
+  assert.deepEqual(routeImportedTrace(incompleteTrace), {
+    surface: 'explorer',
+    reason: 'no-compatible-scenario',
+  });
+});
+
+test('routing never defaults an unknown trace to auth', () => {
+  const destination = routeImportedTrace(incompleteTrace);
+  assert.notEqual(
+    destination.surface === 'city' ? destination.scenarioId : null,
+    'auth',
+  );
+  assert.equal(destination.surface, 'explorer');
 });

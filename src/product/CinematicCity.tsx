@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import demoRuntime from '../../fixtures/auth-bug/runtime.jsonl?raw';
 import { importPiJsonl } from '../adapters/pi/import';
+import { analyzeRun } from '../analysis/run';
 import { buildTraceFrames } from '../semantic-trace/reducer';
 import type { SemanticTrace } from '../semantic-trace/schema';
 import {
@@ -11,16 +12,22 @@ import {
   MODEL_GATES,
   beforeDurationMs,
   canonicalFrame,
+  evaluateScenarioCompatibility,
   getScenario,
-  lessonEvent,
+  mapLessonFramesToTrace,
+  routeImportedTrace,
   scenarioDurationMs,
   type CanonicalFrameKey,
   type ExperienceDistrict,
   type LessonFrame,
+  type LessonScenario,
 } from '../experience';
 import { PiCityScene } from '../world/PiCityScene';
 
 type ShellMode = 'landing' | 'watch' | 'explore' | 'photo' | 'complete';
+
+const IMPORT_FALLBACK_NOTICE =
+  'This run has no compatible guided lesson yet, so Pi City opened the evidence-preserving explorer instead of applying demo narration.';
 
 function loadDemo(): SemanticTrace {
   return importPiJsonl(demoRuntime).trace;
@@ -32,14 +39,20 @@ function readFrameQuery(): CanonicalFrameKey | null {
   return value && value in CANONICAL_FRAMES ? (value as CanonicalFrameKey) : null;
 }
 
-export function CinematicCity({ onOpenExplorer }: { onOpenExplorer: () => void }) {
-  const scenario = useMemo(() => getScenario('auth'), []);
+function toolLabel(count: number): string {
+  return `${count} tool call${count === 1 ? '' : 's'}`;
+}
+
+export function CinematicCity({
+  onOpenExplorer,
+}: {
+  onOpenExplorer: (trace?: SemanticTrace, notice?: string) => void;
+}) {
+  const [scenario, setScenario] = useState<LessonScenario>(() => getScenario('auth'));
   const [trace, setTrace] = useState<SemanticTrace>(() => loadDemo());
+  const run = useMemo(() => analyzeRun(trace), [trace]);
   const frames = useMemo(() => buildTraceFrames(trace), [trace]);
-  const lessonMap = useMemo(
-    () => scenario.frames.map((_, index) => lessonEvent(scenario, trace, index).traceIndex),
-    [scenario, trace],
-  );
+  const lessonMap = useMemo(() => mapLessonFramesToTrace(scenario, trace), [scenario, trace]);
 
   const [mode, setMode] = useState<ShellMode>(() => (readFrameQuery() ? 'photo' : 'landing'));
   const [index, setIndex] = useState(() => {
@@ -64,11 +77,9 @@ export function CinematicCity({ onOpenExplorer }: { onOpenExplorer: () => void }
   const frame = frames[Math.min(traceIndex, Math.max(frames.length - 1, 0))];
   const totalMs = scenarioDurationMs(scenario);
   const chapterIndex = scenario.story.findIndex(([title]) => title === lessonFrame?.chapter);
+  const authCompatible = evaluateScenarioCompatibility(getScenario('auth'), trace).compatible;
 
   useEffect(() => {
-    setIndex(0);
-    setPlaying(false);
-    setMode((current) => (current === 'photo' ? current : 'landing'));
     setLastChapter('');
     setShowCompare(false);
   }, [trace.id]);
@@ -129,7 +140,7 @@ export function CinematicCity({ onOpenExplorer }: { onOpenExplorer: () => void }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [mode]);
+  }, [mode, scenario.id, authCompatible]);
 
   function enterCity() {
     setMode('watch');
@@ -140,15 +151,25 @@ export function CinematicCity({ onOpenExplorer }: { onOpenExplorer: () => void }
     setPlaying(true);
   }
 
+  function ensureAuthPhotoDemo() {
+    if (scenario.id === 'auth' && authCompatible) return;
+    const authScenario = getScenario('auth');
+    const demo = loadDemo();
+    setScenario(authScenario);
+    setTrace(demo);
+  }
+
   function enterPhoto(key: CanonicalFrameKey) {
+    ensureAuthPhotoDemo();
     const target = canonicalFrame(key) ?? CANONICAL_FRAMES.arrival;
+    const authScenario = getScenario('auth');
     setCanonicalKey(target.key);
     setIndex(target.frameIndex);
     setPlaying(false);
     setFrameClean(false);
     setShowCompare(false);
     setMode('photo');
-    setLastChapter(scenario.frames[target.frameIndex]?.chapter ?? '');
+    setLastChapter(authScenario.frames[target.frameIndex]?.chapter ?? '');
     const url = new URL(window.location.href);
     url.searchParams.set('frame', target.key);
     window.history.replaceState({}, '', url);
@@ -176,6 +197,12 @@ export function CinematicCity({ onOpenExplorer }: { onOpenExplorer: () => void }
     if (!files?.length) return;
     try {
       const result = importPiJsonl(await files[0].text());
+      const destination = routeImportedTrace(result.trace);
+      if (destination.surface === 'explorer') {
+        onOpenExplorer(result.trace, IMPORT_FALLBACK_NOTICE);
+        return;
+      }
+      setScenario(getScenario(destination.scenarioId));
       setTrace(result.trace);
       setMode('watch');
       setCinema(true);
@@ -207,7 +234,7 @@ export function CinematicCity({ onOpenExplorer }: { onOpenExplorer: () => void }
         <div className="cinematic-top-actions">
           <button onClick={() => enterPhoto('arrival')}>Photo Mode</button>
           <button onClick={() => inputRef.current?.click()}>Import Pi JSONL</button>
-          <button className="primary" onClick={onOpenExplorer}>Evidence Explorer</button>
+          <button className="primary" onClick={() => onOpenExplorer()}>Evidence Explorer</button>
           <input ref={inputRef} type="file" accept=".jsonl,.json,.txt" hidden onChange={(event) => onFiles(event.target.files)} />
         </div>
       </header>
@@ -229,8 +256,8 @@ export function CinematicCity({ onOpenExplorer }: { onOpenExplorer: () => void }
               <h2>A request has entered the harbor.</h2>
               <p>Follow one real Agent loop through history, context, model decisions, tools, and back again.</p>
               <div className="landing-metrics">
-                <span>{scenario.modelTotal} model calls</span>
-                <span>{scenario.toolTotal} tool call</span>
+                <span>{run.modelCalls} model calls</span>
+                <span>{toolLabel(run.toolCalls)}</span>
                 <span>~{Math.round(totalMs / 1000)} sec guided journey</span>
                 <span>Explore after replay</span>
               </div>
@@ -250,8 +277,8 @@ export function CinematicCity({ onOpenExplorer }: { onOpenExplorer: () => void }
               <h1>{scenario.title}</h1>
               <p>{lessonFrame.what}</p>
               <div className="micro">
-                <span>MODEL {frame?.state.modelCalls ?? 0}/{scenario.modelTotal}</span>
-                <span>TOOLS {frame?.state.toolCalls ?? 0}/{scenario.toolTotal}</span>
+                <span>MODEL {frame?.state.modelCalls ?? 0}/{run.modelCalls}</span>
+                <span>TOOLS {frame?.state.toolCalls ?? 0}/{run.toolCalls}</span>
                 <span>{playing ? 'FOLLOWING RUN' : 'PAUSED'}</span>
               </div>
             </div>
@@ -358,7 +385,7 @@ export function CinematicCity({ onOpenExplorer }: { onOpenExplorer: () => void }
               <button className="primary" onClick={() => { setMode('watch'); setCinema(true); setPlaying(true); setIndex(0); }}>
                 Replay
               </button>
-              <button onClick={onOpenExplorer}>Open Explorer</button>
+              <button onClick={() => onOpenExplorer()}>Open Explorer</button>
             </div>
           </>
         )}
@@ -367,12 +394,12 @@ export function CinematicCity({ onOpenExplorer }: { onOpenExplorer: () => void }
           <div className="cinematic-complete">
             <small>RUN COMPLETE</small>
             <h2>You just watched one Agent run become a city.</h2>
-            <p>{scenario.modelTotal} model calls · {scenario.toolTotal} tool call · {scenario.story.length} runtime phases</p>
+            <p>{run.modelCalls} model calls · {toolLabel(run.toolCalls)} · {scenario.story.length} runtime phases</p>
             <div className="complete-actions">
               <button className="primary" onClick={() => { setMode('watch'); setIndex(0); setPlaying(true); setCinema(true); }}>Replay</button>
               <button onClick={enterExplore}>Explore the city</button>
-              <button onClick={() => { setMode('watch'); setShowCompare(true); setPlaying(false); setIndex(10); }}>Compare Context</button>
-              <button onClick={onOpenExplorer}>Evidence Explorer</button>
+              <button onClick={() => { setMode('watch'); setShowCompare(true); setPlaying(false); setIndex(CANONICAL_FRAMES.context.frameIndex); }}>Compare Context</button>
+              <button onClick={() => onOpenExplorer()}>Evidence Explorer</button>
             </div>
           </div>
         )}
