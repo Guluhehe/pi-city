@@ -255,7 +255,7 @@ See `docs/integrated-alpha.md` for the world-first journey contract and the thre
 
 ## Deployable builds
 
-GitHub Pages now deploys the Vite build (`dist/`). See [`docs/github-pages.md`](docs/github-pages.md).
+The maintained app is the Vite build (`npm run build` → `dist/`). GitHub stores source and runs CI; hosting stays provider-neutral — see [`docs/deployment.md`](docs/deployment.md). GitHub Pages remains an optional adapter — see [`docs/github-pages.md`](docs/github-pages.md).
 
 Legacy static prototypes remain archived in-repo:
 

@@ -14,6 +14,7 @@
     "check:live": "python3 scripts/check_live_beta.py",
     "setup:visual": "python3 -m venv .venv-visual && .venv-visual/bin/pip install -r requirements-visual.txt",
     "check:frames": "bash scripts/run_canonical_frames.sh",
+    "check:ci": "npm run check:core && npm test && npm run typecheck && npm run build",
     "check:all": "npm run check:core && npm test && npm run typecheck && npm run build && npm run check:frames"
   },
   "engines": {
