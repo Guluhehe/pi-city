@@ -33,7 +33,7 @@ export const CANONICAL_FRAMES: Record<CanonicalFrameKey, CanonicalFrame> = {
   context: {
     key: 'context',
     scenarioId: 'auth',
-    frameIndex: 10,
+    frameIndex: 11,
     district: 'context',
     shotId: 'context-sealed',
     eyebrow: 'FRAME 02 · CONTEXT WORKS',
@@ -43,7 +43,7 @@ export const CANONICAL_FRAMES: Record<CanonicalFrameKey, CanonicalFrame> = {
   model: {
     key: 'model',
     scenarioId: 'auth',
-    frameIndex: 11,
+    frameIndex: 12,
     district: 'model',
     shotId: 'model-decision',
     eyebrow: 'FRAME 03 · MODEL CORE',

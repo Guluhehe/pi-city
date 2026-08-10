@@ -4,3 +4,4 @@ export * from './scenarios';
 export * from './canonical-frames';
 export * from './explore';
 export * from './lesson-map';
+export * from './scenario-compatibility';

@@ -1,35 +1,26 @@
 import type { SemanticEvent, SemanticTrace } from '../semantic-trace/schema';
+import { evaluateScenarioCompatibility } from './scenario-compatibility';
 import type { LessonFrame, LessonScenario } from './scenarios';
 
 /**
  * Align lesson presentation frames to Semantic Trace events by ordered type match.
- * Falls back to clamping when a teaching beat has no exact counterpart.
+ * Throws when the trace is incompatible — silent fallback is forbidden.
  */
 export function mapLessonFramesToTrace(
   scenario: LessonScenario,
   trace: SemanticTrace,
 ): number[] {
-  const counts = new Map<string, number>();
-  const typeIndexes = new Map<string, number[]>();
-
-  trace.events.forEach((event, index) => {
-    const list = typeIndexes.get(event.type) ?? [];
-    list.push(index);
-    typeIndexes.set(event.type, list);
-  });
-
-  let last = 0;
-  return scenario.frames.map((frame) => {
-    const seen = counts.get(frame.type) ?? 0;
-    counts.set(frame.type, seen + 1);
-    const candidates = typeIndexes.get(frame.type) ?? [];
-    const matched = candidates[seen];
-    if (typeof matched === 'number') {
-      last = matched;
-      return matched;
-    }
-    return Math.min(last, Math.max(trace.events.length - 1, 0));
-  });
+  const result = evaluateScenarioCompatibility(scenario, trace);
+  if (!result.compatible) {
+    const missing = result.missing
+      .map((beat) => `${beat.type}#${beat.occurrence}`)
+      .join(', ');
+    throw new Error(
+      `Scenario "${scenario.id}" is incompatible with this trace` +
+        (missing ? `; missing: ${missing}` : ''),
+    );
+  }
+  return result.eventIndexes;
 }
 
 export function lessonEvent(

@@ -293,7 +293,7 @@
     "context": {
       "key": "context",
       "scenarioId": "auth",
-      "frameIndex": 10,
+      "frameIndex": 11,
       "district": "context",
       "shotId": "context-sealed",
       "eyebrow": "FRAME 02 · CONTEXT WORKS",
@@ -303,7 +303,7 @@
     "model": {
       "key": "model",
       "scenarioId": "auth",
-      "frameIndex": 11,
+      "frameIndex": 12,
       "district": "model",
       "shotId": "model-decision",
       "eyebrow": "FRAME 03 · MODEL CORE",
@@ -351,18 +351,6 @@
           "durationMs": 4800
         },
         {
-          "type": "SESSION_NODE_ADDED",
-          "district": "session",
-          "chapter": "Understand the request",
-          "what": "The request is filed into Session Archive.",
-          "why": "Session preserves what happened as durable history.",
-          "why2": "History and Context are different objects.",
-          "evidence": "observed · session entry",
-          "artifact": "session-entry",
-          "cam": "session-close",
-          "durationMs": 3400
-        },
-        {
           "type": "CONTEXT_COMPILE_STARTED",
           "district": "context",
           "chapter": "Build the first Context",
@@ -400,6 +388,19 @@
           "gate": 0
         },
         {
+          "type": "MODEL_STREAMING",
+          "district": "model",
+          "chapter": "Inspect evidence",
+          "what": "Model Core streams its first decision.",
+          "why": "The live response shows the Agent committing to an inspect path.",
+          "why2": "Streaming is still part of the same model call.",
+          "evidence": "observed · model streaming",
+          "artifact": "work-order",
+          "cam": "model-decision",
+          "durationMs": 3400,
+          "gate": 0
+        },
+        {
           "type": "TOOL_CALL_CREATED",
           "district": "model",
           "chapter": "Inspect evidence",
@@ -407,6 +408,19 @@
           "why": "The model requests more evidence instead of answering immediately.",
           "why2": "Decision: inspect src/auth.ts.",
           "evidence": "observed · toolCall read",
+          "artifact": "work-order",
+          "cam": "model-gate",
+          "durationMs": 3000,
+          "gate": 0
+        },
+        {
+          "type": "MODEL_RESPONSE_COMPLETED",
+          "district": "model",
+          "chapter": "Inspect evidence",
+          "what": "The first model call finishes with a tool request.",
+          "why": "Pi closes the model response before the harness runs the tool.",
+          "why2": "Decision and execution are separate beats.",
+          "evidence": "observed · model response",
           "artifact": "work-order",
           "cam": "model-gate",
           "durationMs": 3000,
@@ -501,18 +515,6 @@
           "cam": "model-answer",
           "durationMs": 3600,
           "gate": 3
-        },
-        {
-          "type": "SESSION_NODE_ADDED",
-          "district": "session",
-          "chapter": "Answer the user",
-          "what": "The assistant response is added to Session history.",
-          "why": "The final response becomes durable history for future turns.",
-          "why2": "Session grows even after the model is done thinking.",
-          "evidence": "observed · assistant session entry",
-          "artifact": "answer",
-          "cam": "session-close",
-          "durationMs": 3000
         },
         {
           "type": "AGENT_SETTLED",

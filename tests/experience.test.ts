@@ -4,10 +4,36 @@ import { test } from 'node:test';
 import { importPiJsonl } from '../src/adapters/pi/import';
 import { CANONICAL_FRAMES } from '../src/experience/canonical-frames';
 import { mapLessonFramesToTrace } from '../src/experience/lesson-map';
+import {
+  evaluateScenarioCompatibility,
+  selectCompatibleScenario,
+} from '../src/experience/scenario-compatibility';
 import { getScenario, scenarioDurationMs } from '../src/experience/scenarios';
 import { EVENT_SHOT, SHOTS, shotForEventType } from '../src/experience/shots';
+import { SEMANTIC_TRACE_SCHEMA_VERSION, type SemanticTrace } from '../src/semantic-trace/schema';
 
 const runtime = readFileSync(new URL('../fixtures/auth-bug/runtime.jsonl', import.meta.url), 'utf8');
+const authRuntime = runtime;
+const multiRuntime = readFileSync(new URL('../fixtures/multi-tool/runtime.jsonl', import.meta.url), 'utf8');
+const sessionOnlyFixture = readFileSync(new URL('../fixtures/auth-bug/session.jsonl', import.meta.url), 'utf8');
+
+const incompleteTrace: SemanticTrace = {
+  schemaVersion: SEMANTIC_TRACE_SCHEMA_VERSION,
+  adapterVersion: 'test',
+  id: 'incomplete',
+  source: 'demo',
+  createdAt: 0,
+  events: [
+    {
+      id: 'e1',
+      type: 'REQUEST_ARRIVED',
+      evidence: { level: 'observed', source: 'demo' },
+      payload: {},
+    },
+  ],
+  warnings: [],
+  metadata: {},
+};
 
 test('auth lesson pacing remains the cinematic ~65s journey', () => {
   const auth = getScenario('auth');
@@ -39,5 +65,36 @@ test('lesson frames map onto the auth semantic trace without inventing indices',
   assert.equal(mapped.length, auth.frames.length);
   assert.ok(mapped.every((index) => index >= 0 && index < trace.events.length));
   assert.equal(trace.events[mapped[0]]?.type, 'REQUEST_ARRIVED');
-  assert.equal(trace.events[mapped[8]]?.type, 'TOOL_RESULT_ATTACHED');
+  assert.equal(trace.events[mapped[9]]?.type, 'TOOL_RESULT_ATTACHED');
+  for (let i = 1; i < mapped.length; i += 1) {
+    assert.ok(mapped[i] > mapped[i - 1], 'mapped indexes must advance chronologically');
+  }
+});
+
+test('selects auth only when every required auth beat exists', () => {
+  const trace = importPiJsonl(authRuntime).trace;
+  assert.equal(selectCompatibleScenario(trace)?.id, 'auth');
+});
+
+test('selects multi for the multi-tool fixture', () => {
+  const trace = importPiJsonl(multiRuntime).trace;
+  assert.equal(selectCompatibleScenario(trace)?.id, 'multi');
+});
+
+test('does not silently map an incompatible trace to auth', () => {
+  const trace = importPiJsonl(sessionOnlyFixture).trace;
+  assert.equal(selectCompatibleScenario(trace), null);
+});
+
+test('reports missing ordered event occurrences', () => {
+  const result = evaluateScenarioCompatibility(getScenario('auth'), incompleteTrace);
+  assert.equal(result.compatible, false);
+  assert.ok(result.missing.length > 0);
+});
+
+test('mapLessonFramesToTrace throws for incompatible traces', () => {
+  assert.throws(
+    () => mapLessonFramesToTrace(getScenario('auth'), incompleteTrace),
+    /incompatible/i,
+  );
 });
