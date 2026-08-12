@@ -34,6 +34,24 @@ test('imports a Pi runtime log into a settled semantic trace', () => {
   assert.equal(final?.settled, true);
 });
 
+test('derives deterministic trace identity from the exact imported source', () => {
+  const first = importPiJsonl(runtime).trace;
+  const second = importPiJsonl(runtime).trace;
+
+  assert.equal(first.sourceHash, '0f0b9ca2af4c264c612f01722880b7352fcec12615be43583debcbb41a19da52');
+  assert.equal(first.id, 'pi-runtime-0f0b9ca2af4c');
+  assert.deepEqual(first, second);
+});
+
+test('changes trace identity when the imported source bytes change', () => {
+  const original = importPiJsonl(runtime).trace;
+  const withTrailingNewline = importPiJsonl(`${runtime}\n`).trace;
+
+  assert.notEqual(withTrailingNewline.sourceHash, original.sourceHash);
+  assert.notEqual(withTrailingNewline.id, original.id);
+  assert.deepEqual(withTrailingNewline.events, original.events);
+});
+
 test('imports a Pi Session v3-style tree and preserves durable nodes', () => {
   const result = importPiJsonl(session);
   assert.equal(result.kind, 'session');
@@ -64,6 +82,17 @@ test('combines runtime lifecycle with durable Session nodes', () => {
   assert.equal(final?.toolCalls, 1);
   assert.equal(final?.toolResults, 1);
   assert.equal(final?.settled, true);
+});
+
+test('merges the same source traces into a deterministic combined trace', () => {
+  const runtimeTrace = importPiJsonl(runtime).trace;
+  const sessionTrace = importPiJsonl(session).trace;
+  const first = mergePiTraces(runtimeTrace, sessionTrace);
+  const second = mergePiTraces(runtimeTrace, sessionTrace);
+
+  assert.match(first.sourceHash ?? '', /^[a-f0-9]{64}$/);
+  assert.equal(first.id, `pi-combined-${first.sourceHash?.slice(0, 12)}`);
+  assert.deepEqual(first, second);
 });
 
 test('tolerates malformed JSONL lines and reports import completeness', () => {

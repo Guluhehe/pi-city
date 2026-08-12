@@ -1,6 +1,9 @@
 import type { SemanticEvent, SemanticTrace } from './schema';
 import { SEMANTIC_TRACE_SCHEMA_VERSION } from './schema';
 import { PI_ADAPTER_VERSION } from '../adapters/pi/version';
+import { sha256Hex } from '../adapters/pi/hash';
+
+const MISSING_TIMESTAMP_SORT = Number.MAX_SAFE_INTEGER;
 
 function runtimeToolKey(event: SemanticEvent): string | undefined {
   if (!event.toolCallId) return undefined;
@@ -36,18 +39,21 @@ export function mergePiTraces(runtime: SemanticTrace, session: SemanticTrace): S
   const ordered = [...runtime.events, ...sessionEvents]
     .map((event, order) => ({ event, order }))
     .sort((a, b) => {
-      const at = a.event.timestamp ?? Number.MAX_SAFE_INTEGER;
-      const bt = b.event.timestamp ?? Number.MAX_SAFE_INTEGER;
+      const at = a.event.timestamp ?? MISSING_TIMESTAMP_SORT;
+      const bt = b.event.timestamp ?? MISSING_TIMESTAMP_SORT;
       return at === bt ? a.order - b.order : at - bt;
     })
     .map(({ event }, index) => ({ ...event, id: `combined-${String(index + 1).padStart(4, '0')}-${event.id}` }));
 
+  const sourceHash = sha256Hex(`${runtime.sourceHash ?? runtime.id}\n${session.sourceHash ?? session.id}`);
+
   return {
     schemaVersion: SEMANTIC_TRACE_SCHEMA_VERSION,
     adapterVersion: PI_ADAPTER_VERSION,
-    id: `pi-combined-${Date.now()}`,
+    id: `pi-combined-${sourceHash.slice(0, 12)}`,
     source: 'pi-combined',
-    createdAt: Date.now(),
+    sourceHash,
+    createdAt: Math.max(runtime.createdAt, session.createdAt),
     events: ordered,
     warnings: [...runtime.warnings, ...session.warnings],
     metadata: {

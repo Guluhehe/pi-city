@@ -86,11 +86,11 @@ export function normalizePiRuntime(events: PiRuntimeEvent[]): SemanticTrace {
   const semantic: SemanticEvent[] = [];
   const warnings: TraceWarning[] = [];
   let currentTurn = -1;
-  let lastTimestamp = Date.now();
+  let lastTimestamp = 0;
 
   events.forEach((event, index) => {
     const ts = timestampOf(event.timestamp) ?? timestampOf(event.message?.timestamp) ?? lastTimestamp + index;
-    if (ts) lastTimestamp = ts;
+    lastTimestamp = ts;
     const sourceEvent = event;
     const push = (
       type: SemanticEventType,
@@ -271,7 +271,7 @@ export function normalizePiRuntime(events: PiRuntimeEvent[]): SemanticTrace {
           'derived',
           { messages: lastAgentEnd.messages, fallbackFrom: 'agent_end' },
           {
-            timestamp: (semantic.at(-1)?.timestamp ?? Date.now()) + 1,
+            timestamp: (semantic.at(-1)?.timestamp ?? 0) + 1,
             sourceEvent: lastAgentEnd,
             evidence: {
               source: 'pi-runtime',
@@ -289,9 +289,9 @@ export function normalizePiRuntime(events: PiRuntimeEvent[]): SemanticTrace {
   return {
     schemaVersion: SEMANTIC_TRACE_SCHEMA_VERSION,
     adapterVersion: PI_ADAPTER_VERSION,
-    id: `pi-runtime-${Date.now()}`,
+    id: 'pi-runtime-normalized',
     source: 'pi-runtime',
-    createdAt: Date.now(),
+    createdAt: Math.max(0, ...semantic.map((event) => event.timestamp ?? 0)),
     events: semantic,
     warnings,
     metadata: { rawEventCount: events.length },
@@ -486,7 +486,7 @@ export function normalizePiSession(entries: PiSessionEntry[]): SemanticTrace {
         'synthetic',
         { reason: 'end-of-import' },
         {
-          timestamp: (semantic.at(-1)?.timestamp ?? Date.now()) + 1,
+          timestamp: (semantic.at(-1)?.timestamp ?? 0) + 1,
           evidence: {
             source: 'pi-session',
             level: 'synthetic',
@@ -502,9 +502,9 @@ export function normalizePiSession(entries: PiSessionEntry[]): SemanticTrace {
   return {
     schemaVersion: SEMANTIC_TRACE_SCHEMA_VERSION,
     adapterVersion: PI_ADAPTER_VERSION,
-    id: `pi-session-${Date.now()}`,
+    id: 'pi-session-normalized',
     source: 'pi-session',
-    createdAt: Date.now(),
+    createdAt: Math.max(0, ...semantic.map((event) => event.timestamp ?? 0)),
     events: semantic,
     warnings,
     metadata: { rawEntryCount: entries.length },

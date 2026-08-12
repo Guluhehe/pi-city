@@ -1,5 +1,6 @@
 import type { EvidenceLevel, SemanticTrace, TraceWarning } from '../../semantic-trace/schema';
 import { asRuntimeEvents, detectPiImportKind, parseJsonl, splitSessionRecords } from './jsonl';
+import { sha256Hex } from './hash';
 import { normalizePiRuntime, normalizePiSession } from './normalize';
 import { PI_ADAPTER_VERSION } from './version';
 
@@ -46,9 +47,12 @@ function buildReport(
 export function importPiJsonl(text: string): PiImportResult {
   const parsed = parseJsonl(text);
   const kind = detectPiImportKind(parsed.records);
+  const sourceHash = sha256Hex(text);
 
   if (kind === 'runtime') {
     const trace = normalizePiRuntime(asRuntimeEvents(parsed.records));
+    trace.sourceHash = sourceHash;
+    trace.id = `pi-runtime-${sourceHash.slice(0, 12)}`;
     const runtimeHeader = parsed.records.find((record) => record && typeof record === 'object' && !Array.isArray(record) && (record as Record<string, unknown>).type === 'session');
     if (runtimeHeader) trace.metadata = { ...trace.metadata, sessionHeader: runtimeHeader };
     if (parsed.errors.length) {
@@ -68,6 +72,8 @@ export function importPiJsonl(text: string): PiImportResult {
   if (kind === 'session') {
     const { header, entries } = splitSessionRecords(parsed.records);
     const trace = normalizePiSession(entries);
+    trace.sourceHash = sourceHash;
+    trace.id = `pi-session-${sourceHash.slice(0, 12)}`;
     trace.metadata = { ...trace.metadata, sessionHeader: header, sessionEntries: entries };
     if (parsed.errors.length) {
       trace.warnings.push({
