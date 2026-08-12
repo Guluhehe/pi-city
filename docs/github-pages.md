@@ -36,7 +36,7 @@ VITE_BASE=/pi-city/ npm run build
 
 ## Legacy static prototypes
 
-`site-live-beta/`, `site-visual-beta/`, and `site-beta/` remain in the repository as historical prototypes. They are no longer a required deployment source. See `site-live-beta/README.md`.
+`legacy/site-live-beta/`, `legacy/site-visual-beta/`, and `legacy/site-beta/` remain as frozen historical prototypes. They are not deployment sources. See [`../legacy/README.md`](../legacy/README.md).
 
 ## Clean setup checklist
 

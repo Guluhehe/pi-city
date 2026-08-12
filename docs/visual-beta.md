@@ -34,4 +34,4 @@ The generated assets are intentionally deterministic so they can be rebuilt and 
 
 ## Deployable visual shell
 
-`site-visual-beta/` is a build-free deployment shell that loads the same local GLBs and a pinned Three.js build from a CDN. It preserves the guided runtime journey and Context Aha moments while making the visual beta deployable as a static site.
+Historical note: `site-visual-beta/` is now frozen at `legacy/site-visual-beta/`. It was a build-free deployment shell that loaded the same local GLBs and a pinned Three.js build from a CDN; it is no longer a supported deployment source.

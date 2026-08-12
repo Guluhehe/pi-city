@@ -100,7 +100,7 @@ Implemented the Pi runtime/session importer, tolerant JSONL parsing, Semantic Tr
 - [x] capture the three frames in a Chromium WebGL acceptance pass
 - [ ] perform final color / matte / DOF tuning across non-Apple GPUs
 
-## v0.11 — Trustworthy Public Beta — current
+## v0.11 — Trustworthy Public Beta
 
 - [x] deployment-neutral GitHub CI (`check:ci`) without required hosting
 - [x] explicit scenario compatibility; no silent auth narration for unmatched traces
@@ -111,6 +111,17 @@ Implemented the Pi runtime/session importer, tolerant JSONL parsing, Semantic Tr
 - [x] root and subpath production builds verified
 - [ ] choose and enable an optional public host adapter when ready
 - [ ] capture additional real **runtime** JSONL fixtures for guided lessons
+
+## v0.12 — Predict & Honesty — current
+
+- [x] event-derived narration and evidence labels for imported traces
+- [x] real Context Compare and reversible Photo Mode trace switching
+- [x] renderer ErrorBoundary with Evidence Explorer fallback
+- [x] trace-derived Predict checkpoints and pure Game Session reducer
+- [x] complete two-checkpoint Play & Predict browser journey
+- [x] deterministic `sourceHash`, trace ids, timestamps, and merges
+- [x] freeze static prototypes under `legacy/`
+- [ ] capture a redacted real **runtime** fixture for Predict acceptance
 
 ### Validation gate before Branch / Compaction
 

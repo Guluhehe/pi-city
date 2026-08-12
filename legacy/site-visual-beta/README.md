@@ -7,7 +7,7 @@ It contains local GLB Hero Buildings and the local concept matte. Three.js / GLT
 Serve the directory over HTTP:
 
 ```bash
-python3 -m http.server 8080 -d site-visual-beta
+python3 -m http.server 8080 -d legacy/site-visual-beta
 ```
 
 This build keeps the world-first replay, Story Rail, Inspector, Tool Result U-turn, Context Compare, runtime building activation and cinematic camera framing.

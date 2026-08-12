@@ -27,7 +27,7 @@ Do not skip ahead to Intervene / Debug / open-world features before Predict is r
 - Do not silently replace an imported user trace with demo narration or demo fixtures.
 - Guided cinematic copy may only claim details that the active trace actually supports.
 - Rendering consumes semantic events / shared shot specs — never Pi RPC event names.
-- Prefer one maintained Vite app. Treat `site-beta/`, `site-visual-beta/`, `site-live-beta/` as legacy prototypes.
+- Prefer one maintained Vite app. Treat `legacy/site-beta/`, `legacy/site-visual-beta/`, and `legacy/site-live-beta/` as frozen prototypes.
 - Do not introduce: multiplayer, accounts, cloud saves, ECS, custom backend, plugin marketplace, or a general Agent platform.
 
 ## Preferred next work

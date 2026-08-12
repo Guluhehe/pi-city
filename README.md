@@ -1,12 +1,18 @@
 # Pi City
 
-**Current milestone: v0.11 Trustworthy Public Beta — guided lessons only when traces are compatible, unmatched imports keep Evidence Explorer truth, deployment-neutral CI, redacted real fixtures, and browser acceptance.**
+**Current milestone: v0.12 Predict & Honesty — trace-derived narration, real Context Compare, reversible Photo Mode, renderer fallback, deterministic trace identity, and the first playable Predict lesson.**
 
 **A playable visualization of how AI agents actually run.**
 
 Pi City turns agent runtime behavior into a living harbor city. Requests arrive as cargo, session history grows in an archive, context is assembled in a works facility, model decisions open dispatch gates, and tools operate as workshops.
 
 ## Current milestone
+
+### v0.12 Beta — Predict & Honesty
+
+V0.12 makes the cinematic shell evidence-honest and advances the product ladder from Watch / Understand to its first playable mechanic. Imported traces now drive narration and evidence labels, Compare uses real Context snapshots, Photo Mode never silently replaces a user's trace, and renderer failures fall back to the Evidence Explorer. **Play & Predict** pauses at trace-supported decision checkpoints so the player can choose READ / EDIT / BASH / ANSWER before the observed action is revealed. Game state is a pure reducer outside the immutable Semantic Trace. Imported and merged traces now have deterministic SHA-256 identities.
+
+See [`docs/plans/2026-08-12-fable-v012-implementation.md`](docs/plans/2026-08-12-fable-v012-implementation.md) and [`docs/architecture-evolution.md`](docs/architecture-evolution.md).
 
 ### v0.11 Beta — Trustworthy Public Beta
 
@@ -58,7 +64,7 @@ Enter the city → Watch the loop → notice the U-turn → notice Context chang
 
 ### v0.6 Beta — Live Visual Beta
 
-The project now has two connected surfaces: the full React/Three.js Runtime Explorer and a deployable `site-live-beta/` experience. The live beta uses the v0.5 GLB Hero Buildings, the industrial-harbor concept matte, realtime water/port ecology, distinct information artifacts, duration-driven cinematic camera beats, Aha moments, Context Compare, runtime JSONL import, and a post-run Explore mode.
+Historically, v0.6 connected the React/Three.js Runtime Explorer to a deployable static `site-live-beta/` experiment. That prototype is now frozen under `legacy/site-live-beta/`; its visual work was folded into the maintained Vite app.
 
 The bundled auth-bug journey is intentionally paced at about **65 seconds** at 1× so the Agent loop can be understood by watching rather than by reading a trace.
 
@@ -71,6 +77,7 @@ The bundled auth-bug journey is intentionally paced at about **65 seconds** at 1
 - Correlate tool lifecycle with `toolCallId`.
 - Distinguish **Observed / Derived / Synthetic** replay evidence.
 - Build deterministic replay frames with cumulative runtime state.
+- Derive deterministic SHA-256 trace identities from exact import bytes.
 - Import a local file in the browser.
 - Select a guided cinematic scenario only when the trace is compatible.
 - Fall back to Evidence Explorer for incompatible imports without inventing narration.
@@ -83,7 +90,8 @@ The bundled auth-bug journey is intentionally paced at about **65 seconds** at 1
 - Reconstruct model-call Context snapshots and compare newly added evidence.
 - Explain both **what happened** and **why it matters** in the Inspector.
 - Handle multi-tool turns without exposing every runtime event as a top-level story step.
-- Landing, Watch, Photo Mode, Explore, and Evidence Explorer in the Vite product shell.
+- Landing, Watch, Predict, Photo Mode, Explore, and Evidence Explorer in the Vite product shell.
+- Recover from renderer failures into the evidence-first fallback.
 - Browser smoke coverage for the cinematic shell and import routing.
 
 ## Product principles
@@ -156,6 +164,7 @@ src/
   semantic-trace/         Runtime-neutral schema, reducer, explanations
   analysis/               Run summary, Story Timeline, Context snapshots/diff
   experience/             Shared shots, scenarios, compatibility, canonical frames
+  game/                   Pure Predict checkpoint compiler + Game Session reducer
   product/                Cinematic Landing / Watch / Photo / Explore shell
   world/                  Three.js / R3F harbor runtime
   App.tsx                 Surface router + Evidence Explorer
@@ -281,16 +290,16 @@ See `docs/integrated-alpha.md` for the world-first journey contract and the thre
 
 The maintained app is the Vite build (`npm run build` → `dist/`). GitHub stores source and runs CI; hosting stays provider-neutral — see [`docs/deployment.md`](docs/deployment.md). GitHub Pages remains an optional adapter — see [`docs/github-pages.md`](docs/github-pages.md).
 
-Legacy static prototypes remain archived in-repo:
+Legacy static prototypes remain archived in [`legacy/`](legacy/README.md):
 
-- `site-beta/` — zero-dependency v0.3 fallback
-- `site-visual-beta/` — v0.5 asset-based visual build
-- `site-live-beta/` — v0.10 cinematic Canonical Frames prototype (archive only)
+- `legacy/site-beta/` — zero-dependency v0.3 fallback
+- `legacy/site-visual-beta/` — v0.5 asset-based visual build
+- `legacy/site-live-beta/` — v0.10 cinematic Canonical Frames prototype
 
 Preview the archived live beta:
 
 ```bash
-python3 -m http.server 8080 -d site-live-beta
+python3 -m http.server 8080 -d legacy/site-live-beta
 ```
 
-The maintained product surfaces (Landing, Watch, Photo Mode, Explore, Evidence Explorer) already live in the Vite shell. Next work should deepen real-runtime fixtures, optional hosting adapters, and Branch / Compaction exhibits without reopening a second product runtime.
+The maintained product surfaces (Landing, Watch, Predict, Photo Mode, Explore, Evidence Explorer) live in the Vite shell. The next evidence gap is a privacy-reviewed real runtime fixture that can exercise the cinematic and Predict paths; advanced mechanics remain deferred.

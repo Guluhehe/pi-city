@@ -14,5 +14,5 @@ Do not add new product logic here. Shot / scenario / canonical-frame data now li
 Preview this archived build locally:
 
 ```bash
-python3 -m http.server 8080 -d site-live-beta
+python3 -m http.server 8080 -d legacy/site-live-beta
 ```

@@ -15,7 +15,7 @@ Make Pi City testable as a URL before the final high-fidelity asset pipeline is 
 
 ## Deployment architecture
 
-`site-beta/` is a self-contained static application with no CDN or npm dependency. This is intentional: it can be deployed to any static host and can serve as the source for a Sites deployment.
+Historical note: the original `site-beta/` is now frozen at `legacy/site-beta/`. It was a self-contained static application with no CDN or npm dependency; it is no longer a supported deployment source.
 
 The full product remains:
 

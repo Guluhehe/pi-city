@@ -17,7 +17,7 @@ The main application remains the React + React Three Fiber implementation. This 
 ## Preview locally
 
 ```bash
-python3 -m http.server 8080 -d site-beta
+python3 -m http.server 8080 -d legacy/site-beta
 ```
 
 Then open `http://localhost:8080`.
@@ -25,10 +25,10 @@ Then open `http://localhost:8080`.
 ## Deploy
 
 ### GitHub Pages
-Publish the `site-beta` directory as a static site (or copy it to a `gh-pages` branch root).
+Historical only: this prototype is frozen and should not be used as the current deployment source.
 
 ### Vercel / Netlify
-Set the project root/output to `site-beta`; no build command is required.
+Use the root Vite build (`npm run build` → `dist/`) for current deployments.
 
 ### ChatGPT Sites
 Use this folder as the deployment source when Sites is available in Work/Codex. The beta is self-contained and has no external runtime dependencies.

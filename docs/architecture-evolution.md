@@ -1,6 +1,6 @@
 # Pi City Architecture Evolution
 
-**Status:** Milestone A (One Core) accepted for the product shell — v0.11 trustworthy public beta
+**Status:** Milestone B started — v0.12 Predict & Honesty
 **Scope:** Evolve the current playable visualization into a maintainable, game-based explanation of how Pi Agents work.
 **Primary constraint:** Preserve technical truth while adding player agency.
 
@@ -18,6 +18,12 @@ Done:
 - Guided scenarios require explicit compatibility; unmatched traces keep Evidence Explorer truth
 - Redacted real Session fixtures (`fixtures/real-read`, `fixtures/real-multi`)
 - Browser acceptance smoke coverage documented in `docs/browser-acceptance-v011.md`
+- Imported cinematic narration and evidence labels are trace-derived
+- Context Compare reads real snapshots; Photo Mode trace replacement is explicit and reversible
+- Renderer failures preserve the lesson through the Evidence Explorer fallback
+- Predict checkpoints compile from trace evidence into a separate pure Game Session reducer
+- Imported and merged traces have deterministic SHA-256 identities
+- Static prototypes are frozen under `legacy/`; Vite remains the only maintained runtime
 
 Still open after A:
 
@@ -66,7 +72,7 @@ The most important asset is the Semantic Trace. It is the stable bridge between 
 
 ## Current architectural risks
 
-### 1. Two product runtimes
+### 1. Two product runtimes (resolved in v0.12)
 
 The React/Vite application uses the complete pipeline:
 
@@ -78,29 +84,29 @@ importPiJsonl
   -> React / Three.js
 ```
 
-The deployed `site-live-beta/index.html` independently implements runtime normalization, story construction, Context comparison, playback, camera shots, and canonical frames.
+The archived `legacy/site-live-beta/index.html` independently implements runtime normalization, story construction, Context comparison, playback, camera shots, and canonical frames.
 
-This creates semantic and visual drift. The same Pi log can eventually tell a different story in development and production.
+Keeping that prototype at the repository root created semantic and visual drift risk. It is now frozen under `legacy/` and excluded from product checks and deployment contracts.
 
 **Decision:** The Vite application is the only maintained product runtime. `npm run build` produces a host-neutral `dist/` artifact. GitHub stores source and runs CI; any static host may optionally serve `dist/`. Existing static sites remain historical prototypes, not parallel sources of truth.
 
-### 2. Evidence and gameplay are not separate domains
+### 2. Evidence and gameplay separation (resolved in v0.12)
 
-Today a Semantic Event directly drives explanation, timing, camera, UI, and animation. This is sufficient for a guided replay, but it cannot safely represent player decisions.
+Before v0.12 a Semantic Event directly drove explanation, timing, camera, UI, and animation. The Predict lesson now stores player decisions in a separate pure reducer while reading the trace as immutable input.
 
 Pi facts, reconstructed teaching semantics, player choices, and game feedback must remain distinguishable.
 
 **Decision:** Semantic Trace stays immutable. Gameplay is a separate deterministic state machine that reads the trace but never edits it.
 
-### 3. The trace schema is not versioned
+### 3. Trace versioning and identity (resolved)
 
-`SemanticEvent.payload` is currently a general record and `SemanticTrace` has no schema version. As real log formats evolve, old fixtures and replays will become ambiguous.
+`SemanticEvent.payload` remains a general record, but the envelope now carries schema and adapter versions plus a deterministic source identity. The broader discriminated-payload migration remains intentionally deferred.
 
-**Decision:** Add explicit trace and adapter versions before building a library of real runs.
+**Decision:** Keep schema and adapter versions explicit; derive imported trace ids from SHA-256 of the exact source bytes.
 
-### 4. The visual build can fail without a useful fallback
+### 4. Renderer failure fallback (resolved in v0.12)
 
-The current experience assumes WebGL, GLB loading, post-processing, and CDN module loading succeed. A rendering or asset failure can leave the teaching experience unusable.
+The 3D path still depends on WebGL and assets, but renderer failure is caught and offers Retry or a direct Evidence Explorer route with diagnostics.
 
 **Decision:** Treat the Story/Inspector projection as a functional fallback, not merely analysis chrome.
 
@@ -277,8 +283,8 @@ The second mechanic should be a **Context selection challenge**: the player choo
 - Build the Vite application for production.
 - Configure relative asset paths suitable for GitHub Pages.
 - Deploy the generated directory through GitHub Actions.
-- Stop adding product logic to `site-live-beta/index.html`.
-- Preserve `site-beta/`, `site-visual-beta/`, and `site-live-beta/` as versioned prototypes or archive them under a clearly named legacy directory.
+- Do not add product logic to `legacy/site-live-beta/index.html`.
+- Preserve `legacy/site-beta/`, `legacy/site-visual-beta/`, and `legacy/site-live-beta/` only as frozen historical prototypes.
 
 ### Reproducible dependencies
 
@@ -437,8 +443,8 @@ The architecture is succeeding when:
 5. A failed 3D renderer still leaves a usable teaching experience.
 6. The Inspector can always explain which claims are observed and which are reconstructed.
 
-## Immediate recommendation
+## Immediate recommendation (completed in v0.12)
 
 Do not add the next district or advanced mechanic first.
 
-Start with **Milestone A — One Core**, then implement one narrow **Predict the Agent's next action** lesson. This preserves the strongest existing asset—the Semantic Trace—while turning Pi City from a guided visualization into a real game-based learning system.
+Milestone A is closed and the narrow **Predict the Agent's next action** lesson now ships. Validate it with a privacy-reviewed real runtime fixture before expanding toward Intervene, Debug, or broader lesson mechanics.

@@ -1,5 +1,7 @@
 # Pi City v0.6 — Live Visual Beta
 
+> Historical document. The static build is frozen at `legacy/site-live-beta/`; the root Vite app and its `dist/` artifact are the only maintained product runtime.
+
 v0.6 is the first build designed around one question: **can someone open a URL and experience Pi City as a world, not as a trace viewer?**
 
 ## Experience contract
@@ -47,10 +49,10 @@ The static beta includes a small runtime JSONL normalizer so a Pi JSON event str
 
 ## Deployment
 
-`site-live-beta/` is a static directory. It can be uploaded to GitHub Pages, Vercel, Netlify, Cloudflare Pages, or ChatGPT Sites when a Sites publishing surface is available.
+`legacy/site-live-beta/` preserves the original static directory for inspection only.
 
-The repository includes `.github/workflows/deploy-pages.yml`. Once the repository is on GitHub and Pages is configured to use **GitHub Actions**, pushing `main` publishes `site-live-beta/` automatically.
+The original workflow targeted this static prototype. Current deployment contracts build the root Vite app and publish `dist/`; host selection remains explicit.
 
 ## Primary deployment: GitHub Pages
 
-v0.6 is Pages-first. `.github/workflows/deploy-pages.yml` deploys `site-live-beta/` directly with no build step. See `docs/github-pages.md` for the first-publish checklist and subpath constraints.
+V0.6 was Pages-first and deployed the static prototype directly. See `docs/github-pages.md` for the current optional adapter contract.
