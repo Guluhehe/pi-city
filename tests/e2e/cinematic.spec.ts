@@ -43,6 +43,17 @@ test('Watch can pause and resume', async ({ page }) => {
   await expect(page.locator('.cinematic-title .micro')).toContainText('FOLLOWING RUN');
 });
 
+test('cinematic Context Compare renders the real trace diff', async ({ page }) => {
+  await enterWatch(page);
+  await page.locator('.cinematic-transport input[type="range"]').fill('11');
+
+  const compare = page.locator('.cinematic-compare');
+  await expect(compare).toBeVisible({ timeout: 15_000 });
+  await expect(compare).toContainText('Context changed before Model #2');
+  await expect(compare.locator('.item.new')).toHaveText(['read call', 'read result']);
+  await expect(compare).not.toContainText('Current instructions');
+});
+
 test('canonical frame deep links open expected frames', async ({ page }) => {
   for (const [frame, eyebrow] of [
     ['arrival', 'FRAME 01 · ARRIVAL HARBOR'],

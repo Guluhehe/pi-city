@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import demoRuntime from '../../fixtures/auth-bug/runtime.jsonl?raw';
 import { importPiJsonl } from '../adapters/pi/import';
+import { buildContextSnapshots, compareContextSnapshots } from '../analysis/context';
 import { analyzeRun } from '../analysis/run';
 import { explainEvent } from '../semantic-trace/explain';
 import { buildTraceFrames } from '../semantic-trace/reducer';
@@ -55,6 +56,7 @@ export function CinematicCity({
   const [traceOrigin, setTraceOrigin] = useState<TraceOrigin>('bundled-demo');
   const run = useMemo(() => analyzeRun(trace), [trace]);
   const frames = useMemo(() => buildTraceFrames(trace), [trace]);
+  const contextSnapshots = useMemo(() => buildContextSnapshots(trace), [trace]);
   const lessonMap = useMemo(() => mapLessonFramesToTrace(scenario, trace), [scenario, trace]);
 
   const [mode, setMode] = useState<ShellMode>(() => (readFrameQuery() ? 'photo' : 'landing'));
@@ -89,6 +91,15 @@ export function CinematicCity({
   const visibleTitle = usesAuthoredNarration ? lessonFrame?.what : eventExplanation?.title;
   const visibleWhy = usesAuthoredNarration ? lessonFrame?.why : eventExplanation?.plain;
   const visibleWhy2 = usesAuthoredNarration ? lessonFrame?.why2 : eventExplanation?.why;
+  const compareCurrent = contextSnapshots.find((snapshot) => snapshot.eventIndex >= traceIndex)
+    ?? contextSnapshots.at(-1);
+  const comparePrevious = compareCurrent && compareCurrent.number > 1
+    ? contextSnapshots[compareCurrent.number - 2]
+    : undefined;
+  const contextDiff = compareCurrent
+    ? compareContextSnapshots(compareCurrent, comparePrevious)
+    : undefined;
+  const addedContextKeys = new Set(contextDiff?.added.map((item) => item.key) ?? []);
 
   useEffect(() => {
     setLastChapter('');
@@ -137,9 +148,13 @@ export function CinematicCity({
       setShowCompare(false);
       return;
     }
+    if (!playing) {
+      setShowCompare(true);
+      return;
+    }
     const timer = window.setTimeout(() => setShowCompare(true), 1450);
     return () => window.clearTimeout(timer);
-  }, [mode, lessonFrame, index]);
+  }, [mode, lessonFrame, index, playing]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -324,21 +339,23 @@ export function CinematicCity({
               </div>
             )}
 
-            {showCompare && (
+            {showCompare && contextDiff && (
               <div className="cinematic-compare">
                 <header>
-                  <strong>Context changed before Model #2</strong>
+                  <strong>Context changed before Model #{contextDiff.current.number}</strong>
                   <button onClick={() => setShowCompare(false)}>×</button>
                 </header>
                 <div className="compare-grid">
                   <div className="ctx">
-                    <small>MODEL #1</small>
-                    {scenario.before.map((item) => <div key={item} className="item">{item}</div>)}
+                    <small>MODEL #{contextDiff.previous?.number ?? '—'}</small>
+                    {(contextDiff.previous?.items ?? []).map((item) => (
+                      <div key={item.key} className="item">{item.label}</div>
+                    ))}
                   </div>
                   <div className="ctx">
-                    <small>MODEL #2</small>
-                    {scenario.after.map((item) => (
-                      <div key={item} className={`item ${item.startsWith('+') ? 'new' : ''}`}>{item}</div>
+                    <small>MODEL #{contextDiff.current.number}</small>
+                    {contextDiff.current.items.map((item) => (
+                      <div key={item.key} className={`item ${addedContextKeys.has(item.key) ? 'new' : ''}`}>{item.label}</div>
                     ))}
                   </div>
                 </div>

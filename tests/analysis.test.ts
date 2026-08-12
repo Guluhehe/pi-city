@@ -37,6 +37,24 @@ test('compares model-call contexts and surfaces newly returned evidence', () => 
 
 const multiToolRuntime = readFileSync(new URL('../fixtures/multi-tool/runtime.jsonl', import.meta.url), 'utf8');
 
+test('multi-tool context snapshots expose each newly returned action as evidence', () => {
+  const multiTrace = importPiJsonl(multiToolRuntime).trace;
+  const snapshots = buildContextSnapshots(multiTrace);
+  assert.equal(snapshots.length, 3);
+
+  const second = compareContextSnapshots(snapshots[1], snapshots[0]);
+  assert.deepEqual(
+    second.added.map((item) => item.label),
+    ['read call', 'grep call', 'read result', 'grep result'],
+  );
+
+  const third = compareContextSnapshots(snapshots[2], snapshots[1]);
+  assert.deepEqual(
+    third.added.map((item) => item.label),
+    ['edit call', 'bash call', 'edit result', 'bash result'],
+  );
+});
+
 test('keeps multi-tool work readable at the story layer', () => {
   const multiTrace = importPiJsonl(multiToolRuntime).trace;
   const analysis = analyzeRun(multiTrace);

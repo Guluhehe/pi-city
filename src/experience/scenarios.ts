@@ -25,8 +25,6 @@ export interface LessonScenario {
   narration: 'demo';
   story: Array<[string, ExperienceDistrict | string]>;
   frames: LessonFrame[];
-  before: string[];
-  after: string[];
   /** Teaching metadata for the bundled lesson — UI totals must come from analyzeRun(trace). */
   modelTotal: number;
   /** Teaching metadata for the bundled lesson — UI totals must come from analyzeRun(trace). */
@@ -80,8 +78,6 @@ export const LESSON_SCENARIOS: Record<string, LessonScenario> = {
       ['Answer the user', 'model'],
     ],
     frames: AUTH_BUG_FRAMES,
-    before: ['User request', 'Current instructions'],
-    after: ['User request', 'Current instructions', '+ Tool call: read(src/auth.ts)', '+ Tool result: auth.ts content'],
     modelTotal: 2,
     toolTotal: 1,
   },
@@ -97,8 +93,6 @@ export const LESSON_SCENARIOS: Record<string, LessonScenario> = {
       ['Answer the user', 'model'],
     ],
     frames: MULTI_TOOL_FRAMES,
-    before: ['User request', 'Read result', 'Grep result'],
-    after: ['User request', 'Read result', 'Grep result', '+ Edit result', '+ Bash verification'],
     modelTotal: 3,
     toolTotal: 4,
   },
