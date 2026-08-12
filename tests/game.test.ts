@@ -7,6 +7,11 @@ import {
   derivePredictCheckpointReport,
   derivePredictCheckpoints,
 } from '../src/game/checkpoints';
+import {
+  buildPredictDebrief,
+  createGameSession,
+  reduceGameSession,
+} from '../src/game/session';
 import type { SemanticTrace } from '../src/semantic-trace/schema';
 
 const authRuntime = readFileSync(new URL('../fixtures/auth-bug/runtime.jsonl', import.meta.url), 'utf8');
@@ -76,4 +81,59 @@ test('checkpoint derivation is deterministic and never mutates its trace', () =>
   const second = derivePredictCheckpointReport(trace);
   assert.deepEqual(first, second);
   assert.deepEqual(trace, before);
+});
+
+test('Game Session replays predictions deterministically into a decision-based debrief', () => {
+  const checkpoints = derivePredictCheckpoints(importPiJsonl(authRuntime).trace);
+  const actions = [
+    { type: 'REACH_CHECKPOINT' as const },
+    { type: 'PREDICT_NEXT_ACTION' as const, choice: 'read' as const },
+    { type: 'CONTINUE_REPLAY' as const },
+    { type: 'REACH_CHECKPOINT' as const },
+    { type: 'PREDICT_NEXT_ACTION' as const, choice: 'edit' as const },
+    { type: 'CONTINUE_REPLAY' as const },
+    { type: 'COMPLETE_RUN' as const },
+  ];
+  const replay = () => actions.reduce(
+    (state, action) => reduceGameSession(state, action, checkpoints),
+    createGameSession('auth', checkpoints),
+  );
+
+  const first = replay();
+  assert.deepEqual(first, replay());
+  assert.equal(first.phase, 'debrief');
+  assert.equal(first.runComplete, true);
+  assert.deepEqual(first.decisions.map(({ choice, actual, correct }) => ({ choice, actual, correct })), [
+    { choice: 'read', actual: 'read', correct: true },
+    { choice: 'edit', actual: 'answer', correct: false },
+  ]);
+  assert.deepEqual(buildPredictDebrief(first, checkpoints), {
+    total: 2,
+    correct: 1,
+    entries: first.decisions.map((decision) => ({
+      decision,
+      checkpoint: checkpoints[decision.checkpointIndex],
+    })),
+  });
+});
+
+test('Game Session rejects illegal transitions without allocating a new state', () => {
+  const checkpoints = derivePredictCheckpoints(importPiJsonl(authRuntime).trace);
+  const watch = createGameSession('auth', checkpoints);
+  assert.equal(
+    reduceGameSession(watch, { type: 'PREDICT_NEXT_ACTION', choice: 'read' }, checkpoints),
+    watch,
+  );
+  const predict = reduceGameSession(watch, { type: 'REACH_CHECKPOINT' }, checkpoints);
+  assert.equal(reduceGameSession(predict, { type: 'CONTINUE_REPLAY' }, checkpoints), predict);
+  const reveal = reduceGameSession(predict, { type: 'PREDICT_NEXT_ACTION', choice: 'read' }, checkpoints);
+  assert.equal(reduceGameSession(reveal, { type: 'REACH_CHECKPOINT' }, checkpoints), reveal);
+});
+
+test('COMPLETE_RUN waits for every reached checkpoint before entering debrief', () => {
+  const checkpoints = derivePredictCheckpoints(importPiJsonl(authRuntime).trace);
+  const initial = createGameSession('auth', checkpoints);
+  const completedEarly = reduceGameSession(initial, { type: 'COMPLETE_RUN' }, checkpoints);
+  assert.equal(completedEarly.phase, 'watch');
+  assert.equal(completedEarly.runComplete, true);
 });
