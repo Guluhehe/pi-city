@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
 import demoRuntime from '../../fixtures/auth-bug/runtime.jsonl?raw';
 import { importPiJsonl } from '../adapters/pi/import';
 import { buildContextSnapshots, compareContextSnapshots } from '../analysis/context';
@@ -25,6 +25,8 @@ import {
   type LessonScenario,
 } from '../experience';
 import { PiCityScene } from '../world/PiCityScene';
+import type { PiCitySceneProps } from '../world/PiCityScene';
+import { EvidenceCityMap, SceneErrorBoundary } from './SceneErrorBoundary';
 
 type ShellMode = 'landing' | 'watch' | 'explore' | 'photo' | 'complete';
 type TraceOrigin = 'bundled-demo' | 'imported';
@@ -62,8 +64,10 @@ function toolLabel(count: number): string {
 
 export function CinematicCity({
   onOpenExplorer,
+  SceneComponent = PiCityScene,
 }: {
   onOpenExplorer: (trace?: SemanticTrace, notice?: string) => void;
+  SceneComponent?: ComponentType<PiCitySceneProps>;
 }) {
   const [scenario, setScenario] = useState<LessonScenario>(() => getScenario('auth'));
   const [trace, setTrace] = useState<SemanticTrace>(() => loadDemo());
@@ -324,27 +328,23 @@ export function CinematicCity({
 
       <div className="cinematic-world">
         {fallbackScene ? (
-          <div className="fallback-city-map" aria-label="Pi City evidence map">
-            {(['arrival', 'session', 'context', 'model', 'tool'] as const).map((district) => (
-              <div key={district} className={`fallback-district ${lessonFrame?.district === district ? 'active' : ''}`}>
-                <small>{district}</small>
-                <strong>{DISTRICT_COPY[district].title}</strong>
-              </div>
-            ))}
-            <div className="three-legend visual-beta-legend">
-              <span>{mappedEvent?.type ?? 'evidence map'}</span>
-              <strong>{lessonFrame?.artifact ?? 'ambient'}</strong>
-            </div>
-          </div>
+          <EvidenceCityMap event={mappedEvent} activeDistrict={lessonFrame?.district} artifact={lessonFrame?.artifact} />
         ) : (
-          <PiCityScene
-            event={frame?.event}
-            state={frame?.state}
-            shotId={lessonFrame?.cam}
-            presentation={presentation}
-            exploreDistrict={mode === 'explore' ? exploreDistrict : null}
-            hideChrome={mode === 'photo' && frameClean}
-          />
+          <SceneErrorBoundary
+            event={mappedEvent}
+            activeDistrict={lessonFrame?.district}
+            artifact={lessonFrame?.artifact}
+            onOpenExplorer={() => onOpenExplorer(trace, 'The 3D scene failed, so Pi City preserved this run in the Evidence Explorer.')}
+          >
+            <SceneComponent
+              event={frame?.event}
+              state={frame?.state}
+              shotId={lessonFrame?.cam}
+              presentation={presentation}
+              exploreDistrict={mode === 'explore' ? exploreDistrict : null}
+              hideChrome={mode === 'photo' && frameClean}
+            />
+          </SceneErrorBoundary>
         )}
 
         {mode === 'landing' && (

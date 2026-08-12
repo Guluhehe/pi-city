@@ -55,6 +55,21 @@ test('cinematic Context Compare renders the real trace diff', async ({ page }) =
   await expect(compare).not.toContainText('Current instructions');
 });
 
+test('a scene render failure falls back to the Evidence Explorer', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as unknown as { __PI_CITY_SCENE_OVERRIDE__?: () => never }).__PI_CITY_SCENE_OVERRIDE__ = () => {
+      throw new Error('forced scene failure from injected test component');
+    };
+  });
+  await page.goto('/');
+
+  const fallback = page.getByRole('region', { name: '3D rendering fallback' });
+  await expect(fallback.getByRole('heading', { name: '3D rendering failed' })).toBeVisible();
+  await expect(fallback).toContainText('forced scene failure from injected test component');
+  await fallback.getByRole('button', { name: 'Open Evidence Explorer' }).click();
+  await expect(page.getByRole('heading', { name: 'PI CITY' })).toBeVisible();
+});
+
 test('canonical frame deep links open expected frames', async ({ page }) => {
   for (const [frame, eyebrow] of [
     ['arrival', 'FRAME 01 · ARRIVAL HARBOR'],

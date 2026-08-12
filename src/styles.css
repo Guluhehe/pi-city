@@ -377,10 +377,16 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #d0c3
 .photo-confirm p { color: #bdb8aa; line-height: 1.6; }
 .photo-confirm > div { display: flex; gap: 10px; margin-top: 18px; }
 .fallback-city-map { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(5, minmax(100px, 1fr)); gap: 18px; align-items: center; padding: 12vh 6vw; background: radial-gradient(circle at 50% 42%, #415044 0, #1d2822 36%, #0d130f 78%); }
+.fallback-city-map.scene-error-fallback { z-index: 30; }
 .fallback-district { min-height: 120px; display: grid; align-content: center; gap: 6px; padding: 18px; border: 1px solid rgba(221,197,132,.2); border-radius: 18px; background: rgba(17,23,18,.78); color: #9d9e91; transition: transform .25s ease, border-color .25s ease, background .25s ease; }
 .fallback-district small { font: 9px ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
 .fallback-district strong { color: #d8d2c2; }
 .fallback-district.active { transform: translateY(-12px); border-color: rgba(226,194,111,.7); background: rgba(54,51,31,.88); box-shadow: 0 18px 50px rgba(0,0,0,.28); }
+.scene-error-panel { position: absolute; left: 50%; top: 50%; z-index: 3; width: min(520px, calc(100% - 40px)); transform: translate(-50%,-50%); padding: 24px; border: 1px solid rgba(226,194,111,.55); border-radius: 18px; background: rgba(13,17,14,.96); box-shadow: 0 24px 80px rgba(0,0,0,.55); }
+.scene-error-panel small { color: #c6ab68; font: 9px ui-monospace, monospace; letter-spacing: .12em; }
+.scene-error-panel h2 { margin: 8px 0; color: #f0e9d7; }
+.scene-error-panel p { color: #bbb8aa; line-height: 1.55; }
+.scene-error-panel > div { display: flex; gap: 10px; margin-top: 16px; }
 .cinema-toggle { position: absolute; right: 18px; bottom: 18px; z-index: 5; }
 .chapter-bumper { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; background: rgba(10,14,12,.42); z-index: 7; pointer-events: none; }
 .chapter-bumper small { color: #c6ab68; font: 10px ui-monospace, monospace; letter-spacing: .14em; }

@@ -1,16 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
 import demoRuntime from '../fixtures/auth-bug/runtime.jsonl?raw';
 import { importPiJsonl } from './adapters/pi/import';
 import { activeContextSnapshot, buildContextSnapshots, compareContextSnapshots, type ContextItem } from './analysis/context';
 import { analyzeRun, formatDuration } from './analysis/run';
 import { buildStory, type StoryStep } from './analysis/story';
 import { CinematicCity } from './product/CinematicCity';
+import { SceneErrorBoundary } from './product/SceneErrorBoundary';
 import { explainEvent } from './semantic-trace/explain';
 import { buildTraceFrames } from './semantic-trace/reducer';
 import { mergePiTraces } from './semantic-trace/merge';
 import type { SemanticTrace } from './semantic-trace/schema';
 import { toWorldCue } from './world/cues';
 import { PiCityScene } from './world/PiCityScene';
+import type { PiCitySceneProps } from './world/PiCityScene';
 
 const districtNames = {
   arrival: 'Arrival Harbor',
@@ -33,7 +35,11 @@ function shortJson(value: unknown): string {
   return JSON.stringify(value, null, 2);
 }
 
-export function App() {
+export function App({
+  SceneComponent = PiCityScene,
+}: {
+  SceneComponent?: ComponentType<PiCitySceneProps>;
+}) {
   const [surface, setSurface] = useState<Surface>('city');
   const [explorerTrace, setExplorerTrace] = useState<SemanticTrace | null>(null);
   const [explorerNotice, setExplorerNotice] = useState<string | null>(null);
@@ -45,7 +51,7 @@ export function App() {
   }
 
   if (surface === 'city') {
-    return <CinematicCity onOpenExplorer={openExplorer} />;
+    return <CinematicCity onOpenExplorer={openExplorer} SceneComponent={SceneComponent} />;
   }
   return (
     <EvidenceExplorer
@@ -55,6 +61,7 @@ export function App() {
       }}
       initialTrace={explorerTrace}
       notice={explorerNotice}
+      SceneComponent={SceneComponent}
     />
   );
 }
@@ -63,10 +70,12 @@ function EvidenceExplorer({
   onBackToCity,
   initialTrace,
   notice,
+  SceneComponent,
 }: {
   onBackToCity: () => void;
   initialTrace?: SemanticTrace | null;
   notice?: string | null;
+  SceneComponent: ComponentType<PiCitySceneProps>;
 }) {
   const [trace, setTrace] = useState<SemanticTrace>(() => initialTrace ?? load(demoRuntime));
   const frames = useMemo(() => buildTraceFrames(trace), [trace]);
@@ -204,6 +213,7 @@ function EvidenceExplorer({
           onSelect={(value) => { setIndex(value); setPlaying(false); }}
           onReplay={() => { setIndex(0); setPlaying(true); }}
           onExplore={(target) => { setPlaying(false); setTab(target); }}
+          SceneComponent={SceneComponent}
         />
       ) : (
         <>
@@ -221,7 +231,11 @@ function EvidenceExplorer({
           <section className="workspace">
             <div className="stage-card">
               {tab === 'overview' && <RunOverview run={run} story={story} onWatch={watchRun} />}
-              {tab === 'world' && <PiCityScene event={frame?.event} state={frame?.state} />}
+              {tab === 'world' && (
+                <SceneErrorBoundary event={frame?.event}>
+                  <SceneComponent event={frame?.event} state={frame?.state} />
+                </SceneErrorBoundary>
+              )}
               {tab === 'story' && <StoryView trace={trace} story={story} activeIndex={index} onSelect={(value) => { setIndex(value); setPlaying(false); }} />}
               {tab === 'session' && <SessionTree trace={trace} activeArtifactId={frame?.event.artifactId} />}
               {tab === 'context' && <ContextView trace={trace} snapshots={contextSnapshots} activeIndex={index} onSelect={(value) => { setIndex(value); setPlaying(false); }} />}
@@ -280,6 +294,7 @@ function IntegratedJourney({
   onSelect,
   onReplay,
   onExplore,
+  SceneComponent,
 }: {
   run: ReturnType<typeof analyzeRun>;
   story: StoryStep[];
@@ -290,6 +305,7 @@ function IntegratedJourney({
   onSelect: (index: number) => void;
   onReplay: () => void;
   onExplore: (tab: Exclude<Tab, 'journey' | 'overview' | 'world'>) => void;
+  SceneComponent: ComponentType<PiCitySceneProps>;
 }) {
   const explanation = frame ? explainEvent(frame.event) : undefined;
   const activeStory = story.find((step) => index >= step.startIndex && index <= step.endIndex);
@@ -303,7 +319,9 @@ function IntegratedJourney({
   return (
     <section className="journey-shell">
       <div className="journey-world">
-        <PiCityScene event={frame?.event} state={frame?.state} />
+        <SceneErrorBoundary event={frame?.event}>
+          <SceneComponent event={frame?.event} state={frame?.state} />
+        </SceneErrorBoundary>
 
         <div className="journey-title-card">
           <span>{activeStory ? `STEP ${String(story.indexOf(activeStory) + 1).padStart(2, '0')}` : 'RUN'}</span>
