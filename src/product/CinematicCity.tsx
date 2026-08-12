@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import demoRuntime from '../../fixtures/auth-bug/runtime.jsonl?raw';
 import { importPiJsonl } from '../adapters/pi/import';
 import { analyzeRun } from '../analysis/run';
+import { explainEvent } from '../semantic-trace/explain';
 import { buildTraceFrames } from '../semantic-trace/reducer';
 import type { SemanticTrace } from '../semantic-trace/schema';
 import {
@@ -25,6 +26,7 @@ import {
 import { PiCityScene } from '../world/PiCityScene';
 
 type ShellMode = 'landing' | 'watch' | 'explore' | 'photo' | 'complete';
+type TraceOrigin = 'bundled-demo' | 'imported';
 
 const IMPORT_FALLBACK_NOTICE =
   'This run has no compatible guided lesson yet, so Pi City opened the evidence-preserving explorer instead of applying demo narration.';
@@ -50,6 +52,7 @@ export function CinematicCity({
 }) {
   const [scenario, setScenario] = useState<LessonScenario>(() => getScenario('auth'));
   const [trace, setTrace] = useState<SemanticTrace>(() => loadDemo());
+  const [traceOrigin, setTraceOrigin] = useState<TraceOrigin>('bundled-demo');
   const run = useMemo(() => analyzeRun(trace), [trace]);
   const frames = useMemo(() => buildTraceFrames(trace), [trace]);
   const lessonMap = useMemo(() => mapLessonFramesToTrace(scenario, trace), [scenario, trace]);
@@ -78,6 +81,14 @@ export function CinematicCity({
   const totalMs = scenarioDurationMs(scenario);
   const chapterIndex = scenario.story.findIndex(([title]) => title === lessonFrame?.chapter);
   const authCompatible = evaluateScenarioCompatibility(getScenario('auth'), trace).compatible;
+  const mappedEvent = frame?.event;
+  const eventExplanation = mappedEvent ? explainEvent(mappedEvent) : undefined;
+  const usesAuthoredNarration = traceOrigin === 'bundled-demo';
+  const visibleRunTitle = usesAuthoredNarration ? scenario.title : run.title;
+  const visibleWhat = usesAuthoredNarration ? lessonFrame?.what : eventExplanation?.plain;
+  const visibleTitle = usesAuthoredNarration ? lessonFrame?.what : eventExplanation?.title;
+  const visibleWhy = usesAuthoredNarration ? lessonFrame?.why : eventExplanation?.plain;
+  const visibleWhy2 = usesAuthoredNarration ? lessonFrame?.why2 : eventExplanation?.why;
 
   useEffect(() => {
     setLastChapter('');
@@ -114,12 +125,12 @@ export function CinematicCity({
       setBumper({
         chapter: `CHAPTER ${String(Math.max(chapterIndex, 0) + 1).padStart(2, '0')}`,
         title: lessonFrame.chapter,
-        what: lessonFrame.what,
+        what: visibleWhat ?? '',
       });
       const timer = window.setTimeout(() => setBumper(null), 1500);
       return () => window.clearTimeout(timer);
     }
-  }, [mode, lessonFrame, lastChapter, chapterIndex]);
+  }, [mode, lessonFrame, lastChapter, chapterIndex, visibleWhat]);
 
   useEffect(() => {
     if (mode !== 'watch' || lessonFrame?.aha !== 'context') {
@@ -157,6 +168,7 @@ export function CinematicCity({
     const demo = loadDemo();
     setScenario(authScenario);
     setTrace(demo);
+    setTraceOrigin('bundled-demo');
   }
 
   function enterPhoto(key: CanonicalFrameKey) {
@@ -204,6 +216,7 @@ export function CinematicCity({
       }
       setScenario(getScenario(destination.scenarioId));
       setTrace(result.trace);
+      setTraceOrigin('imported');
       setMode('watch');
       setCinema(true);
       setIndex(0);
@@ -274,8 +287,8 @@ export function CinematicCity({
           <>
             <div className={`cinematic-title ${cinema ? 'compact' : ''}`}>
               <small>{chapterIndex >= 0 ? `CHAPTER ${String(chapterIndex + 1).padStart(2, '0')} · ${lessonFrame.district.toUpperCase()}` : 'RUN'}</small>
-              <h1>{scenario.title}</h1>
-              <p>{lessonFrame.what}</p>
+              <h1>{visibleRunTitle}</h1>
+              <p>{visibleWhat}</p>
               <div className="micro">
                 <span>MODEL {frame?.state.modelCalls ?? 0}/{run.modelCalls}</span>
                 <span>TOOLS {frame?.state.toolCalls ?? 0}/{run.toolCalls}</span>
@@ -285,13 +298,13 @@ export function CinematicCity({
 
             <aside className="cinematic-inspector">
               <div className="type">{lessonFrame.type}</div>
-              <strong>{lessonFrame.what}</strong>
-              <p>{lessonFrame.why}</p>
-              <p className="inspect-why">{lessonFrame.why2}</p>
-              <code>{lessonFrame.evidence}</code>
+              <strong>{visibleTitle}</strong>
+              <p>{visibleWhy}</p>
+              <p className="inspect-why">{visibleWhy2}</p>
+              {mappedEvent && <code>{mappedEvent.evidence.level} · {mappedEvent.type}</code>}
             </aside>
 
-            {typeof lessonFrame.gate === 'number' && lessonFrame.district === 'model' && (
+            {usesAuthoredNarration && typeof lessonFrame.gate === 'number' && lessonFrame.district === 'model' && (
               <div className="cinematic-decision">MODEL DECISION · <b>{MODEL_GATES[lessonFrame.gate] ?? '—'}</b></div>
             )}
 

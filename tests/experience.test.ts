@@ -42,6 +42,20 @@ test('auth lesson pacing remains the cinematic ~65s journey', () => {
   assert.equal(scenarioDurationMs(auth), 64900);
 });
 
+test('lesson metadata cannot make evidence claims and identifies authored narration', () => {
+  for (const scenario of [getScenario('auth'), getScenario('multi')]) {
+    assert.equal(
+      (scenario as unknown as Record<string, unknown>).narration,
+      'demo',
+      `${scenario.id} must identify its authored narration`,
+    );
+    assert.ok(
+      scenario.frames.every((frame) => !('evidence' in frame)),
+      `${scenario.id} frames must derive evidence from mapped trace events`,
+    );
+  }
+});
+
 test('canonical frames point at auth lesson indices and known shots', () => {
   const auth = getScenario('auth');
   for (const frame of Object.values(CANONICAL_FRAMES)) {
