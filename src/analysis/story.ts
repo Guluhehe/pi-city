@@ -1,4 +1,5 @@
 import type { SemanticEvent, SemanticTrace } from '../semantic-trace/schema';
+import { classifyToolName, eventToolName } from './action-classes';
 import { eventRequestText, truncate } from './text';
 
 export type StoryStepKind = 'request' | 'inspect' | 'change' | 'execute' | 'reason' | 'answer' | 'complete';
@@ -21,10 +22,6 @@ export interface StoryStep {
   tools: StoryTool[];
 }
 
-const inspectTools = new Set(['read', 'grep', 'find', 'ls', 'search', 'glob']);
-const changeTools = new Set(['edit', 'write', 'patch', 'apply_patch']);
-const executeTools = new Set(['bash', 'shell', 'terminal', 'exec']);
-
 function classifyTools(tools: StoryTool[], hasResponse: boolean, isLastTurn: boolean): Pick<StoryStep, 'kind' | 'title' | 'summary'> {
   if (!tools.length) {
     if (hasResponse && isLastTurn) return { kind: 'answer', title: 'Answer the user', summary: 'The model returned a user-facing response after the available evidence was incorporated.' };
@@ -32,9 +29,10 @@ function classifyTools(tools: StoryTool[], hasResponse: boolean, isLastTurn: boo
   }
 
   const names = tools.map((tool) => tool.name.toLowerCase());
-  const hasInspect = names.some((name) => inspectTools.has(name));
-  const hasChange = names.some((name) => changeTools.has(name));
-  const hasExecute = names.some((name) => executeTools.has(name));
+  const actionClasses = names.map(classifyToolName);
+  const hasInspect = actionClasses.includes('read');
+  const hasChange = actionClasses.includes('edit');
+  const hasExecute = actionClasses.includes('bash');
   const unique = [...new Set(names)];
 
   if (hasChange && hasExecute) {
@@ -86,7 +84,7 @@ export function buildStory(trace: SemanticTrace): StoryStep[] {
     const toolCalls = group
       .filter(({ event }) => event.type === 'TOOL_CALL_CREATED')
       .map(({ event }) => ({
-        name: typeof event.payload.toolName === 'string' ? event.payload.toolName : 'tool',
+        name: eventToolName(event) ?? 'tool',
         callId: event.toolCallId,
         args: event.payload.args,
       }));
