@@ -102,6 +102,8 @@ The bundled auth-bug journey is intentionally paced at about **65 seconds** at 1
 
 The path from the current replay demo to a maintainable game-based learning system is documented in [`docs/architecture-evolution.md`](docs/architecture-evolution.md). **Milestone A — One Core** is effectively closed for the product shell: Vite is the maintained runtime; GitHub runs deployment-neutral CI; hosting stays provider-neutral; declarative shot/scenario data lives in `src/experience/`.
 
+Coding agents should start from [`AGENTS.md`](AGENTS.md). The active external architecture review is [`docs/reviews/2026-08-10-fable5-architecture-review.md`](docs/reviews/2026-08-10-fable5-architecture-review.md); executable plans live under [`docs/plans/`](docs/plans/).
+
 ```text
 Pi Runtime JSONL ---------┐
                           ├─> Pi Adapter ─> Semantic Trace ─> Replay Frames
@@ -161,6 +163,8 @@ public/experience/        Exported library.json for visual checks
 
 docs/
   architecture-evolution.md
+  reviews/                  External architecture reviews (Fable 5, etc.)
+  plans/                    Executable implementation plans for agents
   deployment.md
   browser-acceptance-v011.md
   product-vision.md
@@ -168,6 +172,7 @@ docs/
   semantic-trace.md
   pi-evidence-model.md
   roadmap.md
+AGENTS.md                   Operating guide for coding agents
 ```
 
 ## Pi evidence model
