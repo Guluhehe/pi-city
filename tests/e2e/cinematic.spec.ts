@@ -8,8 +8,8 @@ test.beforeAll(() => {
   mkdirSync(artifactDir, { recursive: true });
 });
 
-async function enterWatch(page: import('@playwright/test').Page) {
-  await page.goto('/');
+async function enterWatch(page: import('@playwright/test').Page, realScene = false) {
+  await page.goto(realScene ? '/' : '/?quality=fallback');
   await expect(page.getByRole('heading', { name: 'A request has entered the harbor.' })).toBeVisible();
   await page.getByRole('button', { name: /Enter the city/ }).click({ force: true });
   await expect(page.locator('.cinematic-title h1')).toBeVisible({ timeout: 15_000 });
@@ -20,7 +20,8 @@ test('landing renders and enters Watch', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
 
-  await enterWatch(page);
+  await enterWatch(page, true);
+  await expect(page.locator('canvas')).toBeVisible();
   await expect(page.locator('.cinematic-transport .play')).toHaveText(/Pause|Play/);
   await expect(page.locator('.cinematic-title h1')).toContainText('authentication bug');
   expect(errors.filter((message) => !/deprecated/i.test(message)), errors.join('\n')).toEqual([]);

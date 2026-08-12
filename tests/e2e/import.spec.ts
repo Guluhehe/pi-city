@@ -9,7 +9,7 @@ test('importing multi-tool fixture shows event-derived narration and actual tota
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
 
-  await page.goto('/');
+  await page.goto('/?quality=fallback');
   await expect(page.getByRole('heading', { name: 'A request has entered the harbor.' })).toBeVisible();
   await page.locator('.cinematic-top-actions input[type="file"]').setInputFiles(multiFixture);
 
@@ -31,7 +31,7 @@ test('importing incompatible Session opens Evidence Explorer fallback', async ({
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
 
-  await page.goto('/');
+  await page.goto('/?quality=fallback');
   await page.locator('.cinematic-top-actions input[type="file"]').setInputFiles(sessionFixture);
 
   await expect(page.getByRole('heading', { name: 'PI CITY' })).toBeVisible({ timeout: 15_000 });
@@ -42,4 +42,45 @@ test('importing incompatible Session opens Evidence Explorer fallback', async ({
     'evidence-preserving explorer',
   );
   expect(errors.filter((message) => !/deprecated/i.test(message)), errors.join('\n')).toEqual([]);
+});
+
+test('Photo Mode never replaces an imported run without consent', async ({ page }) => {
+  await page.goto('/?quality=fallback');
+  await page.locator('.cinematic-top-actions input[type="file"]').setInputFiles(multiFixture);
+  const runTitle = page.getByRole('heading', {
+    level: 1,
+    name: 'Investigate the auth failure, fix it, and run the tests',
+  });
+  await expect(runTitle).toBeVisible();
+
+  await page.keyboard.press('1');
+  const confirmation = page.getByRole('dialog', { name: 'Switch to bundled Photo Mode?' });
+  await expect(confirmation).toContainText('replace your imported run in this view');
+  await expect(runTitle).toBeVisible();
+
+  await confirmation.getByRole('button', { name: 'Stay with my run' }).click();
+  await expect(confirmation).toHaveCount(0, { timeout: 15_000 });
+  await expect(runTitle).toBeVisible();
+  await expect(page).toHaveURL((url) => !url.searchParams.has('frame'));
+});
+
+test('Photo Mode restores the imported run after an approved demo switch', async ({ page }) => {
+  await page.goto('/?quality=fallback');
+  await page.locator('.cinematic-top-actions input[type="file"]').setInputFiles(multiFixture);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    'Investigate the auth failure, fix it, and run the tests',
+  );
+
+  await page.keyboard.press('1');
+  const confirmation = page.getByRole('dialog', { name: 'Switch to bundled Photo Mode?' });
+  await confirmation.getByRole('button', { name: 'Switch to demo frames' }).click();
+  await expect(page.locator('.frame-mode')).toHaveCount(1);
+  await expect(page).toHaveURL((url) => url.searchParams.get('frame') === 'arrival');
+
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    'Investigate the auth failure, fix it, and run the tests',
+  );
+  await expect(page.locator('.cinematic-app')).toHaveClass(/watch-mode/);
+  await expect(page).toHaveURL((url) => !url.searchParams.has('frame'));
 });

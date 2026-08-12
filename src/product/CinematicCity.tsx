@@ -28,6 +28,15 @@ import { PiCityScene } from '../world/PiCityScene';
 
 type ShellMode = 'landing' | 'watch' | 'explore' | 'photo' | 'complete';
 type TraceOrigin = 'bundled-demo' | 'imported';
+type PhotoReturnView = {
+  scenario: LessonScenario;
+  trace: SemanticTrace;
+  traceOrigin: TraceOrigin;
+  mode: Exclude<ShellMode, 'photo'>;
+  index: number;
+  playing: boolean;
+  cinema: boolean;
+};
 
 const IMPORT_FALLBACK_NOTICE =
   'This run has no compatible guided lesson yet, so Pi City opened the evidence-preserving explorer instead of applying demo narration.';
@@ -40,6 +49,11 @@ function readFrameQuery(): CanonicalFrameKey | null {
   if (typeof window === 'undefined') return null;
   const value = new URLSearchParams(window.location.search).get('frame');
   return value && value in CANONICAL_FRAMES ? (value as CanonicalFrameKey) : null;
+}
+
+function usesFallbackScene(): boolean {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('quality') === 'fallback';
 }
 
 function toolLabel(count: number): string {
@@ -73,9 +87,15 @@ export function CinematicCity({
   const [lastChapter, setLastChapter] = useState('');
   const [bumper, setBumper] = useState<{ chapter: string; title: string; what: string } | null>(null);
   const [showCompare, setShowCompare] = useState(false);
+  const [photoRequest, setPhotoRequest] = useState<{
+    key: CanonicalFrameKey;
+    returnView: PhotoReturnView;
+  } | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const frameStarted = useRef(performance.now());
+  const photoReturnRef = useRef<PhotoReturnView | null>(null);
+  const fallbackScene = usesFallbackScene();
 
   const lessonFrame: LessonFrame = scenario.frames[Math.min(index, scenario.frames.length - 1)];
   const traceIndex = lessonMap[Math.min(index, lessonMap.length - 1)] ?? 0;
@@ -158,15 +178,15 @@ export function CinematicCity({
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      if (event.key === '1') enterPhoto('arrival');
-      if (event.key === '2') enterPhoto('context');
-      if (event.key === '3') enterPhoto('model');
+      if (event.key === '1') requestPhoto('arrival');
+      if (event.key === '2') requestPhoto('context');
+      if (event.key === '3') requestPhoto('model');
       if (mode === 'photo' && (event.key === 'h' || event.key === 'H')) setFrameClean((value) => !value);
       if (mode === 'photo' && event.key === 'Escape') exitPhoto();
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [mode, scenario.id, authCompatible]);
+  }, [mode, scenario, trace, traceOrigin, index, playing, cinema, authCompatible]);
 
   function enterCity() {
     setMode('watch');
@@ -177,17 +197,40 @@ export function CinematicCity({
     setPlaying(true);
   }
 
-  function ensureAuthPhotoDemo() {
-    if (scenario.id === 'auth' && authCompatible) return;
-    const authScenario = getScenario('auth');
-    const demo = loadDemo();
-    setScenario(authScenario);
-    setTrace(demo);
+  function requestPhoto(key: CanonicalFrameKey) {
+    if (mode === 'photo' || (scenario.id === 'auth' && authCompatible)) {
+      enterPhoto(key);
+      return;
+    }
+    const returnView: PhotoReturnView = {
+      scenario,
+      trace,
+      traceOrigin,
+      mode,
+      index,
+      playing,
+      cinema,
+    };
+    setPlaying(false);
+    setPhotoRequest({ key, returnView });
+  }
+
+  function cancelPhotoSwitch() {
+    setPhotoRequest(null);
+  }
+
+  function confirmPhotoSwitch() {
+    if (!photoRequest) return;
+    photoReturnRef.current = photoRequest.returnView;
+    setScenario(getScenario('auth'));
+    setTrace(loadDemo());
     setTraceOrigin('bundled-demo');
+    const key = photoRequest.key;
+    setPhotoRequest(null);
+    enterPhoto(key);
   }
 
   function enterPhoto(key: CanonicalFrameKey) {
-    ensureAuthPhotoDemo();
     const target = canonicalFrame(key) ?? CANONICAL_FRAMES.arrival;
     const authScenario = getScenario('auth');
     setCanonicalKey(target.key);
@@ -203,10 +246,22 @@ export function CinematicCity({
   }
 
   function exitPhoto() {
-    setMode('landing');
     setFrameClean(false);
-    setIndex(0);
-    setPlaying(false);
+    const returnView = photoReturnRef.current;
+    if (returnView) {
+      photoReturnRef.current = null;
+      setScenario(returnView.scenario);
+      setTrace(returnView.trace);
+      setTraceOrigin(returnView.traceOrigin);
+      setMode(returnView.mode);
+      setIndex(returnView.index);
+      setPlaying(returnView.playing);
+      setCinema(returnView.cinema);
+    } else {
+      setMode('landing');
+      setIndex(0);
+      setPlaying(false);
+    }
     const url = new URL(window.location.href);
     url.searchParams.delete('frame');
     window.history.replaceState({}, '', url);
@@ -260,7 +315,7 @@ export function CinematicCity({
           <strong>A playable visualization of how AI agents actually run</strong>
         </div>
         <div className="cinematic-top-actions">
-          <button onClick={() => enterPhoto('arrival')}>Photo Mode</button>
+          <button onClick={() => requestPhoto('arrival')}>Photo Mode</button>
           <button onClick={() => inputRef.current?.click()}>Import Pi JSONL</button>
           <button className="primary" onClick={() => onOpenExplorer()}>Evidence Explorer</button>
           <input ref={inputRef} type="file" accept=".jsonl,.json,.txt" hidden onChange={(event) => onFiles(event.target.files)} />
@@ -268,14 +323,29 @@ export function CinematicCity({
       </header>
 
       <div className="cinematic-world">
-        <PiCityScene
-          event={frame?.event}
-          state={frame?.state}
-          shotId={lessonFrame?.cam}
-          presentation={presentation}
-          exploreDistrict={mode === 'explore' ? exploreDistrict : null}
-          hideChrome={mode === 'photo' && frameClean}
-        />
+        {fallbackScene ? (
+          <div className="fallback-city-map" aria-label="Pi City evidence map">
+            {(['arrival', 'session', 'context', 'model', 'tool'] as const).map((district) => (
+              <div key={district} className={`fallback-district ${lessonFrame?.district === district ? 'active' : ''}`}>
+                <small>{district}</small>
+                <strong>{DISTRICT_COPY[district].title}</strong>
+              </div>
+            ))}
+            <div className="three-legend visual-beta-legend">
+              <span>{mappedEvent?.type ?? 'evidence map'}</span>
+              <strong>{lessonFrame?.artifact ?? 'ambient'}</strong>
+            </div>
+          </div>
+        ) : (
+          <PiCityScene
+            event={frame?.event}
+            state={frame?.state}
+            shotId={lessonFrame?.cam}
+            presentation={presentation}
+            exploreDistrict={mode === 'explore' ? exploreDistrict : null}
+            hideChrome={mode === 'photo' && frameClean}
+          />
+        )}
 
         {mode === 'landing' && (
           <div className="cinematic-landing">
@@ -292,7 +362,7 @@ export function CinematicCity({
               <div className="landing-actions">
                 <button className="primary" onClick={enterCity}>Enter the city →</button>
                 <button onClick={() => inputRef.current?.click()}>Import your Pi run</button>
-                <button onClick={() => enterPhoto('arrival')}>View hero frames</button>
+                <button onClick={() => requestPhoto('arrival')}>View hero frames</button>
               </div>
             </div>
           </div>
@@ -393,6 +463,25 @@ export function CinematicCity({
               <button onClick={() => setFrameClean((value) => !value)}>{frameClean ? 'show UI' : 'clean (H)'}</button>
             </div>
           </>
+        )}
+
+        {photoRequest && (
+          <div className="photo-confirm-backdrop">
+            <section
+              className="photo-confirm"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="photo-confirm-title"
+            >
+              <small>PHOTO MODE · BUNDLED DEMO</small>
+              <h2 id="photo-confirm-title">Switch to bundled Photo Mode?</h2>
+              <p>Photo Mode frames are staged on the bundled auth demo. Continuing will replace your imported run in this view until you exit Photo Mode.</p>
+              <div>
+                <button className="primary" onClick={confirmPhotoSwitch}>Switch to demo frames</button>
+                <button onClick={cancelPhotoSwitch}>Stay with my run</button>
+              </div>
+            </section>
+          </div>
         )}
 
         {mode === 'explore' && (
