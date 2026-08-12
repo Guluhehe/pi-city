@@ -90,3 +90,13 @@ export function derivePredictCheckpointReport(trace: SemanticTrace): PredictChec
 export function derivePredictCheckpoints(trace: SemanticTrace): PredictCheckpoint[] {
   return derivePredictCheckpointReport(trace).checkpoints;
 }
+
+export function checkpointAtLessonFrame(
+  checkpoints: readonly PredictCheckpoint[],
+  lessonMap: readonly number[],
+  lessonIndex: number,
+  nextCheckpoint: number,
+): PredictCheckpoint | null {
+  const checkpoint = checkpoints[nextCheckpoint];
+  return checkpoint && lessonMap[lessonIndex] === checkpoint.eventIndex ? checkpoint : null;
+}

@@ -3,6 +3,15 @@ import demoRuntime from '../../fixtures/auth-bug/runtime.jsonl?raw';
 import { importPiJsonl } from '../adapters/pi/import';
 import { buildContextSnapshots, compareContextSnapshots } from '../analysis/context';
 import { analyzeRun } from '../analysis/run';
+import type { AgentActionClass } from '../analysis/action-classes';
+import {
+  buildPredictDebrief,
+  checkpointAtLessonFrame,
+  createGameSession,
+  derivePredictCheckpoints,
+  reduceGameSession,
+  type GameSessionState,
+} from '../game';
 import { explainEvent } from '../semantic-trace/explain';
 import { buildTraceFrames } from '../semantic-trace/reducer';
 import type { SemanticTrace } from '../semantic-trace/schema';
@@ -75,6 +84,7 @@ export function CinematicCity({
   const run = useMemo(() => analyzeRun(trace), [trace]);
   const frames = useMemo(() => buildTraceFrames(trace), [trace]);
   const contextSnapshots = useMemo(() => buildContextSnapshots(trace), [trace]);
+  const checkpoints = useMemo(() => derivePredictCheckpoints(trace), [trace]);
   const lessonMap = useMemo(() => mapLessonFramesToTrace(scenario, trace), [scenario, trace]);
 
   const [mode, setMode] = useState<ShellMode>(() => (readFrameQuery() ? 'photo' : 'landing'));
@@ -95,6 +105,7 @@ export function CinematicCity({
     key: CanonicalFrameKey;
     returnView: PhotoReturnView;
   } | null>(null);
+  const [game, setGame] = useState<GameSessionState | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const frameStarted = useRef(performance.now());
@@ -124,6 +135,14 @@ export function CinematicCity({
     ? compareContextSnapshots(compareCurrent, comparePrevious)
     : undefined;
   const addedContextKeys = new Set(contextDiff?.added.map((item) => item.key) ?? []);
+  const gameCheckpoint = game ? checkpoints[game.checkpoint] : undefined;
+  const gameContext = gameCheckpoint ? contextSnapshots[gameCheckpoint.modelCallNumber - 1] : undefined;
+  const gamePreviousContext = gameCheckpoint && gameCheckpoint.modelCallNumber > 1
+    ? contextSnapshots[gameCheckpoint.modelCallNumber - 2]
+    : undefined;
+  const gameContextDiff = gameContext ? compareContextSnapshots(gameContext, gamePreviousContext) : undefined;
+  const latestDecision = game?.decisions.at(-1);
+  const debrief = game?.phase === 'debrief' ? buildPredictDebrief(game, checkpoints) : undefined;
 
   useEffect(() => {
     setLastChapter('');
@@ -142,16 +161,31 @@ export function CinematicCity({
           setPlaying(false);
           setMode('complete');
           setElapsed(totalMs);
+          setGame((current) => current
+            ? reduceGameSession(current, { type: 'COMPLETE_RUN' }, checkpoints)
+            : null);
           return;
         }
-        setIndex((value) => value + 1);
+        const nextIndex = index + 1;
+        if (
+          game?.phase === 'watch'
+          && checkpointAtLessonFrame(checkpoints, lessonMap, nextIndex, game.checkpoint)
+        ) {
+          setIndex(nextIndex);
+          setPlaying(false);
+          setGame((current) => current
+            ? reduceGameSession(current, { type: 'REACH_CHECKPOINT' }, checkpoints)
+            : null);
+          return;
+        }
+        setIndex(nextIndex);
         return;
       }
       raf = window.requestAnimationFrame(tick);
     };
     raf = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(raf);
-  }, [mode, playing, index, speed, lessonFrame, scenario.frames, totalMs]);
+  }, [mode, playing, index, speed, lessonFrame, scenario.frames, totalMs, game, checkpoints, lessonMap]);
 
   useEffect(() => {
     if (mode !== 'watch' || !lessonFrame) return;
@@ -193,11 +227,35 @@ export function CinematicCity({
   }, [mode, scenario, trace, traceOrigin, index, playing, cinema, authCompatible]);
 
   function enterCity() {
+    setGame(null);
     setMode('watch');
     setCinema(true);
     setIndex(0);
     setLastChapter('');
     setShowCompare(false);
+    setPlaying(true);
+  }
+
+  function enterPredict() {
+    setGame(createGameSession(scenario.id, checkpoints));
+    setMode('watch');
+    setCinema(true);
+    setIndex(0);
+    setLastChapter('');
+    setShowCompare(false);
+    setPlaying(true);
+  }
+
+  function choosePrediction(choice: AgentActionClass) {
+    setGame((current) => current
+      ? reduceGameSession(current, { type: 'PREDICT_NEXT_ACTION', choice }, checkpoints)
+      : null);
+  }
+
+  function continuePrediction() {
+    setGame((current) => current
+      ? reduceGameSession(current, { type: 'CONTINUE_REPLAY' }, checkpoints)
+      : null);
     setPlaying(true);
   }
 
@@ -291,6 +349,7 @@ export function CinematicCity({
       setScenario(getScenario(destination.scenarioId));
       setTrace(result.trace);
       setTraceOrigin('imported');
+      setGame(null);
       setMode('watch');
       setCinema(true);
       setIndex(0);
@@ -361,6 +420,7 @@ export function CinematicCity({
               </div>
               <div className="landing-actions">
                 <button className="primary" onClick={enterCity}>Enter the city →</button>
+                <button onClick={enterPredict} disabled={!checkpoints.length}>Play &amp; Predict</button>
                 <button onClick={() => inputRef.current?.click()}>Import your Pi run</button>
                 <button onClick={() => requestPhoto('arrival')}>View hero frames</button>
               </div>
@@ -484,6 +544,38 @@ export function CinematicCity({
           </div>
         )}
 
+        {game?.phase === 'predict' && gameCheckpoint && (
+          <section className="predict-overlay" role="dialog" aria-modal="true" aria-labelledby="predict-title">
+            <small>PREDICT · MODEL #{gameCheckpoint.modelCallNumber}</small>
+            <h2 id="predict-title">What will the Agent do next?</h2>
+            <p>Use only the evidence currently available to this model call.</p>
+            <div className="predict-evidence">
+              <header><strong>Reconstructed Context</strong><span>{gameContext?.evidence.toUpperCase() ?? 'DERIVED'}</span></header>
+              {(gameContext?.items ?? []).slice(0, 6).map((item) => (
+                <div key={item.key}><small>{item.kind}</small><strong>{item.label}</strong></div>
+              ))}
+            </div>
+            <div className="predict-choices">
+              {(['read', 'edit', 'bash', 'answer'] as AgentActionClass[]).map((choice) => (
+                <button key={choice} onClick={() => choosePrediction(choice)}>{choice.toUpperCase()}</button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {game?.phase === 'reveal' && gameCheckpoint && latestDecision && (
+          <section className="predict-overlay predict-reveal" role="dialog" aria-modal="true" aria-labelledby="reveal-title">
+            <small>{latestDecision.correct ? 'Correct' : 'Not this time'}</small>
+            <h2 id="reveal-title">Prediction revealed</h2>
+            <p>You chose <b>{latestDecision.choice}</b>. The trace shows <b>{gameCheckpoint.actual}</b>{gameCheckpoint.actualToolName ? ` via ${gameCheckpoint.actualToolName}` : ''}.</p>
+            <div className="predict-explanation">
+              <strong>{gameContextDiff?.added.length ? `What changed: +${gameContextDiff.added.length} evidence items` : 'Evidence at this decision'}</strong>
+              <p>{gameContextDiff?.added.map((item) => item.label).join(', ') || gameContext?.items.map((item) => item.label).join(', ') || 'No reconstructed evidence items.'}</p>
+            </div>
+            <button className="primary" onClick={continuePrediction}>Continue replay</button>
+          </section>
+        )}
+
         {mode === 'explore' && (
           <>
             <div className="explore-copy">
@@ -509,13 +601,32 @@ export function CinematicCity({
           </>
         )}
 
-        {mode === 'complete' && (
+        {mode === 'complete' && debrief ? (
+          <div className="cinematic-complete predict-debrief" role="region" aria-label="Prediction debrief">
+            <small>PREDICTION DEBRIEF</small>
+            <h2>{debrief.correct}/{debrief.total} decisions matched the trace</h2>
+            <div className="debrief-entries">
+              {debrief.entries.map(({ decision, checkpoint }) => (
+                <div key={decision.checkpointIndex}>
+                  <span>MODEL #{checkpoint.modelCallNumber}</span>
+                  <strong>{decision.choice.toUpperCase()} → {checkpoint.actual.toUpperCase()}</strong>
+                  <small>{decision.correct ? 'Matched' : 'Use the revealed evidence to update your model.'}</small>
+                </div>
+              ))}
+            </div>
+            <div className="complete-actions">
+              <button className="primary" onClick={enterPredict}>Predict again</button>
+              <button onClick={enterExplore}>Explore the city</button>
+              <button onClick={() => onOpenExplorer(trace)}>Evidence Explorer</button>
+            </div>
+          </div>
+        ) : mode === 'complete' && (
           <div className="cinematic-complete">
             <small>RUN COMPLETE</small>
             <h2>You just watched one Agent run become a city.</h2>
             <p>{run.modelCalls} model calls · {toolLabel(run.toolCalls)} · {scenario.story.length} runtime phases</p>
             <div className="complete-actions">
-              <button className="primary" onClick={() => { setMode('watch'); setIndex(0); setPlaying(true); setCinema(true); }}>Replay</button>
+              <button className="primary" onClick={() => { setGame(null); setMode('watch'); setIndex(0); setPlaying(true); setCinema(true); }}>Replay</button>
               <button onClick={enterExplore}>Explore the city</button>
               <button onClick={() => { setMode('watch'); setShowCompare(true); setPlaying(false); setIndex(CANONICAL_FRAMES.context.frameIndex); }}>Compare Context</button>
               <button onClick={() => onOpenExplorer()}>Evidence Explorer</button>
@@ -535,6 +646,8 @@ export function CinematicCity({
                 <button
                   key={title}
                   className={`${active ? 'active' : ''} ${done ? 'done' : ''}`}
+                  disabled={Boolean(game)}
+                  title={game ? 'Timeline navigation is locked during Predict.' : undefined}
                   onClick={() => { setMode('watch'); setIndex(Math.max(start, 0)); setPlaying(false); }}
                 >
                   <span>{String(storyIndex + 1).padStart(2, '0')}</span>
@@ -564,6 +677,8 @@ export function CinematicCity({
               min={0}
               max={scenario.frames.length - 1}
               value={index}
+              disabled={Boolean(game)}
+              title={game ? 'Timeline navigation is locked during Predict.' : undefined}
               onChange={(event) => {
                 setMode('watch');
                 setIndex(Number(event.target.value));
@@ -578,7 +693,9 @@ export function CinematicCity({
               <option value={1}>1×</option>
               <option value={1.5}>1.5×</option>
               <option value={2}>2×</option>
+              <option value={8}>8×</option>
             </select>
+            {game && <span className="predict-lock-note">Predict locks seeking</span>}
           </section>
         </>
       )}

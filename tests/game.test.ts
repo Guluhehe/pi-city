@@ -4,9 +4,12 @@ import { test } from 'node:test';
 import { importPiJsonl } from '../src/adapters/pi/import';
 import { classifyToolName } from '../src/analysis/action-classes';
 import {
+  checkpointAtLessonFrame,
   derivePredictCheckpointReport,
   derivePredictCheckpoints,
 } from '../src/game/checkpoints';
+import { mapLessonFramesToTrace } from '../src/experience/lesson-map';
+import { getScenario } from '../src/experience/scenarios';
 import {
   buildPredictDebrief,
   createGameSession,
@@ -81,6 +84,16 @@ test('checkpoint derivation is deterministic and never mutates its trace', () =>
   const second = derivePredictCheckpointReport(trace);
   assert.deepEqual(first, second);
   assert.deepEqual(trace, before);
+});
+
+test('lesson playback pauses only when its mapped frame reaches the outstanding checkpoint', () => {
+  const trace = importPiJsonl(authRuntime).trace;
+  const checkpoints = derivePredictCheckpoints(trace);
+  const lessonMap = mapLessonFramesToTrace(getScenario('auth'), trace);
+  assert.equal(checkpointAtLessonFrame(checkpoints, lessonMap, 3, 0), checkpoints[0]);
+  assert.equal(checkpointAtLessonFrame(checkpoints, lessonMap, 12, 1), checkpoints[1]);
+  assert.equal(checkpointAtLessonFrame(checkpoints, lessonMap, 4, 0), null);
+  assert.equal(checkpointAtLessonFrame(checkpoints, lessonMap, 3, 1), null);
 });
 
 test('Game Session replays predictions deterministically into a decision-based debrief', () => {
