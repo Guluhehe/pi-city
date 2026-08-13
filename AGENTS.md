@@ -6,9 +6,10 @@ This file tells coding agents how to work in this repository without inventing a
 
 1. [`docs/architecture-evolution.md`](docs/architecture-evolution.md) — target architecture, milestones, non-goals
 2. [`docs/reviews/2026-08-10-fable5-architecture-review.md`](docs/reviews/2026-08-10-fable5-architecture-review.md) — Fable 5 review; priority list and honesty risks
-3. **Active plan:** [`docs/plans/2026-08-10-fable5-predict-and-honesty.md`](docs/plans/2026-08-10-fable5-predict-and-honesty.md) — Predict + narrative honesty (execute task-by-task)
+3. **Implemented plan:** [`docs/plans/2026-08-12-fable-v012-implementation.md`](docs/plans/2026-08-12-fable-v012-implementation.md) — v0.12 Predict + narrative honesty + reliability
+4. **Current handoff:** [`docs/handoffs/2026-08-13-fable-v012-handoff.md`](docs/handoffs/2026-08-13-fable-v012-handoff.md) — completed work, verification, repository state, and next steps
 
-Index pages: [`docs/reviews/`](docs/reviews/), [`docs/plans/`](docs/plans/).
+Index pages: [`docs/reviews/`](docs/reviews/), [`docs/plans/`](docs/plans/), [`docs/handoffs/`](docs/handoffs/).
 
 If a plan and the review disagree on tactics, prefer the **newest active plan**. If either disagrees with the architecture evolution doc on boundaries (immutable Semantic Trace, evidence levels, non-goals), prefer **architecture-evolution**.
 
@@ -32,12 +33,13 @@ Do not skip ahead to Intervene / Debug / open-world features before Predict is r
 
 ## Preferred next work
 
-Unless the human says otherwise, follow the Fable 5 review priority order:
+The first three Fable 5 priorities and deterministic trace identity are complete in v0.12. Unless the human says otherwise, continue with:
 
-1. Narrative honesty fixes in the cinematic shell (real Compare, event-derived evidence labels, no silent Photo Mode demo swap)
-2. First playable lesson: **Predict the Agent's next action**
-3. Minimal 3D/renderer failure fallback (ErrorBoundary → Evidence Explorer)
-4. Real runtime fixtures + `sourceHash` / deterministic trace ids
+1. A privacy-reviewed real **runtime** fixture for cinematic and Predict acceptance
+2. User validation of the first playable Predict lesson
+3. Measured bundle splitting if performance is the selected goal
+
+Do not start Intervene / Debug simply because Predict now exists. Require a new plan grounded in real-runtime and playthrough evidence.
 
 ## Verification
 

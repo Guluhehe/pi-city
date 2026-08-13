@@ -9,3 +9,5 @@ Executable plans for coding agents. Prefer the newest **active/proposed** plan t
 | [`2026-08-10-v011-trustworthy-public-beta.md`](2026-08-10-v011-trustworthy-public-beta.md) | historical for v0.11 | Milestone A closeout |
 
 Agent entrypoint: [`../../AGENTS.md`](../../AGENTS.md).
+
+Completed-work handoffs: [`../handoffs/`](../handoffs/).

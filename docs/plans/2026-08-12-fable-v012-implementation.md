@@ -1,5 +1,7 @@
 # Fable v0.12 Implementation Plan
 
+**Status:** Implemented on `codex/fable-v012`; see [`../handoffs/2026-08-13-fable-v012-handoff.md`](../handoffs/2026-08-13-fable-v012-handoff.md).
+
 > **For Claude:** REQUIRED SUB-SKILL: Use `executing-plans` to implement this plan task-by-task.
 
 **Goal:** Make Pi City's cinematic shell evidence-honest, add the first deterministic Predict lesson, and close the renderer/trace reliability gaps without changing the immutable Semantic Trace boundary.
