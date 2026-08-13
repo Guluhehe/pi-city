@@ -1,6 +1,6 @@
 # Pi City Architecture Evolution
 
-**Status:** Milestone B started — v0.12 Predict & Honesty
+**Status:** Milestone B implemented on main — awaiting real-runtime / playthrough validation
 **Scope:** Evolve the current playable visualization into a maintainable, game-based explanation of how Pi Agents work.
 **Primary constraint:** Preserve technical truth while adding player agency.
 
@@ -33,11 +33,13 @@ Still open after A:
 
 ### External architecture review (binding guidance)
 
-Fable 5 reviewed the v0.11 state and ranked the next work. Agents should treat this as active guidance:
+Fable 5 reviewed the v0.11 state and ranked the next work. Keep its evidence-honesty rules and non-goals. Priorities 1–4 and 6–7 shipped in v0.12; priority 5 (real runtime fixture) remains open.
 
 - Review: [`docs/reviews/2026-08-10-fable5-architecture-review.md`](reviews/2026-08-10-fable5-architecture-review.md)
 - Operating entrypoint for agents: [`AGENTS.md`](../AGENTS.md)
-- Executable follow-up plan: [`docs/plans/2026-08-10-fable5-predict-and-honesty.md`](plans/2026-08-10-fable5-predict-and-honesty.md)
+- Implemented plan: [`docs/plans/2026-08-12-fable-v012-implementation.md`](plans/2026-08-12-fable-v012-implementation.md)
+- Current handoff: [`docs/handoffs/2026-08-13-fable-v012-handoff.md`](handoffs/2026-08-13-fable-v012-handoff.md)
+- Superseded tactics: [`docs/plans/2026-08-10-fable5-predict-and-honesty.md`](plans/2026-08-10-fable5-predict-and-honesty.md)
 
 Core review conclusion to preserve: keep the evidence core strict; fix cinematic narrative pollution; implement **Predict the Agent's next action** before another art pass or larger world.
 

@@ -2,13 +2,13 @@
 title: Pi City v0.12 — Predict 机制与叙事诚实性修复实施计划
 date: 2026-08-10
 model: wanqing/claude-5-fable
-status: proposed
+status: superseded
 based_on: docs/reviews/2026-08-10-fable5-architecture-review.md
 ---
 
 # Pi City v0.12 — Predict the Agent's next action + Narrative Honesty
 
-> **For Cursor / coding agents:** 按任务顺序执行本计划。这是 Fable 5 架构评审（`docs/reviews/2026-08-10-fable5-architecture-review.md`）的执行文档，评审的优先级顺序与非目标清单是约束条件。核心纪律：**Semantic Trace 不可变；Game Session 是纯确定性 reducer；UI 上任何声称"证据"的文案必须来自真实事件；绝不静默替换用户导入的 trace**。所有行为变更采用 test-first。每个 commit 前检查 `git diff --cached`，不得混入无关文件；`.github/workflows/deploy-pages.yml` 仍是未提交草稿，不得 stage/commit/删除（见 Open questions）。禁止运行 `git remote` / `gh` / `git config`，禁止在任何产出中写入个人身份、绝对家目录路径、邮箱（如意外出现一律替换为 `<redacted>`）。
+> **For Cursor / coding agents:** 本计划已被 [`2026-08-12-fable-v012-implementation.md`](2026-08-12-fable-v012-implementation.md) 取代，且已在 v0.12 落地。不要按本文件重跑任务。当前入口是 [`../../AGENTS.md`](../../AGENTS.md) 与 [`../handoffs/2026-08-13-fable-v012-handoff.md`](../handoffs/2026-08-13-fable-v012-handoff.md)。
 
 ## Goal
 

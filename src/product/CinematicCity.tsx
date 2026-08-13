@@ -143,6 +143,7 @@ export function CinematicCity({
   const gameContextDiff = gameContext ? compareContextSnapshots(gameContext, gamePreviousContext) : undefined;
   const latestDecision = game?.decisions.at(-1);
   const debrief = game?.phase === 'debrief' ? buildPredictDebrief(game, checkpoints) : undefined;
+  const predictOverlayOpen = game?.phase === 'predict' || game?.phase === 'reveal';
 
   useEffect(() => {
     setLastChapter('');
@@ -150,7 +151,7 @@ export function CinematicCity({
   }, [trace.id]);
 
   useEffect(() => {
-    if (mode !== 'watch' || !playing || !lessonFrame) return;
+    if (mode !== 'watch' || !playing || !lessonFrame || predictOverlayOpen) return;
     frameStarted.current = performance.now();
     let raf = 0;
     const tick = () => {
@@ -185,7 +186,7 @@ export function CinematicCity({
     };
     raf = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(raf);
-  }, [mode, playing, index, speed, lessonFrame, scenario.frames, totalMs, game, checkpoints, lessonMap]);
+  }, [mode, playing, index, speed, lessonFrame, scenario.frames, totalMs, game, checkpoints, lessonMap, predictOverlayOpen]);
 
   useEffect(() => {
     if (mode !== 'watch' || !lessonFrame) return;
@@ -216,6 +217,7 @@ export function CinematicCity({
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
+      if (predictOverlayOpen) return;
       if (event.key === '1') requestPhoto('arrival');
       if (event.key === '2') requestPhoto('context');
       if (event.key === '3') requestPhoto('model');
@@ -224,7 +226,7 @@ export function CinematicCity({
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [mode, scenario, trace, traceOrigin, index, playing, cinema, authCompatible]);
+  }, [mode, scenario, trace, traceOrigin, index, playing, cinema, authCompatible, predictOverlayOpen]);
 
   function enterCity() {
     setGame(null);
@@ -260,7 +262,8 @@ export function CinematicCity({
   }
 
   function requestPhoto(key: CanonicalFrameKey) {
-    if (mode === 'photo' || (scenario.id === 'auth' && authCompatible)) {
+    if (predictOverlayOpen) return;
+    if (mode === 'photo' || (traceOrigin === 'bundled-demo' && scenario.id === 'auth' && authCompatible)) {
       enterPhoto(key);
       return;
     }
@@ -378,7 +381,7 @@ export function CinematicCity({
           <strong>A playable visualization of how AI agents actually run</strong>
         </div>
         <div className="cinematic-top-actions">
-          <button onClick={() => requestPhoto('arrival')}>Photo Mode</button>
+          <button onClick={() => requestPhoto('arrival')} disabled={predictOverlayOpen}>Photo Mode</button>
           <button onClick={() => inputRef.current?.click()}>Import Pi JSONL</button>
           <button className="primary" onClick={() => onOpenExplorer()}>Evidence Explorer</button>
           <input ref={inputRef} type="file" accept=".jsonl,.json,.txt" hidden onChange={(event) => onFiles(event.target.files)} />
@@ -659,6 +662,8 @@ export function CinematicCity({
           <section className="cinematic-transport">
             <button
               className="play"
+              disabled={predictOverlayOpen}
+              title={predictOverlayOpen ? 'Playback is locked while a prediction is open.' : undefined}
               onClick={() => {
                 if (mode === 'complete' || index >= scenario.frames.length - 1) {
                   setMode('watch');

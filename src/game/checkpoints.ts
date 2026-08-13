@@ -38,28 +38,21 @@ export function derivePredictCheckpointReport(trace: SemanticTrace): PredictChec
     const toolEvents = segment
       .map((event, offset) => ({ event, eventIndex: eventIndex + 1 + offset }))
       .filter(({ event }) => event.type === 'TOOL_CALL_CREATED');
-    const actualTool = toolEvents
-      .map(({ event, eventIndex: toolEventIndex }) => {
-        const toolName = eventToolName(event);
-        return toolName
-          ? { eventIndex: toolEventIndex, toolName, actual: classifyToolName(toolName) }
-          : { eventIndex: toolEventIndex, toolName: undefined, actual: undefined };
-      })
-      .find(({ actual }) => actual !== undefined);
-
-    if (actualTool?.actual) {
-      checkpoints.push({
-        eventIndex,
-        modelCallNumber,
-        turnId: trace.events[eventIndex]?.turnId,
-        actual: actualTool.actual,
-        actualToolEventIndex: actualTool.eventIndex,
-        actualToolName: actualTool.toolName,
-      });
-      return;
-    }
-
-    if (toolEvents.length) {
+    const nextTool = toolEvents[0];
+    if (nextTool) {
+      const toolName = eventToolName(nextTool.event);
+      const actual = toolName ? classifyToolName(toolName) : undefined;
+      if (actual) {
+        checkpoints.push({
+          eventIndex,
+          modelCallNumber,
+          turnId: trace.events[eventIndex]?.turnId,
+          actual,
+          actualToolEventIndex: nextTool.eventIndex,
+          actualToolName: toolName,
+        });
+        return;
+      }
       omissions.push({
         eventIndex,
         modelCallNumber,

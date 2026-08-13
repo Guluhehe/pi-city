@@ -28,6 +28,22 @@ test('Predict pauses at trace checkpoints and produces a decision-based debrief'
   await expect(debrief).toContainText('ANSWER');
 });
 
+test('Predict overlay locks playback and Photo Mode shortcuts', async ({ page }) => {
+  test.setTimeout(45_000);
+  await page.goto('/?quality=fallback');
+  await page.getByRole('button', { name: 'Play & Predict' }).click();
+  await page.locator('.cinematic-transport select').selectOption('8');
+
+  const predict = page.getByRole('dialog', { name: 'What will the Agent do next?' });
+  await expect(predict).toBeVisible({ timeout: 8_000 });
+  await expect(page.locator('.cinematic-transport .play')).toBeDisabled();
+
+  await page.keyboard.press('1');
+  await expect(page.getByRole('dialog', { name: 'Switch to bundled Photo Mode?' })).toHaveCount(0);
+  await expect(page.locator('.frame-mode')).toHaveCount(0);
+  await expect(predict).toBeVisible();
+});
+
 test('ordinary Watch never shows Predict controls', async ({ page }) => {
   await page.goto('/?quality=fallback');
   await page.getByRole('button', { name: /Enter the city/ }).click();

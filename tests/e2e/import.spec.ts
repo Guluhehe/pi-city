@@ -2,7 +2,9 @@ import { expect, test } from '@playwright/test';
 import { resolve } from 'node:path';
 
 const multiFixture = resolve('fixtures/multi-tool/runtime.jsonl');
+const authRuntimeFixture = resolve('fixtures/auth-bug/runtime.jsonl');
 const sessionFixture = resolve('fixtures/auth-bug/session.jsonl');
+const importedNarration = 'A user message became new work for the Agent.';
 
 test('importing multi-tool fixture shows event-derived narration and actual totals', async ({ page }) => {
   test.setTimeout(60_000);
@@ -62,6 +64,27 @@ test('Photo Mode never replaces an imported run without consent', async ({ page 
   await expect(confirmation).toHaveCount(0, { timeout: 15_000 });
   await expect(runTitle).toBeVisible();
   await expect(page).toHaveURL((url) => !url.searchParams.has('frame'));
+});
+
+test('Photo Mode asks before replacing a compatible imported auth run', async ({ page }) => {
+  await page.goto('/?quality=fallback');
+  await page.locator('.cinematic-top-actions input[type="file"]').setInputFiles(authRuntimeFixture);
+  await expect(page.locator('.cinematic-title p')).toHaveText(importedNarration);
+
+  await page.keyboard.press('1');
+  const confirmation = page.getByRole('dialog', { name: 'Switch to bundled Photo Mode?' });
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole('button', { name: 'Stay with my run' }).click();
+  await expect(confirmation).toHaveCount(0);
+  await expect(page.locator('.cinematic-title p')).toHaveText(importedNarration);
+  await expect(page).toHaveURL((url) => !url.searchParams.has('frame'));
+
+  await page.keyboard.press('1');
+  await confirmation.getByRole('button', { name: 'Switch to demo frames' }).click();
+  await expect(page.locator('.frame-mode')).toHaveCount(1);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.cinematic-title p')).toHaveText(importedNarration);
+  await expect(page.locator('.cinematic-app')).toHaveClass(/watch-mode/);
 });
 
 test('Photo Mode restores the imported run after an approved demo switch', async ({ page }) => {

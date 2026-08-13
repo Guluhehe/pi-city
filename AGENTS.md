@@ -11,7 +11,7 @@ This file tells coding agents how to work in this repository without inventing a
 
 Index pages: [`docs/reviews/`](docs/reviews/), [`docs/plans/`](docs/plans/), [`docs/handoffs/`](docs/handoffs/).
 
-If a plan and the review disagree on tactics, prefer the **newest active plan**. If either disagrees with the architecture evolution doc on boundaries (immutable Semantic Trace, evidence levels, non-goals), prefer **architecture-evolution**.
+If a later plan and the review disagree on tactics, prefer the **current handoff**, then the newest implemented plan. There is no active v0.12 execution queue. If either disagrees with the architecture evolution doc on boundaries (immutable Semantic Trace, evidence levels, non-goals), prefer **architecture-evolution**.
 
 ## Product ladder
 

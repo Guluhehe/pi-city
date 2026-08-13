@@ -75,6 +75,29 @@ test('omits truncated and unknown-tool decisions with explicit reasons', () => {
     { eventIndex: 3, modelCallNumber: 1, reason: 'unknown-tool', toolNames: ['mcp_delete_record'] },
   ]);
   assert.deepEqual(report.checkpoints.map((checkpoint) => checkpoint.actual), ['answer']);
+
+  const unknownThenRead: SemanticTrace = {
+    ...auth,
+    events: [
+      ...auth.events.slice(0, 5),
+      {
+        ...auth.events[5],
+        id: 'injected-unknown',
+        payload: { ...auth.events[5].payload, toolName: 'mcp_delete_record' },
+      },
+      ...auth.events.slice(5),
+    ],
+  };
+  const skipped = derivePredictCheckpointReport(unknownThenRead);
+  assert.deepEqual(skipped.omissions, [
+    {
+      eventIndex: 3,
+      modelCallNumber: 1,
+      reason: 'unknown-tool',
+      toolNames: ['mcp_delete_record', 'read'],
+    },
+  ]);
+  assert.deepEqual(skipped.checkpoints.map((checkpoint) => checkpoint.actual), ['answer']);
 });
 
 test('checkpoint derivation is deterministic and never mutates its trace', () => {

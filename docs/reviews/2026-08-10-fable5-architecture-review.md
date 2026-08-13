@@ -2,13 +2,13 @@
 title: Fable 5 Architecture Review
 date: 2026-08-10
 model: wanqing/claude-5-fable
-status: active-guidance
+status: historical-snapshot
 audience: humans + coding agents
 ---
 
 # Pi City — Fable 5 Architecture Review
 
-> **For coding agents:** Treat this document as binding product/architecture guidance alongside [`docs/architecture-evolution.md`](../architecture-evolution.md). Prefer its priority list when choosing the next implementation work. Do not contradict its evidence-honesty rules (Observed / Derived / Synthetic must stay distinguishable; never silently replace user traces with demo narration).
+> **For coding agents:** This is a snapshot of the v0.11 repository. Keep its evidence-honesty rules (Observed / Derived / Synthetic; never silently replace user traces with demo narration). Do **not** treat the §6 checklist as a queue: v0.12 shipped priorities 1–4 and 6–7. Remaining open work is priority 5 (a privacy-reviewed real runtime fixture) plus playthrough validation. See [`../handoffs/2026-08-13-fable-v012-handoff.md`](../handoffs/2026-08-13-fable-v012-handoff.md).
 
 **Source:** External review by Claude Fable 5 via myflicker, based on the repository state around the v0.11 trustworthy public beta. Identity / hosting / personal metadata were redacted before check-in.
 
