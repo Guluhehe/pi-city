@@ -33,6 +33,25 @@ const LOCATIONS: Record<LocationId, { position: Vec3; color: string; label: stri
   'stable-water': { position: [3.8, 0, 1.7], color: '#73d9e5', label: '水线小渠' },
 };
 
+const JOURNEY_SECONDS = 2.7;
+const RETURN_SECONDS = 2.15;
+
+function easeInOut(value: number): number {
+  const clamped = THREE.MathUtils.clamp(value, 0, 1);
+  return clamped * clamped * (3 - 2 * clamped);
+}
+
+function journeyStateKey(state: FountainSessionState): string {
+  return `${state.phase}:${state.pendingQuestion ?? 'fountain'}:${state.lastReturn?.fact?.id ?? 'none'}`;
+}
+
+function journeyTarget(state: FountainSessionState): LocationId {
+  if (state.pendingQuestion) return state.pendingQuestion;
+  if (state.phase === 'action') return 'workshop';
+  if (state.phase === 'complete') return 'full-song';
+  return 'fountain';
+}
+
 export function FountainStoryScene({
   state,
   onSelectQuestion,
@@ -114,24 +133,45 @@ function FountainCamera({ state }: { state: FountainSessionState }) {
   const lookAt = useRef(new THREE.Vector3(0, 1.15, 0));
   const desired = useMemo(() => new THREE.Vector3(), []);
   const nextLookAt = useMemo(() => new THREE.Vector3(), []);
-  useFrame((_, delta) => {
-    const targetId = state.phase === 'plan' || state.phase === 'expedition'
-      ? state.pendingQuestion ?? 'fountain'
-      : state.phase === 'action'
-        ? 'workshop'
-        : state.phase === 'complete'
-          ? 'full-song'
-          : 'fountain';
-    const location = LOCATIONS[targetId];
-    const close = state.phase === 'plan' || state.phase === 'expedition' || state.phase === 'action';
-    desired.set(
-      location.position[0] + (close ? 4.5 : 9.15),
-      close ? 4.05 : 5.9,
-      location.position[2] + (close ? 6.4 : 13.1),
-    );
-    nextLookAt.set(location.position[0], close ? 1.0 : 1.06, location.position[2]);
-    camera.position.lerp(desired, 1 - Math.exp(-delta * 1.45));
-    lookAt.current.lerp(nextLookAt, 1 - Math.exp(-delta * 1.65));
+  const subject = useMemo(() => new THREE.Vector3(), []);
+  const phaseStartedAt = useRef(0);
+  const lastKey = useRef('');
+  useFrame(({ clock }, delta) => {
+    const key = journeyStateKey(state);
+    if (key !== lastKey.current) {
+      lastKey.current = key;
+      phaseStartedAt.current = clock.elapsedTime;
+    }
+    const elapsed = clock.elapsedTime - phaseStartedAt.current;
+    const targetId = journeyTarget(state);
+    const target = LOCATIONS[targetId].position;
+    const origin = LOCATIONS.fountain.position;
+    const departing = state.phase === 'expedition' && targetId !== 'fountain';
+    const returning = state.phase === 'return' && targetId !== 'fountain';
+    const progress = departing ? easeInOut(elapsed / JOURNEY_SECONDS) : returning ? easeInOut(elapsed / RETURN_SECONDS) : 0;
+
+    if (departing) subject.set(origin[0], .72, origin[2]).lerp(new THREE.Vector3(target[0], .72, target[2]), progress);
+    else if (returning) subject.set(target[0], .72, target[2]).lerp(new THREE.Vector3(origin[0], .72, origin[2]), progress);
+    else if (state.phase === 'plan') subject.set(origin[0], .78, origin[2]);
+    else if (state.phase === 'action' || state.phase === 'complete') subject.set(target[0], .9, target[2]);
+    else subject.set(origin[0], 1.05, origin[2]);
+
+    if (state.phase === 'plan') {
+      desired.set(5.25, 3.55, 7.45);
+      nextLookAt.set(.05, .88, .05);
+    } else if (departing || returning) {
+      desired.set(subject.x + 3.7, 3.35, subject.z + 5.55);
+      nextLookAt.copy(subject).add(new THREE.Vector3(0, .12, 0));
+    } else if (state.phase === 'action' || state.phase === 'complete') {
+      desired.set(target[0] + 4.1, 3.95, target[2] + 5.85);
+      nextLookAt.set(target[0], .95, target[2]);
+    } else {
+      desired.set(9.15, 5.9, 13.1);
+      nextLookAt.set(0, 1.06, 0);
+    }
+
+    camera.position.lerp(desired, 1 - Math.exp(-delta * (departing || returning ? 2.45 : 1.65)));
+    lookAt.current.lerp(nextLookAt, 1 - Math.exp(-delta * (departing || returning ? 2.8 : 1.85)));
     camera.lookAt(lookAt.current);
   });
   return null;
@@ -170,8 +210,8 @@ function FountainTown({
       <HarborLandmarks />
       <HarborHomes />
       <HarborBoats />
-      <PiCompanion target={piTarget} active={state.phase === 'expedition'} complete={complete} />
-      <PathLanterns target={piTarget} visible={state.phase === 'plan' || state.phase === 'expedition'} />
+      <PiCompanion state={state} target={piTarget} complete={complete} />
+      <PathLanterns state={state} target={piTarget} />
       <LanternField complete={complete} />
       <Fireflies complete={complete} />
     </group>
@@ -464,37 +504,70 @@ function LocationHotspot({ position, color, active, visited, onClick }: { positi
   </group>;
 }
 
-function PiCompanion({ target, active, complete }: { target: LocationId; active: boolean; complete: boolean }) {
+function PiCompanion({ state, target, complete }: { state: FountainSessionState; target: LocationId; complete: boolean }) {
   const group = useRef<THREE.Group>(null);
   const satchel = useRef<THREE.Group>(null);
   const desired = useMemo(() => new THREE.Vector3(), []);
+  const origin = useMemo(() => new THREE.Vector3(.82, .5, .78), []);
+  const phaseStartedAt = useRef(0);
+  const lastKey = useRef('');
   useFrame(({ clock }, delta) => {
     if (!group.current) return;
-    const position = LOCATIONS[target].position;
-    desired.set(position[0] + .82, .5 + Math.sin(clock.elapsedTime*2.25)*.05, position[2] + .78);
-    group.current.position.lerp(desired, 1 - Math.exp(-delta * (active ? 1.42 : 2.45)));
-    group.current.rotation.y = Math.sin(clock.elapsedTime * 1.15) * .17;
-    if (satchel.current) satchel.current.rotation.z = Math.sin(clock.elapsedTime*2.2)*.13;
+    const key = journeyStateKey(state);
+    if (key !== lastKey.current) {
+      lastKey.current = key;
+      phaseStartedAt.current = clock.elapsedTime;
+    }
+    const elapsed = clock.elapsedTime - phaseStartedAt.current;
+    const destination = LOCATIONS[target].position;
+    const departing = state.phase === 'expedition' && target !== 'fountain';
+    const returning = state.phase === 'return' && target !== 'fountain';
+    const progress = departing ? easeInOut(elapsed / JOURNEY_SECONDS) : returning ? easeInOut(elapsed / RETURN_SECONDS) : 0;
+    const destinationPoint = new THREE.Vector3(destination[0] + .35, .5, destination[2] + .4);
+    if (departing) desired.copy(origin).lerp(destinationPoint, progress);
+    else if (returning) desired.copy(destinationPoint).lerp(origin, progress);
+    else if (state.phase === 'plan') desired.copy(origin);
+    else desired.copy(destinationPoint);
+    desired.y += Math.sin(clock.elapsedTime * 2.3) * .055;
+    group.current.position.lerp(desired, 1 - Math.exp(-delta * (departing || returning ? 7.5 : 2.5)));
+    const direction = desired.clone().sub(group.current.position);
+    if (direction.lengthSq() > .0002) group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, Math.atan2(direction.x, direction.z), .14);
+    else group.current.rotation.y = Math.sin(clock.elapsedTime * 1.15) * .17;
+    if (satchel.current) satchel.current.rotation.z = Math.sin(clock.elapsedTime * (departing || returning ? 7.2 : 2.2)) * (returning ? .24 : .13);
   });
-  return <group ref={group} position={[.84,.5,.8]}>
-    <mesh scale={1.32}><sphereGeometry args={[.43,20,16]} /><meshBasicMaterial color="#93fff0" transparent opacity={.13} depthWrite={false} /></mesh>
-    <mesh castShadow><sphereGeometry args={[.37,20,16]} /><meshStandardMaterial color="#c8fff0" emissive={complete ? '#ffe398' : '#56d7c8'} emissiveIntensity={complete ? 1.55 : 1.14} roughness={.32} /></mesh>
+  const returning = state.phase === 'return' && target !== 'fountain';
+  const tokenColor = state.lastReturn?.kind === 'refuted' ? '#c9c7d8' : state.lastReturn?.kind === 'refined' ? '#7ed5eb' : state.lastReturn?.kind === 'confirmed' ? '#ffe287' : '#f5b879';
+  return <group ref={group} position={origin}>
+    <mesh scale={state.phase === 'plan' ? 1.5 : 1.32}><sphereGeometry args={[.43,20,16]} /><meshBasicMaterial color="#93fff0" transparent opacity={state.phase === 'plan' ? .22 : .13} depthWrite={false} /></mesh>
+    <mesh castShadow><sphereGeometry args={[.37,20,16]} /><meshStandardMaterial color="#c8fff0" emissive={complete ? '#ffe398' : '#56d7c8'} emissiveIntensity={complete ? 1.55 : state.phase === 'plan' ? 1.58 : 1.14} roughness={.32} /></mesh>
     <mesh position={[-.12,.06,.34]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color="#34585a" /></mesh>
     <mesh position={[.12,.06,.34]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color="#34585a" /></mesh>
     <mesh position={[0,.48,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.1,.018,6,16,Math.PI]} /><meshStandardMaterial color="#f4d77e" emissive="#b97d2e" emissiveIntensity={.75} /></mesh>
-    <group ref={satchel} position={[.34,-.18,.02]}><mesh><boxGeometry args={[.24,.22,.17]} /><meshStandardMaterial color="#ad6c48" roughness={.77} /></mesh><mesh position={[0,.17,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.085,.015,6,12,Math.PI]} /><meshStandardMaterial color="#e2bd7b" /></mesh></group>
-    <pointLight position={[0,.1,0]} color={complete ? '#ffe3a3' : '#adfff0'} intensity={1.45} distance={3.4} />
+    <group ref={satchel} position={[.34,-.18,.02]}><mesh><boxGeometry args={[.24,.22,.17]} /><meshStandardMaterial color="#ad6c48" roughness={.77} /></mesh><mesh position={[0,.17,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.085,.015,6,12,Math.PI]} /><meshStandardMaterial color="#e2bd7b" /></mesh>{returning && <><mesh position={[.01,.33,.08]}><octahedronGeometry args={[.11,0]} /><meshStandardMaterial color={tokenColor} emissive={tokenColor} emissiveIntensity={2.1} roughness={.18} /></mesh><pointLight position={[.01,.33,.08]} color={tokenColor} intensity={1.2} distance={2.8} /></>}</group>
+    <pointLight position={[0,.1,0]} color={complete ? '#ffe3a3' : '#adfff0'} intensity={state.phase === 'plan' ? 2.15 : 1.45} distance={3.4} />
   </group>;
 }
 
-function PathLanterns({ target, visible }: { target: LocationId; visible: boolean }) {
+function PathLanterns({ state, target }: { state: FountainSessionState; target: LocationId }) {
+  const group = useRef<THREE.Group>(null);
   const targetPosition = LOCATIONS[target].position;
-  if (!visible || target === 'fountain') return null;
-  return <group>{Array.from({length: 13}).map((_, index) => {
+  const visible = (state.phase === 'plan' || state.phase === 'expedition' || state.phase === 'return') && target !== 'fountain';
+  useFrame(({ clock }) => {
+    if (!group.current) return;
+    const reversing = state.phase === 'return';
+    group.current.children.forEach((child, index) => {
+      const wave = .5 + .5 * Math.sin(clock.elapsedTime * 5.2 + (reversing ? index : 12 - index) * .72);
+      child.scale.setScalar(.82 + wave * .55);
+      const light = child.children.find((item) => item instanceof THREE.PointLight) as THREE.PointLight | undefined;
+      if (light) light.intensity = .12 + wave * .7;
+    });
+  });
+  if (!visible) return null;
+  return <group ref={group}>{Array.from({length: 13}).map((_, index) => {
     const t = (index + 1) / 14;
     const x = THREE.MathUtils.lerp(.8, targetPosition[0], t);
     const z = THREE.MathUtils.lerp(.8, targetPosition[2], t) + Math.sin(t*Math.PI) * .44;
-    return <group key={index} position={[x,.3,z]}><mesh><sphereGeometry args={[.07 + index*.003,10,8]} /><meshStandardMaterial color="#fff0a7" emissive="#e5a54f" emissiveIntensity={1.55} /></mesh>{index % 4 === 0 && <pointLight intensity={.45} distance={2.0} color="#ffd37b" />}</group>;
+    return <group key={index} position={[x,.3,z]}><mesh><sphereGeometry args={[.07 + index*.003,10,8]} /><meshStandardMaterial color="#fff0a7" emissive="#e5a54f" emissiveIntensity={1.75} /></mesh><pointLight intensity={.45} distance={2.0} color="#ffd37b" /></group>;
   })}</group>;
 }
 

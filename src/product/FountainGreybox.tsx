@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import '../fountain.css';
 import { FountainStoryScene } from '../world/FountainStoryScene';
 import {
@@ -138,7 +138,7 @@ function renderStoryFocus(
         <span>Pi 正沿着小城出发</span>
         <strong>去 {question.destination}</strong>
         <p>{question.plan}</p>
-        <button className="scene-cta compact" onClick={() => dispatch({ type: 'COMPLETE_EXPEDITION' })}>等 Pi 带着发现回来 <i>→</i></button>
+        <ExpeditionReturnButton onComplete={() => dispatch({ type: 'COMPLETE_EXPEDITION' })} />
       </article>
     );
   }
@@ -148,7 +148,7 @@ function renderStoryFocus(
         <span>{returnHeading(result.kind)}</span>
         <strong>{result.title}</strong>
         <p>{result.body}</p>
-        <button className="scene-cta compact" onClick={() => dispatch({ type: 'ACKNOWLEDGE_RETURN' })}>把它记进手账 <i>↘</i></button>
+        <ReturnAcknowledgeButton onAcknowledge={() => dispatch({ type: 'ACKNOWLEDGE_RETURN' })} />
       </article>
     );
   }
@@ -173,6 +173,28 @@ function renderStoryFocus(
     );
   }
   return <div className="story-empty">新的发现会让城市里出现下一颗疑问种子。</div>;
+}
+
+function ReturnAcknowledgeButton({ onAcknowledge }: { onAcknowledge: () => void }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setReady(true), 2150);
+    return () => window.clearTimeout(timer);
+  }, []);
+  return <button className="scene-cta compact" onClick={onAcknowledge} disabled={!ready}>
+    {ready ? '把它记进手账' : 'Pi 正带着发现回来…'} <i>{ready ? '↘' : '· · ·'}</i>
+  </button>;
+}
+
+function ExpeditionReturnButton({ onComplete }: { onComplete: () => void }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setReady(true), 2700);
+    return () => window.clearTimeout(timer);
+  }, []);
+  return <button className="scene-cta compact" onClick={onComplete} disabled={!ready}>
+    {ready ? '等 Pi 带着发现回来' : 'Pi 正沿着灯火前往…'} <i>{ready ? '→' : '· · ·'}</i>
+  </button>;
 }
 
 function piLine(state: FountainSessionState, question?: FountainQuestion, result?: FountainSessionState['lastReturn']): string {
