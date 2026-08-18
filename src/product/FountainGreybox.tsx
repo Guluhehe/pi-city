@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import '../fountain.css';
+import { FountainStoryScene } from '../world/FountainStoryScene';
 import {
   FOUNTAIN_QUESTIONS,
   availableFountainQuestions,
@@ -9,14 +10,6 @@ import {
   type FountainSessionAction,
   type FountainSessionState,
 } from '../game';
-
-const QUESTION_PRESENTATION: Record<FountainQuestion['id'], { icon: string; className: string; hint: string }> = {
-  melody: { icon: '♫', className: 'melody-seed', hint: '一截断开的节拍纸带' },
-  water: { icon: '◌', className: 'water-seed', hint: '水线上的小小记号' },
-  wind: { icon: '〰', className: 'wind-seed', hint: '风铃旁的一缕风线' },
-  'full-song': { icon: '✦', className: 'song-seed', hint: '等晚风来听一整首' },
-  'stable-water': { icon: '◒', className: 'water-seed', hint: '看看水流会不会一直稳住' },
-};
 
 function returnTone(kind: FountainReturnKind): string {
   if (kind === 'refuted') return 'refuted';
@@ -36,7 +29,7 @@ export function FountainGreybox({
 }) {
   const [showStoryNote, setShowStoryNote] = useState(false);
   const facts = factDetails(state);
-  const questions = availableFountainQuestions(state);
+  const availableQuestions = availableFountainQuestions(state);
   const question = state.pendingQuestion ? FOUNTAIN_QUESTIONS[state.pendingQuestion] : undefined;
   const result = state.lastReturn;
 
@@ -59,11 +52,10 @@ export function FountainGreybox({
       )}
 
       <main className="story-world">
-        <div className="world-glow world-glow-one" />
-        <div className="world-glow world-glow-two" />
-        <div className="seventh-beat" aria-hidden="true"><span>第七拍</span><i /><i /><i /></div>
-        <div className="pi-presence" aria-hidden="true"><span className="pi-lantern">✦</span><i className="pi-satchel" /></div>
-
+        <FountainStoryScene
+          state={state}
+          onSelectQuestion={(questionId) => dispatch({ type: 'SELECT_QUESTION', questionId })}
+        />
         <section className="story-copy">
           <p className="resident-tag">码头乐手的委托</p>
           <h1>让 Pi 和你一起<br />把这首歌弄明白。</h1>
@@ -75,23 +67,21 @@ export function FountainGreybox({
         </section>
 
         {state.phase === 'choose-question' && (
-          <section className="question-seeds" aria-label="可以继续弄清的城市线索">
-            <p>你觉得 Pi 现在最该弄清什么？</p>
-            {questions.map((item) => {
-              const presentation = QUESTION_PRESENTATION[item.id];
-              return (
+          <aside className="world-clue-guide" aria-label="选择下一处调查地点">
+            <span aria-hidden="true">✦</span>
+            <p>看见发光的小圈了吗？点一个你想和 Pi 一起弄清的地方。</p>
+            <div className="world-question-fallback">
+              <small>也可以从这里出发</small>
+              {availableQuestions.map((item) => (
                 <button
-                  className={`question-seed ${presentation.className}`}
                   key={item.id}
                   onClick={() => dispatch({ type: 'SELECT_QUESTION', questionId: item.id })}
                 >
-                  <span className="seed-icon">{presentation.icon}</span>
-                  <span className="seed-hint">{presentation.hint}</span>
-                  <strong>{item.prompt}</strong>
+                  去{item.destination}看看
                 </button>
-              );
-            })}
-          </section>
+              ))}
+            </div>
+          </aside>
         )}
 
         <div className="pi-dialogue" aria-live="polite">
