@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState, type ComponentType } from 'react';
 import demoRuntime from '../../fixtures/auth-bug/runtime.jsonl?raw';
 import { importPiJsonl } from '../adapters/pi/import';
 import { buildContextSnapshots, compareContextSnapshots } from '../analysis/context';
@@ -7,8 +7,10 @@ import type { AgentActionClass } from '../analysis/action-classes';
 import {
   buildPredictDebrief,
   checkpointAtLessonFrame,
+  createFountainSession,
   createGameSession,
   derivePredictCheckpoints,
+  reduceFountainSession,
   reduceGameSession,
   type GameSessionState,
 } from '../game';
@@ -36,8 +38,9 @@ import {
 import { PiCityScene } from '../world/PiCityScene';
 import type { PiCitySceneProps } from '../world/PiCityScene';
 import { EvidenceCityMap, SceneErrorBoundary } from './SceneErrorBoundary';
+import { FountainGreybox } from './FountainGreybox';
 
-type ShellMode = 'landing' | 'watch' | 'explore' | 'photo' | 'complete';
+type ShellMode = 'landing' | 'watch' | 'explore' | 'photo' | 'complete' | 'fountain';
 type TraceOrigin = 'bundled-demo' | 'imported';
 type PhotoReturnView = {
   scenario: LessonScenario;
@@ -106,6 +109,7 @@ export function CinematicCity({
     returnView: PhotoReturnView;
   } | null>(null);
   const [game, setGame] = useState<GameSessionState | null>(null);
+  const [fountain, dispatchFountain] = useReducer(reduceFountainSession, undefined, createFountainSession);
   const [elapsed, setElapsed] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const frameStarted = useRef(performance.now());
@@ -248,6 +252,13 @@ export function CinematicCity({
     setPlaying(true);
   }
 
+  function enterFountain() {
+    setPlaying(false);
+    setGame(null);
+    dispatchFountain({ type: 'RESTART' });
+    setMode('fountain');
+  }
+
   function choosePrediction(choice: AgentActionClass) {
     setGame((current) => current
       ? reduceGameSession(current, { type: 'PREDICT_NEXT_ACTION', choice }, checkpoints)
@@ -362,6 +373,20 @@ export function CinematicCity({
     }
   }
 
+  if (mode === 'fountain') {
+    return (
+      <FountainGreybox
+        state={fountain}
+        dispatch={dispatchFountain}
+        onExit={() => {
+          dispatchFountain({ type: 'RESTART' });
+          setMode('landing');
+          setCinema(true);
+        }}
+      />
+    );
+  }
+
   const presentation = mode === 'photo' ? 'photo' : mode === 'explore' ? 'explore' : 'watch';
   const exploreCopy = DISTRICT_COPY[exploreDistrict];
   const photo = CANONICAL_FRAMES[canonicalKey];
@@ -424,6 +449,7 @@ export function CinematicCity({
               <div className="landing-actions">
                 <button className="primary" onClick={enterCity}>Enter the city →</button>
                 <button onClick={enterPredict} disabled={!checkpoints.length}>Play &amp; Predict</button>
+                <button className="tutorial-entry" onClick={enterFountain}>和 Pi 一起调查</button>
                 <button onClick={() => inputRef.current?.click()}>Import your Pi run</button>
                 <button onClick={() => requestPhoto('arrival')}>View hero frames</button>
               </div>
