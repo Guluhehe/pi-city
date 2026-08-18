@@ -145,21 +145,24 @@ function FountainCamera({ state }: { state: FountainSessionState }) {
     const elapsed = clock.elapsedTime - phaseStartedAt.current;
     const targetId = journeyTarget(state);
     const target = LOCATIONS[targetId].position;
-    const origin = LOCATIONS.fountain.position;
+    const origin = new THREE.Vector3(1.42, .72, 1.26);
     const departing = state.phase === 'expedition' && targetId !== 'fountain';
     const returning = state.phase === 'return' && targetId !== 'fountain';
     const progress = departing ? easeInOut(elapsed / JOURNEY_SECONDS) : returning ? easeInOut(elapsed / RETURN_SECONDS) : 0;
 
-    if (departing) subject.set(origin[0], .72, origin[2]).lerp(new THREE.Vector3(target[0], .72, target[2]), progress);
-    else if (returning) subject.set(target[0], .72, target[2]).lerp(new THREE.Vector3(origin[0], .72, origin[2]), progress);
-    else if (state.phase === 'plan') subject.set(origin[0], .78, origin[2]);
+    if (departing) subject.copy(origin).lerp(new THREE.Vector3(target[0], .72, target[2]), progress);
+    else if (returning) subject.set(target[0], .72, target[2]).lerp(origin, progress);
+    else if (state.phase === 'plan') subject.copy(origin).add(new THREE.Vector3(0, .06, 0));
     else if (state.phase === 'action' || state.phase === 'complete') subject.set(target[0], .9, target[2]);
-    else subject.set(origin[0], 1.05, origin[2]);
+    else subject.set(origin.x, 1.05, origin.z);
 
     if (state.phase === 'plan') {
       desired.set(5.25, 3.55, 7.45);
       nextLookAt.set(.05, .88, .05);
-    } else if (departing || returning) {
+    } else if (returning) {
+      desired.set(subject.x - 2.35, 2.18, subject.z + 3.25);
+      nextLookAt.copy(subject).add(new THREE.Vector3(0, .34, 0));
+    } else if (departing) {
       desired.set(subject.x + 3.7, 3.35, subject.z + 5.55);
       nextLookAt.copy(subject).add(new THREE.Vector3(0, .12, 0));
     } else if (state.phase === 'action' || state.phase === 'complete') {
@@ -508,7 +511,7 @@ function PiCompanion({ state, target, complete }: { state: FountainSessionState;
   const group = useRef<THREE.Group>(null);
   const satchel = useRef<THREE.Group>(null);
   const desired = useMemo(() => new THREE.Vector3(), []);
-  const origin = useMemo(() => new THREE.Vector3(.82, .5, .78), []);
+  const origin = useMemo(() => new THREE.Vector3(1.42, .5, 1.26), []);
   const phaseStartedAt = useRef(0);
   const lastKey = useRef('');
   useFrame(({ clock }, delta) => {
@@ -539,12 +542,13 @@ function PiCompanion({ state, target, complete }: { state: FountainSessionState;
   const tokenColor = state.lastReturn?.kind === 'refuted' ? '#c9c7d8' : state.lastReturn?.kind === 'refined' ? '#7ed5eb' : state.lastReturn?.kind === 'confirmed' ? '#ffe287' : '#f5b879';
   return <group ref={group} position={origin}>
     <mesh scale={state.phase === 'plan' ? 1.5 : 1.32}><sphereGeometry args={[.43,20,16]} /><meshBasicMaterial color="#93fff0" transparent opacity={state.phase === 'plan' ? .22 : .13} depthWrite={false} /></mesh>
-    <mesh castShadow><sphereGeometry args={[.37,20,16]} /><meshStandardMaterial color="#c8fff0" emissive={complete ? '#ffe398' : '#56d7c8'} emissiveIntensity={complete ? 1.55 : state.phase === 'plan' ? 1.58 : 1.14} roughness={.32} /></mesh>
+    <mesh castShadow><sphereGeometry args={[.37,20,16]} /><meshStandardMaterial color={returning ? '#fff0be' : '#c8fff0'} emissive={complete ? '#ffe398' : returning ? tokenColor : '#56d7c8'} emissiveIntensity={complete ? 1.55 : returning ? 1.85 : state.phase === 'plan' ? 1.58 : 1.14} roughness={.32} /></mesh>
     <mesh position={[-.12,.06,.34]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color="#34585a" /></mesh>
     <mesh position={[.12,.06,.34]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color="#34585a" /></mesh>
     <mesh position={[0,.48,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.1,.018,6,16,Math.PI]} /><meshStandardMaterial color="#f4d77e" emissive="#b97d2e" emissiveIntensity={.75} /></mesh>
-    <group ref={satchel} position={[.34,-.18,.02]}><mesh><boxGeometry args={[.24,.22,.17]} /><meshStandardMaterial color="#ad6c48" roughness={.77} /></mesh><mesh position={[0,.17,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.085,.015,6,12,Math.PI]} /><meshStandardMaterial color="#e2bd7b" /></mesh>{returning && <><mesh position={[.01,.33,.08]}><octahedronGeometry args={[.11,0]} /><meshStandardMaterial color={tokenColor} emissive={tokenColor} emissiveIntensity={2.1} roughness={.18} /></mesh><pointLight position={[.01,.33,.08]} color={tokenColor} intensity={1.2} distance={2.8} /></>}</group>
-    <pointLight position={[0,.1,0]} color={complete ? '#ffe3a3' : '#adfff0'} intensity={state.phase === 'plan' ? 2.15 : 1.45} distance={3.4} />
+    <group ref={satchel} position={[.34,-.18,.02]}><mesh><boxGeometry args={[.24,.22,.17]} /><meshStandardMaterial color="#ad6c48" roughness={.77} /></mesh><mesh position={[0,.17,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.085,.015,6,12,Math.PI]} /><meshStandardMaterial color="#e2bd7b" /></mesh>{returning && <><mesh position={[.01,.48,.08]}><octahedronGeometry args={[.16,0]} /><meshStandardMaterial color={tokenColor} emissive={tokenColor} emissiveIntensity={2.35} roughness={.18} /></mesh><pointLight position={[.01,.48,.08]} color={tokenColor} intensity={1.45} distance={3.1} /></>}</group>
+    {returning && <group position={[0,.92,.02]}><mesh rotation={[0,Math.PI/4,0]}><octahedronGeometry args={[.18,0]} /><meshStandardMaterial color={tokenColor} emissive={tokenColor} emissiveIntensity={2.9} roughness={.16} /></mesh><mesh rotation={[-Math.PI/2,0,0]}><torusGeometry args={[.31,.016,6,24]} /><meshBasicMaterial color={tokenColor} transparent opacity={.62} /></mesh><pointLight color={tokenColor} intensity={1.75} distance={3.8} /></group>}
+    <pointLight position={[0,.1,0]} color={complete ? '#ffe3a3' : returning ? tokenColor : '#adfff0'} intensity={state.phase === 'plan' ? 2.15 : returning ? 2.1 : 1.45} distance={3.4} />
   </group>;
 }
 
@@ -565,8 +569,8 @@ function PathLanterns({ state, target }: { state: FountainSessionState; target: 
   if (!visible) return null;
   return <group ref={group}>{Array.from({length: 13}).map((_, index) => {
     const t = (index + 1) / 14;
-    const x = THREE.MathUtils.lerp(.8, targetPosition[0], t);
-    const z = THREE.MathUtils.lerp(.8, targetPosition[2], t) + Math.sin(t*Math.PI) * .44;
+    const x = THREE.MathUtils.lerp(1.42, targetPosition[0], t);
+    const z = THREE.MathUtils.lerp(1.26, targetPosition[2], t) + Math.sin(t*Math.PI) * .44;
     return <group key={index} position={[x,.3,z]}><mesh><sphereGeometry args={[.07 + index*.003,10,8]} /><meshStandardMaterial color="#fff0a7" emissive="#e5a54f" emissiveIntensity={1.75} /></mesh><pointLight intensity={.45} distance={2.0} color="#ffd37b" /></group>;
   })}</group>;
 }
