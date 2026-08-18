@@ -13,8 +13,16 @@ import {
 } from '../game';
 
 type Vec3 = [number, number, number];
-type LocationId = FountainQuestionId | 'fountain' | 'workshop';
-type MissionTheme = 'fountain' | 'lighthouse' | 'parcel';
+export type StoryLocationId = FountainQuestionId | 'fountain' | 'workshop';
+type MissionTheme = 'fountain' | 'lighthouse' | 'parcel' | 'kite' | 'keys' | 'cinema' | 'seed' | 'card' | 'windmill' | 'orders' | 'fogbell' | 'festival';
+type StoryReturnKind = 'fact' | 'detour' | 'confirmed' | 'reply' | 'refuted' | 'refined';
+
+export interface StoryRoutePresentation {
+  target?: StoryLocationId;
+  travelSeconds?: number;
+  returnSeconds?: number;
+  returnKind?: StoryReturnKind;
+}
 
 const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
 
@@ -24,7 +32,7 @@ const HARBOR_LANDMARKS = [
   { model: 'model-core.glb', position: [7.4, 0.2, -9.4] as Vec3, rotation: [0, -.42, 0] as Vec3, scale: .62 },
 ] as const;
 
-const LOCATIONS: Record<LocationId, { position: Vec3; color: string; label: string }> = {
+const LOCATIONS: Record<StoryLocationId, { position: Vec3; color: string; label: string }> = {
   fountain: { position: [0, 0, 0], color: '#91e8dc', label: '喷泉广场' },
   melody: { position: [-5.2, 0, -1.6], color: '#faad87', label: '乐手码头' },
   water: { position: [3.8, 0, 1.7], color: '#73d9e5', label: '水线小渠' },
@@ -37,6 +45,16 @@ const LOCATIONS: Record<LocationId, { position: Vec3; color: string; label: stri
 const JOURNEY_SECONDS = 2.7;
 const RETURN_SECONDS = 2.15;
 
+function missionCameraFocus(theme: MissionTheme): Vec3 {
+  const focus: Record<MissionTheme, Vec3> = {
+    fountain: [0, 1.05, 0], lighthouse: [-7.25, 1.3, -5.55], parcel: [4.82, .96, 4.7],
+    kite: [-5.2, 1.1, -1.6], keys: [-1.0, 1.1, -8.8], cinema: [3.8, 1.0, 1.7],
+    seed: [3.8, 1.0, -5.6], card: [4.82, 1.0, 4.7], windmill: [5.5, 1.4, -4.25],
+    orders: [0, 1.05, 0], fogbell: [-5.2, 1.1, -1.6], festival: [0, 1.05, 0],
+  };
+  return focus[theme];
+}
+
 function easeInOut(value: number): number {
   const clamped = THREE.MathUtils.clamp(value, 0, 1);
   return clamped * clamped * (3 - 2 * clamped);
@@ -46,7 +64,7 @@ function journeyStateKey(state: FountainSessionState): string {
   return `${state.phase}:${state.pendingQuestion ?? 'fountain'}:${state.lastReturn?.fact?.id ?? 'none'}`;
 }
 
-function journeyTarget(state: FountainSessionState): LocationId {
+function journeyTarget(state: FountainSessionState): StoryLocationId {
   if (state.pendingQuestion) return state.pendingQuestion;
   if (state.phase === 'action') return 'workshop';
   if (state.phase === 'complete') return 'full-song';
@@ -58,13 +76,21 @@ export function FountainStoryScene({
   onSelectQuestion,
   missionTheme = 'fountain',
   missionFacts = [],
+  storyRoute,
 }: {
   state: FountainSessionState;
   onSelectQuestion: (questionId: FountainQuestionId) => void;
   missionTheme?: MissionTheme;
   missionFacts?: string[];
+  storyRoute?: StoryRoutePresentation;
 }) {
   const available = availableFountainQuestions(state).map((question) => question.id);
+  const presentation = useMemo(() => ({
+    target: storyRoute?.target ?? journeyTarget(state),
+    travelSeconds: storyRoute?.travelSeconds ?? JOURNEY_SECONDS,
+    returnSeconds: storyRoute?.returnSeconds ?? RETURN_SECONDS,
+    returnKind: storyRoute?.returnKind,
+  }), [state, storyRoute]);
   return (
     <div className="fountain-scene" aria-label="暮色中的喷泉街，Pi 会在此出发调查">
       <Canvas shadows dpr={[1, 1.8]} gl={{ antialias: true, alpha: false }} camera={{ position: [9.15, 5.9, 13.1], fov: 41, near: 0.1, far: 110 }}>
@@ -76,8 +102,8 @@ export function FountainStoryScene({
         <directionalLight position={[-10, 14, 6]} intensity={3.25} color="#ffbd79" castShadow shadow-mapSize={[2048, 2048]} />
         <directionalLight position={[11, 8, -10]} intensity={.7} color="#9bdce4" />
         <pointLight position={[0, 5.3, 0]} intensity={2.8} color="#aaffee" distance={11} />
-        <FountainCamera state={state} />
-        <FountainTown state={state} available={available} onSelectQuestion={onSelectQuestion} missionTheme={missionTheme} missionFacts={missionFacts} />
+        <FountainCamera state={state} missionTheme={missionTheme} presentation={presentation} />
+        <FountainTown state={state} available={available} onSelectQuestion={onSelectQuestion} missionTheme={missionTheme} missionFacts={missionFacts} presentation={presentation} />
       </Canvas>
     </div>
   );
@@ -133,7 +159,7 @@ function DuskSky() {
   return <mesh scale={[-1, 1, 1]}><sphereGeometry args={[70, 48, 28]} /><primitive object={material} attach="material" /></mesh>;
 }
 
-function FountainCamera({ state }: { state: FountainSessionState }) {
+function FountainCamera({ state, missionTheme, presentation }: { state: FountainSessionState; missionTheme: MissionTheme; presentation: Required<Omit<StoryRoutePresentation, 'returnKind'>> & Pick<StoryRoutePresentation, 'returnKind'> }) {
   const { camera } = useThree();
   const lookAt = useRef(new THREE.Vector3(0, 1.15, 0));
   const desired = useMemo(() => new THREE.Vector3(), []);
@@ -148,15 +174,16 @@ function FountainCamera({ state }: { state: FountainSessionState }) {
       phaseStartedAt.current = clock.elapsedTime;
     }
     const elapsed = clock.elapsedTime - phaseStartedAt.current;
-    const targetId = journeyTarget(state);
+    const targetId = presentation.target;
     const target = LOCATIONS[targetId].position;
     const origin = new THREE.Vector3(1.42, .72, 1.26);
+    const returnHome = new THREE.Vector3(-1.55, 1.02, 2.35);
     const departing = state.phase === 'expedition' && targetId !== 'fountain';
     const returning = state.phase === 'return' && targetId !== 'fountain';
-    const progress = departing ? easeInOut(elapsed / JOURNEY_SECONDS) : returning ? easeInOut(elapsed / RETURN_SECONDS) : 0;
+    const progress = departing ? easeInOut(elapsed / presentation.travelSeconds) : returning ? easeInOut(elapsed / presentation.returnSeconds) : 0;
 
     if (departing) subject.copy(origin).lerp(new THREE.Vector3(target[0], .72, target[2]), progress);
-    else if (returning) subject.set(target[0], .72, target[2]).lerp(origin, progress);
+    else if (returning) subject.set(target[0], .72, target[2]).lerp(returnHome, progress);
     else if (state.phase === 'plan') subject.copy(origin).add(new THREE.Vector3(0, .06, 0));
     else if (state.phase === 'action' || state.phase === 'complete') subject.set(target[0], .9, target[2]);
     else subject.set(origin.x, 1.05, origin.z);
@@ -165,8 +192,8 @@ function FountainCamera({ state }: { state: FountainSessionState }) {
       desired.set(5.25, 3.55, 7.45);
       nextLookAt.set(.05, .88, .05);
     } else if (returning) {
-      desired.set(subject.x - 2.35, 2.18, subject.z + 3.25);
-      nextLookAt.copy(subject).add(new THREE.Vector3(0, .34, 0));
+      desired.set(subject.x + 4.25, 3.05, subject.z + 5.15);
+      nextLookAt.copy(subject).add(new THREE.Vector3(0, .42, 0));
     } else if (departing) {
       desired.set(subject.x + 3.7, 3.35, subject.z + 5.55);
       nextLookAt.copy(subject).add(new THREE.Vector3(0, .12, 0));
@@ -174,8 +201,9 @@ function FountainCamera({ state }: { state: FountainSessionState }) {
       desired.set(target[0] + 4.1, 3.95, target[2] + 5.85);
       nextLookAt.set(target[0], .95, target[2]);
     } else {
-      desired.set(9.15, 5.9, 13.1);
-      nextLookAt.set(0, 1.06, 0);
+      const landmark = missionCameraFocus(missionTheme);
+      desired.set(landmark[0] + 7.25, landmark[1] + 4.45, landmark[2] + 9.15);
+      nextLookAt.set(landmark[0], landmark[1], landmark[2]);
     }
 
     camera.position.lerp(desired, 1 - Math.exp(-delta * (departing || returning ? 2.45 : 1.65)));
@@ -191,21 +219,23 @@ function FountainTown({
   onSelectQuestion,
   missionTheme,
   missionFacts,
+  presentation,
 }: {
   state: FountainSessionState;
   available: FountainQuestionId[];
   onSelectQuestion: (questionId: FountainQuestionId) => void;
   missionTheme: MissionTheme;
   missionFacts: string[];
+  presentation: Required<Omit<StoryRoutePresentation, 'returnKind'>> & Pick<StoryRoutePresentation, 'returnKind'>;
 }) {
   const hasFact = (fact: FountainSessionState['facts'][number]) => state.facts.includes(fact);
   const activeQuestion = state.phase === 'choose-question' ? available : [];
-  const piTarget: LocationId = state.phase === 'plan' || state.phase === 'expedition'
-    ? state.pendingQuestion ?? 'fountain'
+  const piTarget: StoryLocationId = state.phase === 'plan' || state.phase === 'expedition' || state.phase === 'return'
+    ? presentation.target
     : state.phase === 'action'
       ? 'workshop'
       : state.phase === 'complete'
-        ? 'full-song'
+        ? presentation.target
         : 'fountain';
   const complete = state.phase === 'complete';
   return (
@@ -223,8 +253,8 @@ function FountainTown({
       <DeferredHarborLandmarks />
       <HarborHomes />
       <HarborBoats />
-      <PiCompanion state={state} target={piTarget} complete={complete} />
-      <PathLanterns state={state} target={piTarget} />
+      <PiCompanion state={state} target={piTarget} complete={complete} presentation={presentation} />
+      <PathLanterns state={state} target={piTarget} presentation={presentation} />
       <LanternField complete={complete} />
       <Fireflies complete={complete} />
     </group>
@@ -234,7 +264,32 @@ function FountainTown({
 function MissionSetDressing({ theme, facts }: { theme: MissionTheme; facts: string[] }) {
   if (theme === 'lighthouse') return <LighthouseMissionLandmark adjusted={facts.includes('gear-adjusted')} confirmed={facts.includes('light-confirmed')} />;
   if (theme === 'parcel') return <ParcelMissionLandmark delivered={facts.includes('delivered')} hasOldAddress={facts.includes('old-address')} hasNewStreet={facts.includes('new-street')} />;
+  if (theme !== 'fountain') return <ChapterLandmark theme={theme} facts={facts} />;
   return null;
+}
+
+function ChapterLandmark({ theme, facts }: { theme: Exclude<MissionTheme, 'fountain' | 'lighthouse' | 'parcel'>; facts: string[] }) {
+  const animated = useRef<THREE.Group>(null);
+  const completeFact: Record<typeof theme, string> = {
+    kite: 'kite-home', keys: 'keys-open', cinema: 'cinema-ready', seed: 'seed-bloom', card: 'card-delivered', windmill: 'windmill-steady', orders: 'orders-evening', fogbell: 'fogbell-clear', festival: 'festival-lit',
+  };
+  const complete = facts.includes(completeFact[theme]);
+  const palette: Record<typeof theme, { color: string; glow: string; position: Vec3 }> = {
+    kite: { color: '#e76c72', glow: '#ffcf86', position: [-5.55, .38, -3.8] }, keys: { color: '#6d7698', glow: '#f5cc75', position: [-1.25, .3, -8.35] }, cinema: { color: '#7299b6', glow: '#dbefff', position: [2.55, .32, 3.9] },
+    seed: { color: '#6d9d73', glow: '#ef8dc0', position: [3.8, .32, -5.6] }, card: { color: '#c66664', glow: '#ffe1a1', position: [4.82, .32, 4.7] }, windmill: { color: '#c49b66', glow: '#d8f0b9', position: [6.75, .32, -5.6] },
+    orders: { color: '#bb7652', glow: '#ffdc8f', position: [-4.4, .32, 4.65] }, fogbell: { color: '#6f8890', glow: '#b3f1e9', position: [-7.45, .32, -2.55] }, festival: { color: '#795d9e', glow: '#ffe28d', position: [0, .42, -6.8] },
+  };
+  const { color, glow, position } = palette[theme];
+  useFrame(({ clock }) => { if (animated.current) { animated.current.rotation.y = Math.sin(clock.elapsedTime * .45) * .08; animated.current.position.y = Math.sin(clock.elapsedTime * 1.4) * .035; } });
+  if (theme === 'kite') return <group ref={animated} position={position}><mesh rotation={[0,0,Math.PI/4]}><planeGeometry args={[.92,.92]} /><meshStandardMaterial color={color} emissive={color} emissiveIntensity={complete ? 1.35 : .35} side={THREE.DoubleSide} /></mesh><mesh position={[0,-.84,0]}><cylinderGeometry args={[.02,.02,1.35,6]} /><meshStandardMaterial color="#f4d09a" /></mesh><pointLight color={glow} intensity={complete ? 1.25 : .18} distance={3.6} /></group>;
+  if (theme === 'keys') return <group ref={animated} position={position}><mesh><boxGeometry args={[1.7,2.35,.38]} /><meshStandardMaterial color={color} roughness={.88} /></mesh><mesh position={[0,.16,.23]}><torusGeometry args={[.55,.09,8,24,Math.PI]} /><meshStandardMaterial color={complete ? glow : '#2f3a46'} emissive={complete ? glow : '#000'} emissiveIntensity={complete ? 1.4 : 0} /></mesh><pointLight color={glow} intensity={complete ? 1.55 : .15} distance={4.4} /></group>;
+  if (theme === 'cinema') return <group ref={animated} position={position}><mesh><boxGeometry args={[2.75,1.42,.12]} /><meshStandardMaterial color={complete ? '#f7f1d5' : color} emissive={complete ? glow : '#000'} emissiveIntensity={complete ? .55 : 0} /></mesh>{[-1,1].map((x) => <mesh key={x} position={[x*1.2,-.75,0]}><cylinderGeometry args={[.055,.075,1.45,8]} /><meshStandardMaterial color="#3c4c50" /></mesh>)}<mesh position={[0,1.02,0]}><coneGeometry args={[2.0,.54,4]} /><meshStandardMaterial color="#6b7d88" roughness={.85} /></mesh><pointLight color={glow} intensity={complete ? 1.3 : .2} distance={5} /></group>;
+  if (theme === 'seed') return <group ref={animated} position={position}>{Array.from({ length: 7 }).map((_, index) => { const angle = index / 7 * Math.PI * 2; return <group key={index} position={[Math.cos(angle)*.7,.26,Math.sin(angle)*.58]}><mesh rotation={[Math.PI/2,0,angle]}><coneGeometry args={[.22,.62,8]} /><meshStandardMaterial color={complete ? '#f08ec4' : color} emissive={complete ? '#de669f' : '#000'} emissiveIntensity={complete ? .82 : 0} /></mesh></group>; })}<pointLight color={glow} intensity={complete ? 1.45 : .1} distance={4.3} /></group>;
+  if (theme === 'card') return <group ref={animated} position={position}>{Array.from({length: 5}).map((_, index) => <mesh key={index} position={[-.65 + index*.33,.95 + (index%2)*.25,.12]} rotation={[0,.2,(index-2)*.09]}><planeGeometry args={[.27,.36]} /><meshStandardMaterial color={complete ? '#fff1c4' : color} emissive={complete ? glow : '#000'} emissiveIntensity={complete ? .5 : 0} side={THREE.DoubleSide} /></mesh>)}<pointLight color={glow} intensity={complete ? 1.25 : .15} distance={3.8} /></group>;
+  if (theme === 'windmill') return <group ref={animated} position={position}><mesh><cylinderGeometry args={[.52,.72,2.45,8]} /><meshStandardMaterial color={color} roughness={.87} /></mesh><group position={[0,1.1,.43]} rotation={[0,0,complete ? performance.now()*.0008 : .1]}>{[0,Math.PI/2,Math.PI,Math.PI*1.5].map((angle) => <mesh key={angle} rotation={[0,0,angle]} position={[0,0,0]}><boxGeometry args={[.12,1.55,.06]} /><meshStandardMaterial color={complete ? '#eff0c7' : '#967857'} /></mesh>)}</group><pointLight color={glow} intensity={complete ? 1.05 : .1} distance={4} /></group>;
+  if (theme === 'orders') return <group ref={animated} position={position}><mesh><boxGeometry args={[2.3,1.1,1.1]} /><meshStandardMaterial color={color} roughness={.85} /></mesh><mesh position={[0,1.1,0]}><coneGeometry args={[1.75,.58,4]} /><meshStandardMaterial color={complete ? '#efc072' : '#7b5c5c'} /></mesh>{complete && <pointLight color={glow} intensity={1.25} distance={4.4} />}</group>;
+  if (theme === 'fogbell') return <group ref={animated} position={position}><mesh><cylinderGeometry args={[.38,.52,1.85,8]} /><meshStandardMaterial color={color} /></mesh><mesh position={[0,1.2,0]}><sphereGeometry args={[.34,12,8]} /><meshStandardMaterial color={complete ? glow : '#708e92'} emissive={complete ? glow : '#000'} emissiveIntensity={complete ? 1.4 : 0} /></mesh><mesh position={[.62,.65,0]}><torusGeometry args={[.26,.06,8,14]} /><meshStandardMaterial color="#d3aa6a" /></mesh><pointLight color={glow} intensity={complete ? 1.55 : .18} distance={5.1} /></group>;
+  return <group ref={animated} position={position}>{Array.from({length: 9}).map((_, index) => { const angle=index/9*Math.PI*2; return <mesh key={index} position={[Math.cos(angle)*1.25,.4+Math.sin(index)*.16,Math.sin(angle)*.8]}><sphereGeometry args={[.1,10,8]} /><meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={complete ? 2 : .35} /></mesh>; })}<mesh position={[0,1.35,0]} rotation={[0,Math.PI/4,0]}><octahedronGeometry args={[.4,0]} /><meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={complete ? 2.8 : .35} /></mesh><pointLight color={glow} intensity={complete ? 2.3 : .2} distance={6.5} /></group>;
 }
 
 function LighthouseMissionLandmark({ adjusted, confirmed }: { adjusted: boolean; confirmed: boolean }) {
@@ -587,7 +642,7 @@ function LocationHotspot({ position, color, active, visited, onClick }: { positi
   </group>;
 }
 
-function PiCompanion({ state, target, complete }: { state: FountainSessionState; target: LocationId; complete: boolean }) {
+function PiCompanion({ state, target, complete, presentation }: { state: FountainSessionState; target: StoryLocationId; complete: boolean; presentation: Required<Omit<StoryRoutePresentation, 'returnKind'>> & Pick<StoryRoutePresentation, 'returnKind'> }) {
   const group = useRef<THREE.Group>(null);
   const satchel = useRef<THREE.Group>(null);
   const desired = useMemo(() => new THREE.Vector3(), []);
@@ -605,10 +660,11 @@ function PiCompanion({ state, target, complete }: { state: FountainSessionState;
     const destination = LOCATIONS[target].position;
     const departing = state.phase === 'expedition' && target !== 'fountain';
     const returning = state.phase === 'return' && target !== 'fountain';
-    const progress = departing ? easeInOut(elapsed / JOURNEY_SECONDS) : returning ? easeInOut(elapsed / RETURN_SECONDS) : 0;
+    const progress = departing ? easeInOut(elapsed / presentation.travelSeconds) : returning ? easeInOut(elapsed / presentation.returnSeconds) : 0;
     const destinationPoint = new THREE.Vector3(destination[0] + .35, .5, destination[2] + .4);
+    const returnHome = new THREE.Vector3(-1.55, .82, 2.35);
     if (departing) desired.copy(origin).lerp(destinationPoint, progress);
-    else if (returning) desired.copy(destinationPoint).lerp(origin, progress);
+    else if (returning) desired.copy(destinationPoint).lerp(returnHome, progress);
     else if (state.phase === 'plan') desired.copy(origin);
     else desired.copy(destinationPoint);
     desired.y += Math.sin(clock.elapsedTime * 2.3) * .055;
@@ -619,20 +675,21 @@ function PiCompanion({ state, target, complete }: { state: FountainSessionState;
     if (satchel.current) satchel.current.rotation.z = Math.sin(clock.elapsedTime * (departing || returning ? 7.2 : 2.2)) * (returning ? .24 : .13);
   });
   const returning = state.phase === 'return' && target !== 'fountain';
-  const tokenColor = state.lastReturn?.kind === 'refuted' ? '#c9c7d8' : state.lastReturn?.kind === 'refined' ? '#7ed5eb' : state.lastReturn?.kind === 'confirmed' ? '#ffe287' : '#f5b879';
+  const returnKind = presentation.returnKind ?? state.lastReturn?.kind;
+  const tokenColor = returnKind === 'refuted' || returnKind === 'detour' ? '#c9c7d8' : returnKind === 'refined' || returnKind === 'fact' ? '#7ed5eb' : returnKind === 'confirmed' ? '#ffe287' : returnKind === 'reply' ? '#ffc896' : '#f5b879';
   return <group ref={group} position={origin}>
-    <mesh scale={state.phase === 'plan' ? 1.5 : 1.32}><sphereGeometry args={[.43,20,16]} /><meshBasicMaterial color="#93fff0" transparent opacity={state.phase === 'plan' ? .22 : .13} depthWrite={false} /></mesh>
-    <mesh castShadow><sphereGeometry args={[.37,20,16]} /><meshStandardMaterial color={returning ? '#fff0be' : '#c8fff0'} emissive={complete ? '#ffe398' : returning ? tokenColor : '#56d7c8'} emissiveIntensity={complete ? 1.55 : returning ? 1.85 : state.phase === 'plan' ? 1.58 : 1.14} roughness={.32} /></mesh>
+    <mesh scale={state.phase === 'plan' ? 1.5 : returning ? 1.48 : 1.32}><sphereGeometry args={[.43,20,16]} /><meshBasicMaterial color={returning ? '#7cc7b3' : '#93fff0'} transparent opacity={state.phase === 'plan' ? .22 : returning ? .14 : .13} depthWrite={false} /></mesh>
+    <mesh castShadow><sphereGeometry args={[.37,20,16]} /><meshStandardMaterial color={returning ? '#8fcbb4' : '#c8fff0'} emissive={complete ? '#ffe398' : returning ? '#3c8c7d' : '#56d7c8'} emissiveIntensity={complete ? 1.55 : returning ? .28 : state.phase === 'plan' ? 1.58 : 1.14} roughness={.44} /></mesh>
     <mesh position={[-.12,.06,.34]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color="#34585a" /></mesh>
     <mesh position={[.12,.06,.34]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color="#34585a" /></mesh>
     <mesh position={[0,.48,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.1,.018,6,16,Math.PI]} /><meshStandardMaterial color="#f4d77e" emissive="#b97d2e" emissiveIntensity={.75} /></mesh>
-    <group ref={satchel} position={[.34,-.18,.02]}><mesh><boxGeometry args={[.24,.22,.17]} /><meshStandardMaterial color="#ad6c48" roughness={.77} /></mesh><mesh position={[0,.17,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.085,.015,6,12,Math.PI]} /><meshStandardMaterial color="#e2bd7b" /></mesh>{returning && <><mesh position={[.01,.48,.08]}><octahedronGeometry args={[.16,0]} /><meshStandardMaterial color={tokenColor} emissive={tokenColor} emissiveIntensity={2.35} roughness={.18} /></mesh><pointLight position={[.01,.48,.08]} color={tokenColor} intensity={1.45} distance={3.1} /></>}</group>
-    {returning && <group position={[0,.92,.02]}><mesh rotation={[0,Math.PI/4,0]}><octahedronGeometry args={[.18,0]} /><meshStandardMaterial color={tokenColor} emissive={tokenColor} emissiveIntensity={2.9} roughness={.16} /></mesh><mesh rotation={[-Math.PI/2,0,0]}><torusGeometry args={[.31,.016,6,24]} /><meshBasicMaterial color={tokenColor} transparent opacity={.62} /></mesh><pointLight color={tokenColor} intensity={1.75} distance={3.8} /></group>}
-    <pointLight position={[0,.1,0]} color={complete ? '#ffe3a3' : returning ? tokenColor : '#adfff0'} intensity={state.phase === 'plan' ? 2.15 : returning ? 2.1 : 1.45} distance={3.4} />
+    <group ref={satchel} position={[.34,-.18,.02]}><mesh><boxGeometry args={[.24,.22,.17]} /><meshStandardMaterial color="#ad6c48" roughness={.77} /></mesh><mesh position={[0,.17,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.085,.015,6,12,Math.PI]} /><meshStandardMaterial color="#e2bd7b" /></mesh>{returning && <><mesh position={[.01,.48,.08]}><octahedronGeometry args={[.16,0]} /><meshStandardMaterial color={tokenColor} emissive={tokenColor} emissiveIntensity={.68} roughness={.3} /></mesh><pointLight position={[.01,.48,.08]} color={tokenColor} intensity={.26} distance={1.6} /></>}</group>
+    {returning && <mesh position={[0,.9,.02]} rotation={[0,Math.PI/4,0]}><octahedronGeometry args={[.12,0]} /><meshStandardMaterial color={tokenColor} emissive={tokenColor} emissiveIntensity={.58} roughness={.3} /></mesh>}
+    <pointLight position={[0,.1,0]} color={complete ? '#ffe3a3' : returning ? '#72b9a7' : '#adfff0'} intensity={state.phase === 'plan' ? 2.15 : returning ? .38 : 1.45} distance={returning ? 1.8 : 3.4} />
   </group>;
 }
 
-function PathLanterns({ state, target }: { state: FountainSessionState; target: LocationId }) {
+function PathLanterns({ state, target, presentation }: { state: FountainSessionState; target: StoryLocationId; presentation: Required<Omit<StoryRoutePresentation, 'returnKind'>> & Pick<StoryRoutePresentation, 'returnKind'> }) {
   const group = useRef<THREE.Group>(null);
   const targetPosition = LOCATIONS[target].position;
   const visible = (state.phase === 'plan' || state.phase === 'expedition' || state.phase === 'return') && target !== 'fountain';
@@ -640,7 +697,8 @@ function PathLanterns({ state, target }: { state: FountainSessionState; target: 
     if (!group.current) return;
     const reversing = state.phase === 'return';
     group.current.children.forEach((child, index) => {
-      const wave = .5 + .5 * Math.sin(clock.elapsedTime * 5.2 + (reversing ? index : 12 - index) * .72);
+      const tempo = 5.2 * (JOURNEY_SECONDS / presentation.travelSeconds);
+      const wave = .5 + .5 * Math.sin(clock.elapsedTime * tempo + (reversing ? index : 12 - index) * .72);
       child.scale.setScalar(.82 + wave * .55);
       const light = child.children.find((item) => item instanceof THREE.PointLight) as THREE.PointLight | undefined;
       if (light) light.intensity = .12 + wave * .7;

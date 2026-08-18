@@ -7,6 +7,7 @@ import type { AgentActionClass } from '../analysis/action-classes';
 import {
   buildPredictDebrief,
   checkpointAtLessonFrame,
+  CITY_MISSIONS,
   createCityCampaign,
   createCityMission,
   createFountainSession,
@@ -80,6 +81,15 @@ function readInitialMode(): ShellMode {
   return new URLSearchParams(window.location.search).get('view') === 'city' ? 'landing' : 'hub';
 }
 
+function createCampaignPreview(): ReturnType<typeof createCityCampaign> {
+  const campaign = createCityCampaign();
+  if (typeof window === 'undefined') return campaign;
+  const value = new URLSearchParams(window.location.search).get('story');
+  const chapter = value ? Number(value) : 1;
+  if (!Number.isInteger(chapter) || chapter < 2 || chapter > 4) return campaign;
+  return (Object.values(CITY_MISSIONS) as Array<typeof CITY_MISSIONS[keyof typeof CITY_MISSIONS]>).filter((mission) => mission.chapter < chapter).reduce((current, mission) => reduceCityCampaign(current, { type: 'COMPLETE_MISSION', missionId: mission.id }), campaign);
+}
+
 function usesFallbackScene(): boolean {
   if (typeof window === 'undefined') return false;
   return new URLSearchParams(window.location.search).get('quality') === 'fallback';
@@ -124,7 +134,7 @@ export function CinematicCity({
     returnView: PhotoReturnView;
   } | null>(null);
   const [game, setGame] = useState<GameSessionState | null>(null);
-  const [campaign, dispatchCampaign] = useReducer(reduceCityCampaign, undefined, createCityCampaign);
+  const [campaign, dispatchCampaign] = useReducer(reduceCityCampaign, undefined, createCampaignPreview);
   const [mission, setMission] = useState(() => createCityMission('lighthouse'));
   const [fountain, dispatchFountain] = useReducer(reduceFountainSession, undefined, createFountainSession);
   const [elapsed, setElapsed] = useState(0);
@@ -420,7 +430,7 @@ export function CinematicCity({
   }
 
   if (mode === 'archive') {
-    return <CityArchive onBack={() => setMode('hub')} onEnterEvidenceCity={() => {
+    return <CityArchive campaign={campaign} onBack={() => setMode('hub')} onEnterEvidenceCity={() => {
       const url = new URL(window.location.href);
       url.searchParams.set('view', 'city');
       window.history.replaceState({}, '', url);
