@@ -12,6 +12,7 @@ import {
 import type { FountainSessionState } from '../game';
 
 function storyRouteFor(state: CityMissionState, destination?: string): StoryRoutePresentation {
+  if (state.missionId === 'kite' && (state.phase === 'return' || state.phase === 'complete')) return { target: 'wind', travelSeconds: 3.35, returnSeconds: 2.87, returnKind: state.lastReturn?.kind };
   const text = destination ?? '';
   let target: StoryLocationId = 'water';
   if (/图书|档案|笔记|借书/.test(text)) target = 'melody';
@@ -44,6 +45,7 @@ export function CityMissionStory({
   const facts = cityMissionFactDetails(state);
   const storyRoute = useMemo(() => storyRouteFor(state, pending?.destination), [pending?.destination, state]);
   const summary = CITY_MISSIONS[state.missionId];
+  const memoryWindReframe = state.missionId === 'kite' && (state.phase === 'return' || state.phase === 'complete');
   const backdrop = useMemo<FountainSessionState>(() => ({
     scenarioId: 'fountain-d-greybox',
     source: 'tutorial',
@@ -75,7 +77,7 @@ export function CityMissionStory({
     {showStoryNote && <aside className="story-note" role="status"><strong>这是一个作者定义的教学故事。</strong><p>它让你用城市里的事实体验 Pi 如何观察、行动、带回新发现再确认；它不是一段真实 Trace。</p></aside>}
 
     <main className="story-world">
-      <FountainStoryScene state={backdrop} missionTheme={state.missionId} missionFacts={state.facts} storyRoute={storyRoute} onSelectQuestion={() => {}} />
+      <FountainStoryScene state={backdrop} missionTheme={state.missionId} missionFacts={state.facts} storyRoute={storyRoute} onSelectQuestion={() => {}} memoryWind={memoryWindReframe} memoryWindBeat={memoryWindReframe ? 'reframe' : 'notice'} />
       <section className="story-copy">
         <p className="resident-tag">{definition.resident}的委托</p>
         <h1>{definition.title}</h1>

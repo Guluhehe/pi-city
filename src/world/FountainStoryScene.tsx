@@ -14,8 +14,9 @@ import {
 
 type Vec3 = [number, number, number];
 export type StoryLocationId = FountainQuestionId | 'fountain' | 'workshop';
-type MissionTheme = 'fountain' | 'lighthouse' | 'parcel' | 'kite' | 'keys' | 'cinema' | 'seed' | 'card' | 'windmill' | 'orders' | 'fogbell' | 'festival';
+export type MissionTheme = 'fountain' | 'lighthouse' | 'parcel' | 'kite' | 'keys' | 'cinema' | 'seed' | 'card' | 'windmill' | 'orders' | 'fogbell' | 'festival';
 type StoryReturnKind = 'fact' | 'detour' | 'confirmed' | 'reply' | 'refuted' | 'refined';
+export type MemoryWindBeat = 'notice' | 'hold' | 'reframe';
 
 export interface StoryRoutePresentation {
   target?: StoryLocationId;
@@ -77,12 +78,18 @@ export function FountainStoryScene({
   missionTheme = 'fountain',
   missionFacts = [],
   storyRoute,
+  memoryWind = false,
+  memoryWindBeat = 'notice',
+  onSceneReady,
 }: {
   state: FountainSessionState;
   onSelectQuestion: (questionId: FountainQuestionId) => void;
   missionTheme?: MissionTheme;
   missionFacts?: string[];
   storyRoute?: StoryRoutePresentation;
+  memoryWind?: boolean;
+  memoryWindBeat?: MemoryWindBeat;
+  onSceneReady?: () => void;
 }) {
   const available = availableFountainQuestions(state).map((question) => question.id);
   const presentation = useMemo(() => ({
@@ -93,17 +100,17 @@ export function FountainStoryScene({
   }), [state, storyRoute]);
   return (
     <div className="fountain-scene" aria-label="暮色中的喷泉街，Pi 会在此出发调查">
-      <Canvas shadows dpr={[1, 1.8]} gl={{ antialias: true, alpha: false }} camera={{ position: [9.15, 5.9, 13.1], fov: 41, near: 0.1, far: 110 }}>
+      <Canvas shadows dpr={[1, 1.8]} gl={{ antialias: true, alpha: false }} camera={{ position: [9.15, 5.9, 13.1], fov: 41, near: 0.1, far: 110 }} onCreated={() => onSceneReady?.()}>
         <FountainRenderer />
-        <FountainPost state={state} />
+        <FountainPost state={state} memoryWind={memoryWind} />
         <DuskSky />
         <fog attach="fog" args={['#24495a', 16, 35]} />
         <hemisphereLight args={['#ffd9ad', '#152c43', 1.45]} />
         <directionalLight position={[-10, 14, 6]} intensity={3.25} color="#ffbd79" castShadow shadow-mapSize={[2048, 2048]} />
         <directionalLight position={[11, 8, -10]} intensity={.7} color="#9bdce4" />
-        <pointLight position={[0, 5.3, 0]} intensity={2.8} color="#aaffee" distance={11} />
-        <FountainCamera state={state} missionTheme={missionTheme} presentation={presentation} />
-        <FountainTown state={state} available={available} onSelectQuestion={onSelectQuestion} missionTheme={missionTheme} missionFacts={missionFacts} presentation={presentation} />
+        <pointLight position={[0, 5.3, 0]} intensity={memoryWind ? .42 : 2.8} color="#aaffee" distance={11} />
+        <FountainCamera state={state} missionTheme={missionTheme} presentation={presentation} memoryWind={memoryWind} />
+        <FountainTown state={state} available={available} onSelectQuestion={onSelectQuestion} missionTheme={missionTheme} missionFacts={missionFacts} presentation={presentation} memoryWind={memoryWind} memoryWindBeat={memoryWindBeat} />
       </Canvas>
     </div>
   );
@@ -121,7 +128,7 @@ function FountainRenderer() {
   return null;
 }
 
-function FountainPost({ state }: { state: FountainSessionState }) {
+function FountainPost({ state, memoryWind }: { state: FountainSessionState; memoryWind: boolean }) {
   const { gl, scene, camera, size } = useThree();
   const composer = useMemo(() => {
     const next = new EffectComposer(gl);
@@ -137,7 +144,7 @@ function FountainPost({ state }: { state: FountainSessionState }) {
   }, [composer, size.width, size.height]);
   useEffect(() => () => composer.next.dispose(), [composer]);
   useFrame((_, delta) => {
-    const target = state.phase === 'complete' ? .52
+    const target = memoryWind ? .12 : state.phase === 'complete' ? .52
       : state.phase === 'expedition' ? .40
         : state.phase === 'choose-question' ? .34
           : state.phase === 'return' ? .37
@@ -159,7 +166,7 @@ function DuskSky() {
   return <mesh scale={[-1, 1, 1]}><sphereGeometry args={[70, 48, 28]} /><primitive object={material} attach="material" /></mesh>;
 }
 
-function FountainCamera({ state, missionTheme, presentation }: { state: FountainSessionState; missionTheme: MissionTheme; presentation: Required<Omit<StoryRoutePresentation, 'returnKind'>> & Pick<StoryRoutePresentation, 'returnKind'> }) {
+function FountainCamera({ state, missionTheme, presentation, memoryWind }: { state: FountainSessionState; missionTheme: MissionTheme; presentation: Required<Omit<StoryRoutePresentation, 'returnKind'>> & Pick<StoryRoutePresentation, 'returnKind'>; memoryWind: boolean }) {
   const { camera } = useThree();
   const lookAt = useRef(new THREE.Vector3(0, 1.15, 0));
   const desired = useMemo(() => new THREE.Vector3(), []);
@@ -188,7 +195,11 @@ function FountainCamera({ state, missionTheme, presentation }: { state: Fountain
     else if (state.phase === 'action' || state.phase === 'complete') subject.set(target[0], .9, target[2]);
     else subject.set(origin.x, 1.05, origin.z);
 
-    if (state.phase === 'plan') {
+    if (memoryWind) {
+      const reveal = easeInOut(elapsed / 2.5);
+      desired.set(7.15 - reveal * 3.15, 4.35 - reveal * 1.7, 9.2 - reveal * 2.0);
+      nextLookAt.set(-1.35, 1.82, .5);
+    } else if (state.phase === 'plan') {
       desired.set(5.25, 3.55, 7.45);
       nextLookAt.set(.05, .88, .05);
     } else if (returning) {
@@ -220,6 +231,8 @@ function FountainTown({
   missionTheme,
   missionFacts,
   presentation,
+  memoryWind,
+  memoryWindBeat,
 }: {
   state: FountainSessionState;
   available: FountainQuestionId[];
@@ -227,6 +240,8 @@ function FountainTown({
   missionTheme: MissionTheme;
   missionFacts: string[];
   presentation: Required<Omit<StoryRoutePresentation, 'returnKind'>> & Pick<StoryRoutePresentation, 'returnKind'>;
+  memoryWind: boolean;
+  memoryWindBeat: MemoryWindBeat;
 }) {
   const hasFact = (fact: FountainSessionState['facts'][number]) => state.facts.includes(fact);
   const activeQuestion = state.phase === 'choose-question' ? available : [];
@@ -243,8 +258,9 @@ function FountainTown({
       <HarborWater />
       <PavedPlaza />
       <MissionSetDressing theme={missionTheme} facts={missionFacts} />
+      {memoryWind && missionTheme === 'kite' && <MemoryWindPhenomenon beat={memoryWindBeat} />}
       <StreetDressing complete={complete} />
-      <FountainPlaza state={state} />
+      <FountainPlaza state={state} memoryWind={memoryWind} />
       <MusicianDock visited={hasFact('melody-page')} complete={complete} active={activeQuestion.includes('melody')} onAsk={() => onSelectQuestion('melody')} />
       <WaterCanal visited={hasFact('pressure-pattern') || hasFact('stable-water')} active={activeQuestion.includes('water') || activeQuestion.includes('stable-water')} onAsk={() => onSelectQuestion(hasFact('sync-valve') ? 'stable-water' : 'water')} />
       <WindAlley visited={hasFact('wind-refuted')} active={activeQuestion.includes('wind')} onAsk={() => onSelectQuestion('wind')} />
@@ -253,7 +269,7 @@ function FountainTown({
       <DeferredHarborLandmarks />
       <HarborHomes />
       <HarborBoats />
-      <PiCompanion state={state} target={piTarget} complete={complete} presentation={presentation} />
+      <PiCompanion state={state} target={piTarget} complete={complete} presentation={presentation} memoryWind={memoryWind && missionTheme === 'kite'} memoryWindBeat={memoryWindBeat} />
       <PathLanterns state={state} target={piTarget} presentation={presentation} />
       <LanternField complete={complete} />
       <Fireflies complete={complete} />
@@ -266,6 +282,54 @@ function MissionSetDressing({ theme, facts }: { theme: MissionTheme; facts: stri
   if (theme === 'parcel') return <ParcelMissionLandmark delivered={facts.includes('delivered')} hasOldAddress={facts.includes('old-address')} hasNewStreet={facts.includes('new-street')} />;
   if (theme !== 'fountain') return <ChapterLandmark theme={theme} facts={facts} />;
   return null;
+}
+
+function MemoryWindPhenomenon({ beat }: { beat: MemoryWindBeat }) {
+  const group = useRef<THREE.Group>(null);
+  const sheets = useRef<THREE.Group>(null);
+  const reframe = beat === 'reframe';
+  useFrame(({ clock }) => {
+    if (group.current) {
+      group.current.rotation.y = clock.elapsedTime * .18;
+      group.current.position.y = 1.45 + Math.sin(clock.elapsedTime * 1.35) * .11;
+    }
+    if (sheets.current) sheets.current.children.forEach((sheet, index) => {
+      sheet.rotation.z = Math.sin(clock.elapsedTime * 1.8 + index * 1.7) * .18 + (reframe ? -.14 : .14);
+      sheet.position.y = Math.sin(clock.elapsedTime * 1.35 + index) * .12;
+    });
+  });
+  return <group position={[-1.72, 2.12, 1.18]} ref={group}>
+    <group ref={sheets}>{Array.from({ length: 5 }).map((_, index) => {
+      const angle = index / 5 * Math.PI * 2 + .2;
+      const radius = 1.05 + (index % 2) * .22;
+      return <mesh key={index} position={[Math.cos(angle) * radius, (index - 2) * .19, Math.sin(angle) * radius * .52]} rotation={[.22, angle + .6, .14]}><planeGeometry args={[.43,.29]} /><meshStandardMaterial color="#f2dfb2" emissive="#b88947" emissiveIntensity={.34} roughness={.82} side={THREE.DoubleSide} /></mesh>;
+    })}</group>
+    <group rotation={[.15, .22, -.78]}>
+      <mesh position={[0,.12,0]}><torusGeometry args={[1.14,.05,8,72,Math.PI * 1.54]} /><meshStandardMaterial color="#b84f55" emissive="#7c252d" emissiveIntensity={.62} roughness={.52} /></mesh>
+      <mesh position={[.95,.68,.03]} rotation={[0,0,.34]}><planeGeometry args={[.72,.72]} /><meshStandardMaterial color="#c95a5c" emissive="#7f2f35" emissiveIntensity={.4} side={THREE.DoubleSide} /></mesh>
+      <mesh position={[.98,.19,.02]} rotation={[0,0,.34]}><cylinderGeometry args={[.018,.018,.86,6]} /><meshStandardMaterial color="#e9bd7f" /></mesh>
+    </group>
+    {[-.74,.82].map((x) => <group key={x} position={[x,.32,0]}><mesh><sphereGeometry args={[.105,12,10]} /><meshStandardMaterial color="#ffd789" emissive="#e7a347" emissiveIntensity={1.4} /></mesh><pointLight color="#ffd58a" intensity={.72} distance={2.35} /></group>)}
+    <mesh position={[0,-1.3,0]} rotation={[0,.26,0]}><cylinderGeometry args={[.018,.018,1.9,6]} /><meshStandardMaterial color="#e6c47d" /></mesh>
+    {reframe && <MemoryWindRoute />}
+  </group>;
+}
+
+function MemoryWindRoute() {
+  const route = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    if (!route.current) return;
+    route.current.children.forEach((child, index) => {
+      const pulse = .74 + Math.sin(clock.elapsedTime * 3.1 - index * .72) * .22;
+      child.scale.setScalar(pulse);
+    });
+  });
+  return <group ref={route} position={[.78,-.58,.18]} rotation={[.16,.32,0]}>
+    {Array.from({ length: 6 }).map((_, index) => <group key={index} position={[.4 + index * .49, .02 + index * .13, -.08 - index * .08]}>
+      <mesh><sphereGeometry args={[.075,10,8]} /><meshStandardMaterial color="#ffd88a" emissive="#e89b49" emissiveIntensity={1.48} /></mesh>
+      {index === 5 && <mesh position={[.18,.12,0]} rotation={[0,0,-.7]}><planeGeometry args={[.26,.18]} /><meshStandardMaterial color="#f2dfb2" emissive="#b88947" emissiveIntensity={.46} side={THREE.DoubleSide} /></mesh>}
+    </group>)}
+  </group>;
 }
 
 function ChapterLandmark({ theme, facts }: { theme: Exclude<MissionTheme, 'fountain' | 'lighthouse' | 'parcel'>; facts: string[] }) {
@@ -443,7 +507,7 @@ function CelebrationRibbons() {
   return <group ref={group} position={[0,2.7,0]}>{Array.from({ length: 18 }).map((_, index) => { const angle=index/18*Math.PI*2; return <mesh key={index} position={[Math.cos(angle)*4.9,Math.sin(index*1.7)*.25,Math.sin(angle)*4.9]} rotation={[0,angle,0]}><planeGeometry args={[.06,.5]} /><meshBasicMaterial color={index%2?'#ffd274':'#a2f2dc'} transparent opacity={.72} side={THREE.DoubleSide} /></mesh>; })}</group>;
 }
 
-function FountainPlaza({ state }: { state: FountainSessionState }) {
+function FountainPlaza({ state, memoryWind }: { state: FountainSessionState; memoryWind: boolean }) {
   const complete = state.phase === 'complete';
   const synced = state.facts.includes('sync-valve');
   const water = useRef<THREE.Group>(null);
@@ -462,7 +526,7 @@ function FountainPlaza({ state }: { state: FountainSessionState }) {
     <mesh position={[0,1.38,0]} castShadow><cylinderGeometry args={[.38,.55,1.38,16]} /><meshStandardMaterial color="#c0b39b" roughness={.78} /></mesh>
     <mesh position={[0,2.12,0]}><cylinderGeometry args={[.58,.38,.22,24]} /><meshStandardMaterial color="#e0c797" roughness={.62} metalness={.16} /></mesh>
     <group ref={water} position={[0,.52,0]}>
-      {[0, Math.PI/2, Math.PI, Math.PI*1.5].map((angle, index) => <FountainJet key={index} angle={angle} bright={complete || synced} />)}
+      {[0, Math.PI/2, Math.PI, Math.PI*1.5].map((angle, index) => <FountainJet key={index} angle={angle} bright={complete || synced} dim={memoryWind} />)}
     </group>
     <mesh position={[-1.25,.54,1.15]} rotation={[0,.5,.2]} castShadow><coneGeometry args={[.23,.5,4]} /><meshStandardMaterial color={complete ? '#f4cd7a' : '#e8836e'} emissive={complete ? '#b77a2b' : '#000'} emissiveIntensity={complete ? .75 : 0} roughness={.75} /></mesh>
     {complete && <mesh position={[-1.25,.82,1.15]} rotation={[0,.5,.2]}><planeGeometry args={[.22,.15]} /><meshBasicMaterial color="#fff2c8" /></mesh>}
@@ -471,7 +535,7 @@ function FountainPlaza({ state }: { state: FountainSessionState }) {
   </group>;
 }
 
-function FountainJet({ angle, bright }: { angle: number; bright: boolean }) {
+function FountainJet({ angle, bright, dim }: { angle: number; bright: boolean; dim: boolean }) {
   const geometry = useMemo(() => {
     const x = Math.cos(angle), z = Math.sin(angle);
     const curve = new THREE.QuadraticBezierCurve3(
@@ -482,8 +546,8 @@ function FountainJet({ angle, bright }: { angle: number; bright: boolean }) {
     return new THREE.TubeGeometry(curve, 18, .045, 6, false);
   }, [angle]);
   return <group>
-    <mesh geometry={geometry}><meshStandardMaterial color="#b8fff3" emissive="#57d9d5" emissiveIntensity={bright ? 2.0 : .88} transparent opacity={.86} roughness={.16} /></mesh>
-    <pointLight position={[Math.cos(angle)*.7,1.05,Math.sin(angle)*.7]} intensity={bright ? 1.25 : .45} distance={3.4} color="#aaffef" />
+    <mesh geometry={geometry}><meshStandardMaterial color="#b8fff3" emissive="#57d9d5" emissiveIntensity={dim ? .22 : bright ? 2.0 : .88} transparent opacity={dim ? .3 : .86} roughness={.16} /></mesh>
+    <pointLight position={[Math.cos(angle)*.7,1.05,Math.sin(angle)*.7]} intensity={dim ? .08 : bright ? 1.25 : .45} distance={3.4} color="#aaffef" />
   </group>;
 }
 
@@ -642,11 +706,12 @@ function LocationHotspot({ position, color, active, visited, onClick }: { positi
   </group>;
 }
 
-function PiCompanion({ state, target, complete, presentation }: { state: FountainSessionState; target: StoryLocationId; complete: boolean; presentation: Required<Omit<StoryRoutePresentation, 'returnKind'>> & Pick<StoryRoutePresentation, 'returnKind'> }) {
+function PiCompanion({ state, target, complete, presentation, memoryWind, memoryWindBeat }: { state: FountainSessionState; target: StoryLocationId; complete: boolean; presentation: Required<Omit<StoryRoutePresentation, 'returnKind'>> & Pick<StoryRoutePresentation, 'returnKind'>; memoryWind: boolean; memoryWindBeat: MemoryWindBeat }) {
   const group = useRef<THREE.Group>(null);
   const satchel = useRef<THREE.Group>(null);
   const desired = useMemo(() => new THREE.Vector3(), []);
-  const origin = useMemo(() => new THREE.Vector3(1.42, .5, 1.26), []);
+  const origin = useMemo(() => new THREE.Vector3(memoryWind ? -.12 : 1.42, memoryWind ? .66 : .5, memoryWind ? 2.72 : 1.26), [memoryWind]);
+  const memoryTarget = useMemo(() => new THREE.Vector3(-1.72, 1.72, 1.18), []);
   const phaseStartedAt = useRef(0);
   const lastKey = useRef('');
   useFrame(({ clock }, delta) => {
@@ -663,6 +728,20 @@ function PiCompanion({ state, target, complete, presentation }: { state: Fountai
     const progress = departing ? easeInOut(elapsed / presentation.travelSeconds) : returning ? easeInOut(elapsed / presentation.returnSeconds) : 0;
     const destinationPoint = new THREE.Vector3(destination[0] + .35, .5, destination[2] + .4);
     const returnHome = new THREE.Vector3(-1.55, .82, 2.35);
+    if (memoryWind) {
+      desired.copy(origin);
+      if (memoryWindBeat === 'notice') desired.x += Math.sin(clock.elapsedTime * 1.45) * .05;
+      if (memoryWindBeat === 'hold') desired.z -= .12;
+      if (memoryWindBeat === 'reframe') desired.x += .16;
+      desired.y += Math.sin(clock.elapsedTime * 2.6) * .045;
+      group.current.position.lerp(desired, 1 - Math.exp(-delta * 3.2));
+      const toWind = memoryTarget.clone().sub(group.current.position);
+      const facingWind = Math.atan2(toWind.x, toWind.z);
+      const targetRotation = memoryWindBeat === 'notice' ? 0 : memoryWindBeat === 'hold' ? facingWind - .28 : facingWind - .08;
+      group.current.rotation.y = THREE.MathUtils.damp(group.current.rotation.y, targetRotation, 5.8, delta);
+      if (satchel.current) satchel.current.rotation.z = Math.sin(clock.elapsedTime * 2.8) * (memoryWindBeat === 'hold' ? .2 : .09);
+      return;
+    }
     if (departing) desired.copy(origin).lerp(destinationPoint, progress);
     else if (returning) desired.copy(destinationPoint).lerp(returnHome, progress);
     else if (state.phase === 'plan') desired.copy(origin);
@@ -677,15 +756,15 @@ function PiCompanion({ state, target, complete, presentation }: { state: Fountai
   const returning = state.phase === 'return' && target !== 'fountain';
   const returnKind = presentation.returnKind ?? state.lastReturn?.kind;
   const tokenColor = returnKind === 'refuted' || returnKind === 'detour' ? '#c9c7d8' : returnKind === 'refined' || returnKind === 'fact' ? '#7ed5eb' : returnKind === 'confirmed' ? '#ffe287' : returnKind === 'reply' ? '#ffc896' : '#f5b879';
-  return <group ref={group} position={origin}>
-    <mesh scale={state.phase === 'plan' ? 1.5 : returning ? 1.48 : 1.32}><sphereGeometry args={[.43,20,16]} /><meshBasicMaterial color={returning ? '#7cc7b3' : '#93fff0'} transparent opacity={state.phase === 'plan' ? .22 : returning ? .14 : .13} depthWrite={false} /></mesh>
-    <mesh castShadow><sphereGeometry args={[.37,20,16]} /><meshStandardMaterial color={returning ? '#8fcbb4' : '#c8fff0'} emissive={complete ? '#ffe398' : returning ? '#3c8c7d' : '#56d7c8'} emissiveIntensity={complete ? 1.55 : returning ? .28 : state.phase === 'plan' ? 1.58 : 1.14} roughness={.44} /></mesh>
+  return <group ref={group} position={origin} scale={memoryWind ? 1.38 : 1}>
+    <mesh scale={state.phase === 'plan' ? 1.5 : returning ? 1.48 : 1.32}><sphereGeometry args={[.43,20,16]} /><meshBasicMaterial color={returning ? '#7cc7b3' : '#93fff0'} transparent opacity={memoryWind ? .055 : state.phase === 'plan' ? .22 : returning ? .14 : .13} depthWrite={false} /></mesh>
+    <mesh castShadow><sphereGeometry args={[.37,20,16]} /><meshStandardMaterial color={memoryWind ? '#62aa9e' : returning ? '#8fcbb4' : '#c8fff0'} emissive={complete ? '#ffe398' : returning ? '#3c8c7d' : memoryWind ? '#225f59' : '#56d7c8'} emissiveIntensity={memoryWind ? .72 : complete ? 1.55 : returning ? .28 : state.phase === 'plan' ? 1.58 : 1.14} roughness={.44} /></mesh>
     <mesh position={[-.12,.06,.34]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color="#34585a" /></mesh>
     <mesh position={[.12,.06,.34]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color="#34585a" /></mesh>
-    <mesh position={[0,.48,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.1,.018,6,16,Math.PI]} /><meshStandardMaterial color="#f4d77e" emissive="#b97d2e" emissiveIntensity={.75} /></mesh>
-    <group ref={satchel} position={[.34,-.18,.02]}><mesh><boxGeometry args={[.24,.22,.17]} /><meshStandardMaterial color="#ad6c48" roughness={.77} /></mesh><mesh position={[0,.17,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.085,.015,6,12,Math.PI]} /><meshStandardMaterial color="#e2bd7b" /></mesh>{returning && <><mesh position={[.01,.48,.08]}><octahedronGeometry args={[.16,0]} /><meshStandardMaterial color={tokenColor} emissive={tokenColor} emissiveIntensity={.68} roughness={.3} /></mesh><pointLight position={[.01,.48,.08]} color={tokenColor} intensity={.26} distance={1.6} /></>}</group>
+    <mesh position={[0,.48,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.1,.018,6,16,Math.PI]} /><meshStandardMaterial color="#f4d77e" emissive="#b97d2e" emissiveIntensity={memoryWind ? 1.22 : .75} /></mesh>
+    <group ref={satchel} position={[.34,-.18,.02]}><mesh><boxGeometry args={[.24,.22,.17]} /><meshStandardMaterial color="#ad6c48" roughness={.77} /></mesh><mesh position={[0,.17,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.085,.015,6,12,Math.PI]} /><meshStandardMaterial color="#e2bd7b" /></mesh>{(returning || (memoryWind && memoryWindBeat !== 'notice')) && <><mesh position={[.01,.48,.08]} rotation={[0,.24,.12]}><planeGeometry args={[.24,.17]} /><meshStandardMaterial color="#f2dfb2" emissive="#b88947" emissiveIntensity={memoryWind ? .66 : .24} side={THREE.DoubleSide} /></mesh>{returning && <pointLight position={[.01,.48,.08]} color={tokenColor} intensity={.26} distance={1.6} />}</>}</group>
     {returning && <mesh position={[0,.9,.02]} rotation={[0,Math.PI/4,0]}><octahedronGeometry args={[.12,0]} /><meshStandardMaterial color={tokenColor} emissive={tokenColor} emissiveIntensity={.58} roughness={.3} /></mesh>}
-    <pointLight position={[0,.1,0]} color={complete ? '#ffe3a3' : returning ? '#72b9a7' : '#adfff0'} intensity={state.phase === 'plan' ? 2.15 : returning ? .38 : 1.45} distance={returning ? 1.8 : 3.4} />
+    <pointLight position={[0,.1,0]} color={memoryWind ? '#a5f5de' : complete ? '#ffe3a3' : returning ? '#72b9a7' : '#adfff0'} intensity={memoryWind ? .68 : state.phase === 'plan' ? 2.15 : returning ? .38 : 1.45} distance={returning ? 1.8 : 3.4} />
   </group>;
 }
 
