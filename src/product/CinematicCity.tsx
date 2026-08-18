@@ -65,6 +65,12 @@ function readFrameQuery(): CanonicalFrameKey | null {
   return value && value in CANONICAL_FRAMES ? (value as CanonicalFrameKey) : null;
 }
 
+function readInitialMode(): ShellMode {
+  if (readFrameQuery()) return 'photo';
+  if (typeof window === 'undefined') return 'fountain';
+  return new URLSearchParams(window.location.search).get('view') === 'city' ? 'landing' : 'fountain';
+}
+
 function usesFallbackScene(): boolean {
   if (typeof window === 'undefined') return false;
   return new URLSearchParams(window.location.search).get('quality') === 'fallback';
@@ -90,7 +96,7 @@ export function CinematicCity({
   const checkpoints = useMemo(() => derivePredictCheckpoints(trace), [trace]);
   const lessonMap = useMemo(() => mapLessonFramesToTrace(scenario, trace), [scenario, trace]);
 
-  const [mode, setMode] = useState<ShellMode>(() => (readFrameQuery() ? 'photo' : 'landing'));
+  const [mode, setMode] = useState<ShellMode>(readInitialMode);
   const [index, setIndex] = useState(() => {
     const key = readFrameQuery();
     return key ? CANONICAL_FRAMES[key].frameIndex : 0;
@@ -257,6 +263,9 @@ export function CinematicCity({
     setGame(null);
     dispatchFountain({ type: 'RESTART' });
     setMode('fountain');
+    const url = new URL(window.location.href);
+    url.searchParams.delete('view');
+    window.history.replaceState({}, '', url);
   }
 
   function choosePrediction(choice: AgentActionClass) {
@@ -382,6 +391,9 @@ export function CinematicCity({
           dispatchFountain({ type: 'RESTART' });
           setMode('landing');
           setCinema(true);
+          const url = new URL(window.location.href);
+          url.searchParams.set('view', 'city');
+          window.history.replaceState({}, '', url);
         }}
       />
     );

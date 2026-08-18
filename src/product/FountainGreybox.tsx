@@ -18,6 +18,14 @@ function returnTone(kind: FountainReturnKind): string {
   return 'answered';
 }
 
+const QUESTION_OBSERVATIONS: Record<FountainQuestion['id'], string> = {
+  melody: '乐手的纸页在第七拍处，刚好留着一格空白。',
+  water: '第三只浮标总在第七拍时，比另外两只沉下一点。',
+  wind: '飘带一直在动，断拍却不随风向改变。',
+  'stable-water': '同步阀亮了，但小渠会不会一直稳定还没人知道。',
+  'full-song': '花园的风灯已经点好，正等一整首歌被晚风听见。',
+};
+
 export function FountainGreybox({
   state,
   dispatch,
@@ -28,6 +36,7 @@ export function FountainGreybox({
   onExit: () => void;
 }) {
   const [showStoryNote, setShowStoryNote] = useState(false);
+  const [showPiKnowledge, setShowPiKnowledge] = useState(false);
   const facts = factDetails(state);
   const availableQuestions = availableFountainQuestions(state);
   const question = state.pendingQuestion ? FOUNTAIN_QUESTIONS[state.pendingQuestion] : undefined;
@@ -37,7 +46,7 @@ export function FountainGreybox({
     <section className={`fountain-story phase-${state.phase}`} aria-label="Pi City fountain story mode">
       <header className="story-topbar">
         <button className="story-bookmark" onClick={() => setShowStoryNote((value) => !value)} aria-expanded={showStoryNote}>
-          <span>故事模式</span>
+          <span>Pi 的城市故事</span>
           <strong>喷泉街</strong>
         </button>
         <p className="story-chapter">{storyChapter(state)}</p>
@@ -46,8 +55,8 @@ export function FountainGreybox({
 
       {showStoryNote && (
         <aside className="story-note" role="status">
-          <strong>这是一个教学故事。</strong>
-          <p>它用城市小冒险解释 Pi 如何观察、带回新事实、再改变行动；它不是一段真实 Trace。</p>
+          <strong>这是一个作者定义的教学故事。</strong>
+          <p>它用城市小冒险解释 Pi 如何观察、带回新事实、再改变行动；它不是一段真实 Trace。想看真实运行时，可以之后前往 Pi City 档案馆。</p>
         </aside>
       )}
 
@@ -69,15 +78,16 @@ export function FountainGreybox({
         {state.phase === 'choose-question' && (
           <aside className="world-clue-guide" aria-label="选择下一处调查地点">
             <span aria-hidden="true">✦</span>
-            <p>看见发光的小圈了吗？点一个你想和 Pi 一起弄清的地方。</p>
+            <p>先看看城里哪里有点不对劲，再决定想让 Pi 弄清什么。</p>
             <div className="world-question-fallback">
-              <small>也可以从这里出发</small>
+              <small>你注意到了什么？</small>
               {availableQuestions.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => dispatch({ type: 'SELECT_QUESTION', questionId: item.id })}
                 >
-                  去{item.destination}看看
+                  <span>{QUESTION_OBSERVATIONS[item.id]}</span>
+                  <strong>去{item.destination}看看</strong>
                 </button>
               ))}
             </div>
@@ -88,6 +98,21 @@ export function FountainGreybox({
           <span className="dialogue-speaker">Pi</span>
           <p>{piLine(state, question, result)}</p>
         </div>
+
+        {(state.phase === 'action' || state.phase === 'complete') && (
+          <aside className={`pi-knowledge-card ${showPiKnowledge ? 'open' : ''}`} aria-label="Pi 小知识">
+            <button onClick={() => setShowPiKnowledge((value) => !value)} aria-expanded={showPiKnowledge}>
+              <span>Pi 小知识 · 可选</span><strong>{showPiKnowledge ? '收起' : '为什么 Pi 换了一个办法？'}</strong><i>{showPiKnowledge ? '−' : '+'}</i>
+            </button>
+            {showPiKnowledge && (
+              <div>
+                <p><b>刚才的城市故事：</b>Pi 把水压和缺少回应节拍放在一起，所以决定去装同步阀。</p>
+                <p><b>在 Pi 里：</b>做事带回的新结果，会成为下一次思考时能看见的信息；它可能改变下一步行动。</p>
+                <small>这是作者定义的教学故事，不是刚才一段真实运行。还没有连接到合适的脱敏真实示例时，档案馆会诚实保持待开放。</small>
+              </div>
+            )}
+          </aside>
+        )}
       </main>
 
       <section className="investigation-journal" aria-label="共同调查手账">

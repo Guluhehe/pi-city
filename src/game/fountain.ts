@@ -81,8 +81,8 @@ const FACTS: Record<FountainFactId, FountainFact> = {
   },
   'wind-refuted': {
     id: 'wind-refuted',
-    label: '不是风',
-    detail: '不同风向下，喷泉仍然恰好在第七拍停住。',
+    label: '不随风断拍的小铃片',
+    detail: 'Pi 带回一枚旧铃片：不同风向下，喷泉仍然恰好在第七拍停住，所以不是风。',
   },
   'sync-valve': {
     id: 'sync-valve',
@@ -199,7 +199,7 @@ function resolveQuestion(questionId: FountainQuestionId): FountainReturn {
     return {
       kind: 'refuted',
       title: '不是风',
-      body: '风有时大，有时小；喷泉却总在第七拍停住。现在我们知道该把注意力放回喷泉和那首歌上。',
+      body: '风有时大，有时小；喷泉却总在第七拍停住。Pi 还带回一枚不随风断拍的小铃片，让我们知道该把注意力放回喷泉和那首歌上。',
       fact: FACTS['wind-refuted'],
     };
   }

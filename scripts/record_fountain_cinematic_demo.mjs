@@ -30,8 +30,9 @@ page.setDefaultTimeout(15_000);
 
 try {
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await clickButton(page, /和 Pi 一起调查/);
-  await page.locator('.fountain-story').waitFor({ state: 'visible' });
+  const story = page.locator('.fountain-story');
+  if (await story.count() === 0) await clickButton(page, /和 Pi 一起调查/);
+  await story.waitFor({ state: 'visible' });
   await wait(900);
 
   await clickButton(page, /和 Pi 一起看看/);

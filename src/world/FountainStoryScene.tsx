@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
@@ -205,12 +205,12 @@ function FountainTown({
       <PavedPlaza />
       <StreetDressing complete={complete} />
       <FountainPlaza state={state} />
-      <MusicianDock visited={hasFact('melody-page')} active={activeQuestion.includes('melody')} onAsk={() => onSelectQuestion('melody')} />
+      <MusicianDock visited={hasFact('melody-page')} complete={complete} active={activeQuestion.includes('melody')} onAsk={() => onSelectQuestion('melody')} />
       <WaterCanal visited={hasFact('pressure-pattern') || hasFact('stable-water')} active={activeQuestion.includes('water') || activeQuestion.includes('stable-water')} onAsk={() => onSelectQuestion(hasFact('sync-valve') ? 'stable-water' : 'water')} />
       <WindAlley visited={hasFact('wind-refuted')} active={activeQuestion.includes('wind')} onAsk={() => onSelectQuestion('wind')} />
       <Workshop unlocked={hasFact('melody-page') && hasFact('pressure-pattern')} installed={hasFact('sync-valve')} active={state.phase === 'action'} />
       <Garden visited={hasFact('full-song')} active={activeQuestion.includes('full-song')} onAsk={() => onSelectQuestion('full-song')} />
-      <HarborLandmarks />
+      <DeferredHarborLandmarks />
       <HarborHomes />
       <HarborBoats />
       <PiCompanion state={state} target={piTarget} complete={complete} />
@@ -219,6 +219,15 @@ function FountainTown({
       <Fireflies complete={complete} />
     </group>
   );
+}
+
+function DeferredHarborLandmarks() {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setVisible(true), 1800);
+    return () => window.clearTimeout(timer);
+  }, []);
+  return visible ? <Suspense fallback={null}><HarborLandmarks /></Suspense> : null;
 }
 
 function HarborWater() {
@@ -355,8 +364,10 @@ function FountainPlaza({ state }: { state: FountainSessionState }) {
     <group ref={water} position={[0,.52,0]}>
       {[0, Math.PI/2, Math.PI, Math.PI*1.5].map((angle, index) => <FountainJet key={index} angle={angle} bright={complete || synced} />)}
     </group>
-    <mesh position={[-1.25,.54,1.15]} rotation={[0,.5,.2]} castShadow><coneGeometry args={[.23,.5,4]} /><meshStandardMaterial color="#e8836e" roughness={.75} /></mesh>
+    <mesh position={[-1.25,.54,1.15]} rotation={[0,.5,.2]} castShadow><coneGeometry args={[.23,.5,4]} /><meshStandardMaterial color={complete ? '#f4cd7a' : '#e8836e'} emissive={complete ? '#b77a2b' : '#000'} emissiveIntensity={complete ? .75 : 0} roughness={.75} /></mesh>
+    {complete && <mesh position={[-1.25,.82,1.15]} rotation={[0,.5,.2]}><planeGeometry args={[.22,.15]} /><meshBasicMaterial color="#fff2c8" /></mesh>}
     <FountainRipples complete={complete || synced} />
+    <ThinkingTable melody={state.facts.includes('melody-page')} pressure={state.facts.includes('pressure-pattern')} rethink={state.phase === 'action' || synced || complete} />
   </group>;
 }
 
@@ -382,25 +393,47 @@ function FountainRipples({ complete }: { complete: boolean }) {
   return <group ref={ripples} position={[0,.47,0]}>{[.52,.92,1.32].map((radius, index) => <mesh key={radius} rotation={[-Math.PI/2,0,0]} scale={1+Math.sin(index+Date.now())*.01}><torusGeometry args={[radius,.018,5,32]} /><meshBasicMaterial color={complete ? '#f8e29a' : '#9af2e5'} transparent opacity={complete ? .48 : .28} /></mesh>)}</group>;
 }
 
-function MusicianDock({ visited, active, onAsk }: { visited: boolean; active: boolean; onAsk: () => void }) {
+function ThinkingTable({ melody, pressure, rethink }: { melody: boolean; pressure: boolean; rethink: boolean }) {
+  const link = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    if (!link.current) return;
+    link.current.rotation.y = clock.elapsedTime * .34;
+    link.current.position.y = .72 + Math.sin(clock.elapsedTime * 2.1) * .028;
+  });
+  const slots = [
+    { filled: melody, position: [-.33, .78, 0] as Vec3, color: '#f2a76e' },
+    { filled: pressure, position: [.33, .78, 0] as Vec3, color: '#73d9e5' },
+  ];
+  return <group position={[1.34, .26, 1.32]} rotation={[0, -.58, 0]}>
+    <mesh receiveShadow><cylinderGeometry args={[.72, .78, .22, 10]} /><meshStandardMaterial color="#755d4b" roughness={.87} /></mesh>
+    <mesh position={[0,.17,0]}><cylinderGeometry args={[.64,.64,.05,10]} /><meshStandardMaterial color="#d6c49e" roughness={.92} /></mesh>
+    {slots.map((slot, index) => <group key={index} position={slot.position}>
+      <mesh rotation={[-Math.PI/2,0,0]}><planeGeometry args={[.4,.28]} /><meshStandardMaterial color={slot.filled ? '#fff4d6' : '#9d937f'} emissive={slot.filled ? slot.color : '#000'} emissiveIntensity={slot.filled ? .38 : 0} roughness={.88} /></mesh>
+      {slot.filled && <mesh position={[0,.03,.012]}><boxGeometry args={[.24,.028,.035]} /><meshStandardMaterial color={slot.color} emissive={slot.color} emissiveIntensity={1.1} /></mesh>}
+    </group>)}
+    {rethink && <group ref={link}><mesh rotation={[-Math.PI/2,0,0]}><torusGeometry args={[.5,.025,6,28]} /><meshBasicMaterial color="#f6d37a" transparent opacity={.75} /></mesh><mesh position={[0,.16,0]} rotation={[0,Math.PI/4,0]}><octahedronGeometry args={[.13,0]} /><meshStandardMaterial color="#ffe4a0" emissive="#f4b850" emissiveIntensity={2.3} roughness={.2} /></mesh><pointLight position={[0,.32,0]} color="#ffd275" intensity={1.25} distance={3.2} /></group>}
+  </group>;
+}
+
+function MusicianDock({ visited, complete, active, onAsk }: { visited: boolean; complete: boolean; active: boolean; onAsk: () => void }) {
   const papers = useRef<THREE.Group>(null);
   useFrame(({ clock }) => { if (papers.current) papers.current.rotation.y = Math.sin(clock.elapsedTime*.8)*.06; });
   return <group position={LOCATIONS.melody.position}>
     <DockHouse color="#9e634c" roof="#354554" />
     <mesh position={[-.42,.82,.68]} rotation={[0,.24,0]}><boxGeometry args={[.82,.06,.51]} /><meshStandardMaterial color="#f8e4b5" roughness={.9} /></mesh>
-    <group ref={papers} position={[.62,1.32,.42]}>{[0,.28,.56].map((offset) => <group key={offset} position={[0,offset*.24,0]} rotation={[.12,offset*.8,0]}><mesh><planeGeometry args={[.48,.34]} /><meshStandardMaterial color="#f6dba3" emissive={visited ? '#9c5825' : '#000'} emissiveIntensity={visited?.26:0} side={THREE.DoubleSide} /></mesh><mesh position={[0,0,.012]}><boxGeometry args={[.28,.012,.02]} /><meshStandardMaterial color="#8e6450" /></mesh></group>)}</group>
+    <group ref={papers} position={[.62,1.32,.42]}>{[0,.28,.56].map((offset) => <group key={offset} position={[0,offset*.24,0]} rotation={[.12,offset*.8,0]}><mesh><planeGeometry args={[.48,.34]} /><meshStandardMaterial color="#f6dba3" emissive={visited ? '#9c5825' : '#000'} emissiveIntensity={visited?.26:0} side={THREE.DoubleSide} /></mesh><mesh position={[-.08,.05,.012]}><boxGeometry args={[.21,.012,.02]} /><meshStandardMaterial color="#8e6450" /></mesh><mesh position={[.16,.05,.014]}><boxGeometry args={[visited ? .07 : .018,.012,.02]} /><meshStandardMaterial color={visited ? '#8e6450' : '#e56c5a'} emissive={visited ? '#000' : '#b83f2e'} emissiveIntensity={visited ? 0 : .9} /></mesh></group>)}</group>
     <DockLantern position={[-1.5,.28,.96]} color="#ffb968" />
-    <DockMusician visited={visited} />
+    <DockMusician visited={visited} complete={complete} />
     <LocationHotspot position={[0,1.18,1.2]} color={LOCATIONS.melody.color} active={active} visited={visited} onClick={onAsk} />
   </group>;
 }
 
-function DockMusician({ visited }: { visited: boolean }) {
+function DockMusician({ visited, complete }: { visited: boolean; complete: boolean }) {
   const group = useRef<THREE.Group>(null);
   const arm = useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     if (group.current) group.current.position.y = .54 + Math.sin(clock.elapsedTime*1.35)*.028;
-    if (arm.current) arm.current.rotation.z = -.55 + Math.sin(clock.elapsedTime*4.2)*.22;
+    if (arm.current) arm.current.rotation.z = -.55 + Math.sin(clock.elapsedTime * (complete ? 6.4 : 4.2)) * (complete ? .34 : .22);
   });
   return <group ref={group} position={[-.92,.54,.1]} rotation={[0,.62,0]} scale={.82}>
     <mesh position={[0,.36,0]}><capsuleGeometry args={[.12,.32,4,8]} /><meshStandardMaterial color="#426a78" roughness={.88} /></mesh>
@@ -408,18 +441,19 @@ function DockMusician({ visited }: { visited: boolean }) {
     <mesh position={[0,.88,.02]}><sphereGeometry args={[.145,12,8]} /><meshStandardMaterial color="#4e413a" roughness={.9} /></mesh>
     <group ref={arm} position={[.12,.47,.08]}><mesh rotation={[0,0,-.5]}><capsuleGeometry args={[.035,.2,4,6]} /><meshStandardMaterial color="#cb9a72" /></mesh></group>
     <mesh position={[.15,.4,.15]} rotation={[0,.35,.3]}><sphereGeometry args={[.17,12,8]} scale={[1,.18,1.25]} /><meshStandardMaterial color="#c98b48" roughness={.58} metalness={.08} /></mesh>
-    {visited && <pointLight position={[0,.62,.18]} intensity={.6} distance={2.4} color="#ffc975" />}
+    {visited && <pointLight position={[0,.62,.18]} intensity={complete ? 1.15 : .6} distance={complete ? 3.2 : 2.4} color="#ffc975" />}
+    {complete && <group position={[.58,.68,.15]}>{[0,.24,.48].map((x, index) => <mesh key={x} position={[x,Math.sin(index)*.12,0]} rotation={[0,0,.35]}><sphereGeometry args={[.055,8,6]} /><meshBasicMaterial color="#ffe39a" /></mesh>)}</group>}
   </group>;
 }
 
 function WaterCanal({ visited, active, onAsk }: { visited: boolean; active: boolean; onAsk: () => void }) {
   const buoys = useRef<THREE.Group>(null);
-  useFrame(({ clock }) => { if (buoys.current) buoys.current.children.forEach((item,index) => { item.position.y = .65 + Math.sin(clock.elapsedTime*2+index)*.065; }); });
+  useFrame(({ clock }) => { if (buoys.current) buoys.current.children.forEach((item,index) => { item.position.y = .65 + Math.sin(clock.elapsedTime*2+index)*.065 - (index === 2 && !visited ? .16 : 0); }); });
   return <group position={LOCATIONS.water.position}>
     <mesh position={[0,.27,0]} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[2.35,2.85]} /><meshStandardMaterial color="#2e8694" emissive="#17636d" emissiveIntensity={visited ? .72 : .32} roughness={.22} metalness={.08} /></mesh>
     <mesh position={[0,.36,.05]}><boxGeometry args={[1.95,.09,.1]} /><meshStandardMaterial color="#d2a267" roughness={.8} /></mesh>
     {[-.9,.9].map((x) => <group key={x} position={[x,.38,.05]}><mesh><boxGeometry args={[.12,.38,2.7]} /><meshStandardMaterial color="#86634b" roughness={.86} /></mesh><mesh position={[0,.27,-.95]}><cylinderGeometry args={[.06,.08,.52,8]} /><meshStandardMaterial color="#3c4540" /></mesh></group>)}
-    <group ref={buoys}>{[-.7,0,.7].map((x,index) => <group key={x} position={[x,.65,-.5+index*.36]}><mesh><sphereGeometry args={[.105,12,8]} /><meshStandardMaterial color={visited ? '#f8d36b' : '#f29b72'} emissive={visited ? '#c58a32' : '#9d4e37'} emissiveIntensity={visited ? 1.15 : .34} /></mesh><mesh position={[0,-.36,0]} rotation={[-Math.PI/2,0,0]}><torusGeometry args={[.22,.013,5,24]} /><meshBasicMaterial color="#a4f5e8" transparent opacity={.38} /></mesh></group>)}</group>
+    <group ref={buoys}>{[-.7,0,.7].map((x,index) => <group key={x} position={[x,.65,-.5+index*.36]}><mesh><sphereGeometry args={[.105,12,8]} /><meshStandardMaterial color={visited ? '#f8d36b' : index === 2 ? '#f3c96c' : '#f29b72'} emissive={visited ? '#c58a32' : index === 2 ? '#ae762f' : '#9d4e37'} emissiveIntensity={visited ? 1.15 : index === 2 ? .92 : .34} /></mesh><mesh position={[0,-.36,0]} rotation={[-Math.PI/2,0,0]}><torusGeometry args={[.22,.013,5,24]} /><meshBasicMaterial color="#a4f5e8" transparent opacity={.38} /></mesh></group>)}</group>
     <LocationHotspot position={[0,1.18,1.18]} color={LOCATIONS.water.color} active={active} visited={visited} onClick={onAsk} />
   </group>;
 }
@@ -437,6 +471,7 @@ function WindAlley({ visited, active, onAsk }: { visited: boolean; active: boole
       {index === 1 && <pointLight position={[0,.1,.18]} intensity={visited ? .8 : .22} color="#f7d581" distance={3} />}
     </group>)}</group>
     <DockLantern position={[1.22,.28,.72]} color="#d7b9f0" />
+    {visited && <group position={[.96,.72,.46]} rotation={[0,.3,.18]}><mesh><octahedronGeometry args={[.13,0]} /><meshStandardMaterial color="#d2d3d5" emissive="#a9b8c8" emissiveIntensity={.72} roughness={.3} /></mesh><mesh position={[0,-.15,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.2,.012,5,18]} /><meshBasicMaterial color="#e4b27b" transparent opacity={.6} /></mesh></group>}
     <LocationHotspot position={[0,1.14,1.2]} color={LOCATIONS.wind.color} active={active} visited={visited} onClick={onAsk} />
   </group>;
 }
