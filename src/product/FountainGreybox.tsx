@@ -30,10 +30,12 @@ export function FountainGreybox({
   state,
   dispatch,
   onExit,
+  onComplete,
 }: {
   state: FountainSessionState;
   dispatch: (action: FountainSessionAction) => void;
   onExit: () => void;
+  onComplete?: () => void;
 }) {
   const [showStoryNote, setShowStoryNote] = useState(false);
   const [showPiKnowledge, setShowPiKnowledge] = useState(false);
@@ -72,7 +74,7 @@ export function FountainGreybox({
         </section>
 
         <section className="story-focus" aria-live="polite">
-          {renderStoryFocus(state, question, result, dispatch)}
+          {renderStoryFocus(state, question, result, dispatch, onComplete)}
         </section>
 
         {state.phase === 'choose-question' && (
@@ -140,6 +142,7 @@ function renderStoryFocus(
   question: FountainQuestion | undefined,
   result: FountainSessionState['lastReturn'],
   dispatch: (action: FountainSessionAction) => void,
+  onComplete?: () => void,
 ) {
   if (state.phase === 'arrival') {
     return <button className="scene-cta" onClick={() => dispatch({ type: 'BEGIN' })}><span>靠近喷泉</span><strong>和 Pi 一起看看</strong><i>→</i></button>;
@@ -193,7 +196,7 @@ function renderStoryFocus(
         <span>晚风里的最后确认</span>
         <strong>喷泉唱完了一整首。</strong>
         <p>乐手、风铃和水声终于一起和起来了。</p>
-        <button className="scene-cta compact" onClick={() => dispatch({ type: 'RESTART' })}>再听一次 <i>↻</i></button>
+        <button className="scene-cta compact" onClick={() => onComplete ? onComplete() : dispatch({ type: 'RESTART' })}>带 Pi 回到心愿码头 <i>↗</i></button>
       </article>
     );
   }

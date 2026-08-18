@@ -7,11 +7,17 @@ import type { AgentActionClass } from '../analysis/action-classes';
 import {
   buildPredictDebrief,
   checkpointAtLessonFrame,
+  createCityCampaign,
+  createCityMission,
   createFountainSession,
   createGameSession,
   derivePredictCheckpoints,
+  reduceCityCampaign,
+  reduceCityMission,
   reduceFountainSession,
   reduceGameSession,
+  type ChapterMissionId,
+  type CityMissionId,
   type GameSessionState,
 } from '../game';
 import { explainEvent } from '../semantic-trace/explain';
@@ -39,8 +45,11 @@ import { PiCityScene } from '../world/PiCityScene';
 import type { PiCitySceneProps } from '../world/PiCityScene';
 import { EvidenceCityMap, SceneErrorBoundary } from './SceneErrorBoundary';
 import { FountainGreybox } from './FountainGreybox';
+import { CityStoryHub } from './CityStoryHub';
+import { CityMissionStory } from './CityMissionStory';
+import { CityArchive } from './CityArchive';
 
-type ShellMode = 'landing' | 'watch' | 'explore' | 'photo' | 'complete' | 'fountain';
+type ShellMode = 'hub' | 'mission' | 'archive' | 'landing' | 'watch' | 'explore' | 'photo' | 'complete' | 'fountain';
 type TraceOrigin = 'bundled-demo' | 'imported';
 type PhotoReturnView = {
   scenario: LessonScenario;
@@ -67,8 +76,8 @@ function readFrameQuery(): CanonicalFrameKey | null {
 
 function readInitialMode(): ShellMode {
   if (readFrameQuery()) return 'photo';
-  if (typeof window === 'undefined') return 'fountain';
-  return new URLSearchParams(window.location.search).get('view') === 'city' ? 'landing' : 'fountain';
+  if (typeof window === 'undefined') return 'hub';
+  return new URLSearchParams(window.location.search).get('view') === 'city' ? 'landing' : 'hub';
 }
 
 function usesFallbackScene(): boolean {
@@ -115,6 +124,8 @@ export function CinematicCity({
     returnView: PhotoReturnView;
   } | null>(null);
   const [game, setGame] = useState<GameSessionState | null>(null);
+  const [campaign, dispatchCampaign] = useReducer(reduceCityCampaign, undefined, createCityCampaign);
+  const [mission, setMission] = useState(() => createCityMission('lighthouse'));
   const [fountain, dispatchFountain] = useReducer(reduceFountainSession, undefined, createFountainSession);
   const [elapsed, setElapsed] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -262,10 +273,32 @@ export function CinematicCity({
     setPlaying(false);
     setGame(null);
     dispatchFountain({ type: 'RESTART' });
+    dispatchCampaign({ type: 'BEGIN_MISSION', missionId: 'fountain' });
     setMode('fountain');
     const url = new URL(window.location.href);
     url.searchParams.delete('view');
     window.history.replaceState({}, '', url);
+  }
+
+  function beginCityMission(missionId: CityMissionId) {
+    if (missionId === 'fountain') {
+      enterFountain();
+      return;
+    }
+    setPlaying(false);
+    setGame(null);
+    dispatchCampaign({ type: 'BEGIN_MISSION', missionId });
+    setMission(createCityMission(missionId as ChapterMissionId));
+    setMode('mission');
+  }
+
+  function dispatchMission(action: Parameters<typeof reduceCityMission>[1]) {
+    setMission((current) => reduceCityMission(current, action));
+  }
+
+  function returnToHarbor() {
+    dispatchCampaign({ type: 'RETURN_TO_HARBOR' });
+    setMode('hub');
   }
 
   function choosePrediction(choice: AgentActionClass) {
@@ -382,21 +415,36 @@ export function CinematicCity({
     }
   }
 
+  if (mode === 'hub') {
+    return <CityStoryHub campaign={campaign} onBeginMission={beginCityMission} onOpenArchives={() => setMode('archive')} />;
+  }
+
+  if (mode === 'archive') {
+    return <CityArchive onBack={() => setMode('hub')} onEnterEvidenceCity={() => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('view', 'city');
+      window.history.replaceState({}, '', url);
+      setMode('landing');
+    }} />;
+  }
+
+  if (mode === 'mission') {
+    return <CityMissionStory state={mission} dispatch={dispatchMission} onExit={returnToHarbor} onDiscovery={(discoveryId) => dispatchCampaign({ type: 'ADD_DISCOVERY', discoveryId })} onCompleted={() => {
+      dispatchCampaign({ type: 'COMPLETE_MISSION', missionId: mission.missionId });
+      setMode('hub');
+    }} />;
+  }
+
   if (mode === 'fountain') {
-    return (
-      <FountainGreybox
-        state={fountain}
-        dispatch={dispatchFountain}
-        onExit={() => {
-          dispatchFountain({ type: 'RESTART' });
-          setMode('landing');
-          setCinema(true);
-          const url = new URL(window.location.href);
-          url.searchParams.set('view', 'city');
-          window.history.replaceState({}, '', url);
-        }}
-      />
-    );
+    return <FountainGreybox
+      state={fountain}
+      dispatch={dispatchFountain}
+      onExit={returnToHarbor}
+      onComplete={() => {
+        dispatchCampaign({ type: 'COMPLETE_MISSION', missionId: 'fountain' });
+        setMode('hub');
+      }}
+    />;
   }
 
   const presentation = mode === 'photo' ? 'photo' : mode === 'explore' ? 'explore' : 'watch';

@@ -14,6 +14,7 @@ import {
 
 type Vec3 = [number, number, number];
 type LocationId = FountainQuestionId | 'fountain' | 'workshop';
+type MissionTheme = 'fountain' | 'lighthouse' | 'parcel';
 
 const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
 
@@ -55,9 +56,13 @@ function journeyTarget(state: FountainSessionState): LocationId {
 export function FountainStoryScene({
   state,
   onSelectQuestion,
+  missionTheme = 'fountain',
+  missionFacts = [],
 }: {
   state: FountainSessionState;
   onSelectQuestion: (questionId: FountainQuestionId) => void;
+  missionTheme?: MissionTheme;
+  missionFacts?: string[];
 }) {
   const available = availableFountainQuestions(state).map((question) => question.id);
   return (
@@ -72,7 +77,7 @@ export function FountainStoryScene({
         <directionalLight position={[11, 8, -10]} intensity={.7} color="#9bdce4" />
         <pointLight position={[0, 5.3, 0]} intensity={2.8} color="#aaffee" distance={11} />
         <FountainCamera state={state} />
-        <FountainTown state={state} available={available} onSelectQuestion={onSelectQuestion} />
+        <FountainTown state={state} available={available} onSelectQuestion={onSelectQuestion} missionTheme={missionTheme} missionFacts={missionFacts} />
       </Canvas>
     </div>
   );
@@ -184,10 +189,14 @@ function FountainTown({
   state,
   available,
   onSelectQuestion,
+  missionTheme,
+  missionFacts,
 }: {
   state: FountainSessionState;
   available: FountainQuestionId[];
   onSelectQuestion: (questionId: FountainQuestionId) => void;
+  missionTheme: MissionTheme;
+  missionFacts: string[];
 }) {
   const hasFact = (fact: FountainSessionState['facts'][number]) => state.facts.includes(fact);
   const activeQuestion = state.phase === 'choose-question' ? available : [];
@@ -203,6 +212,7 @@ function FountainTown({
     <group>
       <HarborWater />
       <PavedPlaza />
+      <MissionSetDressing theme={missionTheme} facts={missionFacts} />
       <StreetDressing complete={complete} />
       <FountainPlaza state={state} />
       <MusicianDock visited={hasFact('melody-page')} complete={complete} active={activeQuestion.includes('melody')} onAsk={() => onSelectQuestion('melody')} />
@@ -219,6 +229,41 @@ function FountainTown({
       <Fireflies complete={complete} />
     </group>
   );
+}
+
+function MissionSetDressing({ theme, facts }: { theme: MissionTheme; facts: string[] }) {
+  if (theme === 'lighthouse') return <LighthouseMissionLandmark adjusted={facts.includes('gear-adjusted')} confirmed={facts.includes('light-confirmed')} />;
+  if (theme === 'parcel') return <ParcelMissionLandmark delivered={facts.includes('delivered')} hasOldAddress={facts.includes('old-address')} hasNewStreet={facts.includes('new-street')} />;
+  return null;
+}
+
+function LighthouseMissionLandmark({ adjusted, confirmed }: { adjusted: boolean; confirmed: boolean }) {
+  const beacon = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => { if (beacon.current) beacon.current.rotation.y = clock.elapsedTime * (confirmed ? .9 : .32); });
+  const glow = confirmed ? 3.25 : adjusted ? 1.35 : .42;
+  return <group position={[-7.25,.24,-5.55]} rotation={[0,.42,0]}>
+    <mesh castShadow><cylinderGeometry args={[.62,.83,3.2,14]} /><meshStandardMaterial color="#ded1ae" roughness={.86} /></mesh>
+    <mesh position={[0,1.8,0]}><cylinderGeometry args={[.82,.78,.32,14]} /><meshStandardMaterial color="#52666b" roughness={.68} /></mesh>
+    <mesh position={[0,2.12,0]}><cylinderGeometry args={[.48,.48,.42,12]} /><meshStandardMaterial color={confirmed ? '#fff1a8' : '#f1c872'} emissive={confirmed ? '#f3b64c' : '#8a5c31'} emissiveIntensity={glow} roughness={.26} /></mesh>
+    <mesh position={[0,2.55,0]}><coneGeometry args={[.92,.72,4]} /><meshStandardMaterial color="#3f4e55" roughness={.76} /></mesh>
+    <group ref={beacon} position={[0,2.15,0]}><mesh rotation={[0,0,Math.PI/2]}><coneGeometry args={[.1,2.8,8,1,true]} /><meshBasicMaterial color="#fff0a1" transparent opacity={confirmed ? .22 : .08} side={THREE.DoubleSide} depthWrite={false} /></mesh></group>
+    <pointLight position={[0,2.12,0]} color="#ffd77d" intensity={glow} distance={8} />
+    <group position={[.88,.38,.48]}><mesh><boxGeometry args={[.5,.35,.08]} /><meshStandardMaterial color="#76533e" roughness={.88} /></mesh><mesh position={[0,.05,.05]}><planeGeometry args={[.33,.18]} /><meshBasicMaterial color={adjusted ? '#f6cb78' : '#e8d3a1'} /></mesh></group>
+  </group>;
+}
+
+function ParcelMissionLandmark({ delivered, hasOldAddress, hasNewStreet }: { delivered: boolean; hasOldAddress: boolean; hasNewStreet: boolean }) {
+  const letters = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => { if (letters.current) letters.current.position.y = .92 + Math.sin(clock.elapsedTime * 2.5) * .04; });
+  return <group position={[4.82,.28,4.7]} rotation={[0,-.54,0]}>
+    <mesh castShadow><boxGeometry args={[2.25,1.65,1.55]} /><meshStandardMaterial color="#9d5d4b" roughness={.9} /></mesh>
+    <mesh position={[0,.1,.79]}><boxGeometry args={[.72,1.06,.05]} /><meshStandardMaterial color="#b8463d" roughness={.82} /></mesh>
+    <mesh position={[0,.74,.825]}><boxGeometry args={[.1,.16,.03]} /><meshStandardMaterial color="#f3d482" emissive="#a96d2e" emissiveIntensity={.55} /></mesh>
+    <mesh position={[0,1.05,0]}><boxGeometry args={[2.46,.14,1.74]} /><meshStandardMaterial color="#454b50" roughness={.72} /></mesh>
+    <group position={[-1.12,.62,.8]}><mesh><cylinderGeometry args={[.08,.1,1.05,8]} /><meshStandardMaterial color="#3a4748" /></mesh><mesh position={[0,.6,0]}><boxGeometry args={[.66,.3,.08]} /><meshStandardMaterial color={hasNewStreet ? '#6fa9b5' : '#7a7b72'} emissive={hasNewStreet ? '#3d6f80' : '#000'} emissiveIntensity={.55} /></mesh><mesh position={[0,.78,.05]}><boxGeometry args={[.42,.055,.02]} /><meshBasicMaterial color="#f0e1b8" /></mesh></group>
+    <group position={[1.08,.5,.67]}><mesh><boxGeometry args={[.42,.72,.38]} /><meshStandardMaterial color="#d35b48" roughness={.8} /></mesh><mesh position={[0,.2,.205]}><boxGeometry args={[.2,.04,.012]} /><meshBasicMaterial color="#f5dfaa" /></mesh></group>
+    <group ref={letters}>{(hasOldAddress || hasNewStreet || delivered) && <><mesh rotation={[0,.45,.14]}><planeGeometry args={[.45,.3]} /><meshStandardMaterial color="#fff0c9" emissive="#d9a859" emissiveIntensity={delivered ? 1.45 : .46} side={THREE.DoubleSide} /></mesh>{delivered && <pointLight color="#ffe18d" intensity={1.35} distance={3.6} />}</>}</group>
+  </group>;
 }
 
 function DeferredHarborLandmarks() {
