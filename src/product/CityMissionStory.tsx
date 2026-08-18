@@ -101,10 +101,20 @@ export function CityMissionStory({
 
     <section className="investigation-journal" aria-label="本次办事手账">
       <div className="journal-heading"><span>本次办事手账</span><small>{facts.length === 0 ? '还没有发现' : `${facts.length} 件带回物`}</small></div>
+      <MissionSatchel state={state} />
       <div className="journal-tape">{facts.length === 0 ? <span className="journal-empty">Pi 会把路上带回来的东西放在这里。</span> : facts.map((fact, index) => <article className="journal-clue" key={fact.id}><span>{index + 1}</span><strong>{fact.label}</strong><p>{fact.detail}</p></article>)}</div>
       <button className="journal-reset" onClick={() => dispatch({ type: 'RESTART' })}>重新听这件心愿</button>
     </section>
   </section>;
+}
+
+function MissionSatchel({ state }: { state: CityMissionState }) {
+  if (!state.satchel) return null;
+  const carried = state.satchel.carriedFactIds.map((id) => state.factCards.find((fact) => fact.id === id));
+  return <section className="mission-satchel" aria-label={`Pi 的两格小包，已带回 ${carried.length} 件发现`}><span>Pi 的两格小包</span><div>{Array.from({ length: state.satchel.capacity }).map((_, index) => {
+    const fact = carried[index];
+    return <article className={fact ? 'filled' : 'empty'} key={index}><i>{fact ? '✦' : '○'}</i><strong>{fact?.label ?? '留给下一件真正有用的发现'}</strong></article>;
+  })}</div></section>;
 }
 
 function MissionFocus({ state, dispatch, onComplete, timing }: { state: CityMissionState; dispatch: (action: CityMissionAction) => void; onComplete: () => void; timing: StoryRoutePresentation }) {

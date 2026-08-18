@@ -25,12 +25,19 @@ export interface CityMissionReturn {
   discovery?: CityDiscoveryId;
 }
 
+export interface CityMissionSatchel {
+  capacity: 2;
+  carriedFactIds: string[];
+}
+
 export interface CityMissionState {
   missionId: ChapterMissionId;
   source: 'tutorial';
   phase: CityMissionPhase;
   facts: string[];
   factCards: CityMissionFact[];
+  /** Only the cinema story uses this: Pi can carry two decision-making findings. */
+  satchel?: CityMissionSatchel;
   questionsAsked: string[];
   pendingQuestion?: string;
   lastReturn?: CityMissionReturn;
@@ -272,7 +279,10 @@ const SEQUENTIAL_MISSIONS: Record<Exclude<ChapterMissionId, 'lighthouse' | 'parc
 const DEFINITIONS: Record<ChapterMissionId, MissionDefinition> = { lighthouse: LIGHTHOUSE, parcel: PARCEL, ...SEQUENTIAL_MISSIONS };
 
 export function createCityMission(missionId: ChapterMissionId): CityMissionState {
-  return { missionId, source: 'tutorial', phase: 'arrival', facts: [], factCards: [], questionsAsked: [], completed: false };
+  return {
+    missionId, source: 'tutorial', phase: 'arrival', facts: [], factCards: [], questionsAsked: [], completed: false,
+    ...(missionId === 'cinema' ? { satchel: { capacity: 2, carriedFactIds: [] } } : {}),
+  };
 }
 
 export function cityMissionDefinition(missionId: ChapterMissionId): MissionDefinition {
@@ -288,7 +298,11 @@ export function availableCityMissionQuestions(state: CityMissionState): CityMiss
 
 function addFact(state: CityMissionState, fact?: CityMissionFact): CityMissionState {
   if (!fact || state.facts.includes(fact.id)) return state;
-  return { ...state, facts: [...state.facts, fact.id], factCards: [...state.factCards, fact] };
+  const isCinemaCarry = state.missionId === 'cinema' && (fact.id === 'cinema-rain-photo' || fact.id === 'cinema-weather-book');
+  const satchel = state.satchel && isCinemaCarry && state.satchel.carriedFactIds.length < state.satchel.capacity
+    ? { ...state.satchel, carriedFactIds: [...state.satchel.carriedFactIds, fact.id] }
+    : state.satchel;
+  return { ...state, facts: [...state.facts, fact.id], factCards: [...state.factCards, fact], ...(satchel ? { satchel } : {}) };
 }
 
 export function cityMissionFactDetails(state: CityMissionState): CityMissionFact[] {

@@ -84,10 +84,15 @@ function readInitialMode(): ShellMode {
 function createCampaignPreview(): ReturnType<typeof createCityCampaign> {
   const campaign = createCityCampaign();
   if (typeof window === 'undefined') return campaign;
-  const value = new URLSearchParams(window.location.search).get('story');
+  const params = new URLSearchParams(window.location.search);
+  const missions = Object.values(CITY_MISSIONS) as Array<typeof CITY_MISSIONS[keyof typeof CITY_MISSIONS]>;
+  const previewMission = params.get('previewMission') as CityMissionId | null;
+  const targetIndex = previewMission ? missions.findIndex((mission) => mission.id === previewMission) : -1;
+  if (targetIndex >= 0) return missions.slice(0, targetIndex).reduce((current, mission) => reduceCityCampaign(current, { type: 'COMPLETE_MISSION', missionId: mission.id }), campaign);
+  const value = params.get('story');
   const chapter = value ? Number(value) : 1;
   if (!Number.isInteger(chapter) || chapter < 2 || chapter > 4) return campaign;
-  return (Object.values(CITY_MISSIONS) as Array<typeof CITY_MISSIONS[keyof typeof CITY_MISSIONS]>).filter((mission) => mission.chapter < chapter).reduce((current, mission) => reduceCityCampaign(current, { type: 'COMPLETE_MISSION', missionId: mission.id }), campaign);
+  return missions.filter((mission) => mission.chapter < chapter).reduce((current, mission) => reduceCityCampaign(current, { type: 'COMPLETE_MISSION', missionId: mission.id }), campaign);
 }
 
 function usesFallbackScene(): boolean {

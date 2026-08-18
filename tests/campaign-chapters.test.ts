@@ -67,6 +67,15 @@ for (const [missionId, first, second, reply, terminalFact] of routes) {
   });
 }
 
+test('Cinema makes its two decision-making findings visible in Pi’s two-slot satchel', () => {
+  let state = begin('cinema');
+  assert.deepEqual(state.satchel, { capacity: 2, carriedFactIds: [] });
+  state = accept(travel(state, 'cinema-sky'));
+  assert.deepEqual(state.satchel?.carriedFactIds, ['cinema-rain-photo']);
+  state = accept(travel(state, 'cinema-library'));
+  assert.deepEqual(state.satchel?.carriedFactIds, ['cinema-rain-photo', 'cinema-weather-book']);
+});
+
 test('Second chapter optional routes keep a collectible city clue instead of a failure state', () => {
   let state = begin('kite');
   state = travel(state, 'kite-quick');
