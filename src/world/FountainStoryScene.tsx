@@ -327,7 +327,7 @@ function MemoryWindPhenomenon({ beat }: { beat: MemoryWindBeat }) {
     </group>
     {[-.74,.82].map((x) => <group key={x} position={[x,.32,0]}><mesh><sphereGeometry args={[.105,12,10]} /><meshStandardMaterial color="#ffd789" emissive="#e7a347" emissiveIntensity={1.4} /></mesh><pointLight color="#ffd58a" intensity={.72} distance={2.35} /></group>)}
     <mesh position={[0,-1.3,0]} rotation={[0,.26,0]}><cylinderGeometry args={[.018,.018,1.9,6]} /><meshStandardMaterial color="#e6c47d" /></mesh>
-    {reframe && <MemoryWindRoute />}
+    {reframe && <><MemoryWindEvidencePair /><MemoryWindRoute /></>}
   </group>;
 }
 
@@ -353,6 +353,21 @@ function MemoryWindHarborLayer() {
       <mesh position={[0,.11,1.32]}><boxGeometry args={[.96,.18,.52]} /><meshStandardMaterial color="#777064" roughness={.94} /></mesh>
       <pointLight position={[0,1.62,.95]} intensity={1.34} distance={4.9} color="#ffb967" />
     </group>
+  </group>;
+}
+
+function MemoryWindEvidencePair() {
+  const pair = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    if (!pair.current) return;
+    pair.current.position.y = -.66 + Math.sin(clock.elapsedTime * 1.7) * .045;
+    pair.current.rotation.z = Math.sin(clock.elapsedTime * 1.25) * .03;
+  });
+  return <group ref={pair} position={[-.16,-.66,.08]} rotation={[.08,.18,0]}>
+    <group position={[-.34,0,0]} rotation={[0,-.22,-.08]}><mesh><planeGeometry args={[.42,.29]} /><meshStandardMaterial color="#e9d6a4" emissive="#9b7541" emissiveIntensity={.45} roughness={.72} side={THREE.DoubleSide} /></mesh><mesh position={[0,.03,.012]} scale={[.64,.05,.02]}><boxGeometry args={[.32,.06,.01]} /><meshBasicMaterial color="#b26d45" /></mesh></group>
+    <group position={[.34,0,.01]} rotation={[0,.22,.08]}><mesh><planeGeometry args={[.42,.29]} /><meshStandardMaterial color="#f1e4bd" emissive="#b9894f" emissiveIntensity={.62} roughness={.68} side={THREE.DoubleSide} /></mesh><mesh position={[0,-.03,.018]} rotation={[0,0,.68]}><cylinderGeometry args={[.022,.022,.32,6]} /><meshStandardMaterial color="#d8705d" emissive="#9e3d36" emissiveIntensity={.55} /></mesh></group>
+    <mesh position={[0,.01,.04]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.075,.012,6,14]} /><meshStandardMaterial color="#ffd889" emissive="#d98234" emissiveIntensity={1.05} /></mesh>
+    <pointLight position={[0,.04,.18]} color="#ffd587" intensity={.45} distance={2.4} />
   </group>;
 }
 
