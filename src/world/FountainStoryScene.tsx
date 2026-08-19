@@ -783,10 +783,11 @@ function PiCompanion({ state, target, complete, presentation, memoryWind, memory
       if (satchel.current) {
         const present = Math.min(1, Math.max(0, (elapsed - .18) / .9));
         const lift = present * present * (3 - 2 * present);
-        satchel.current.rotation.z = Math.sin(clock.elapsedTime * 2.8) * (memoryWindBeat === 'hold' ? .16 : .06) - lift * .26;
-        satchel.current.position.y = -.14 + lift * .085;
-        const carrySide = memoryWindBeat === 'hold' ? -.46 : .43;
-        const carryDepth = memoryWindBeat === 'hold' ? -.31 : .23;
+        satchel.current.rotation.z = Math.sin(clock.elapsedTime * 2.8) * (memoryWindBeat === 'hold' ? .13 : .05) - lift * .22;
+        satchel.current.rotation.y = Math.sin(clock.elapsedTime * 1.7) * .045;
+        satchel.current.position.y = -.14 + lift * .075 + Math.sin(clock.elapsedTime * 2.8) * .01;
+        const carrySide = memoryWindBeat === 'hold' ? -.39 : .37;
+        const carryDepth = memoryWindBeat === 'hold' ? -.27 : .21;
         satchel.current.position.x = THREE.MathUtils.damp(satchel.current.position.x, carrySide, 6.8, delta);
         satchel.current.position.z = THREE.MathUtils.damp(satchel.current.position.z, carryDepth, 6.8, delta);
       }
@@ -809,16 +810,18 @@ function PiCompanion({ state, target, complete, presentation, memoryWind, memory
   const styledHero = heroPi || memoryWind;
   return <group ref={group} position={origin} scale={memoryWind ? 1.55 : 1}>
     <mesh scale={state.phase === 'plan' ? 1.5 : returning ? 1.48 : 1.32}><sphereGeometry args={[.43,20,16]} /><meshBasicMaterial color={returning ? '#7cc7b3' : '#93fff0'} transparent opacity={styledHero ? .035 : state.phase === 'plan' ? .22 : returning ? .14 : .13} depthWrite={false} /></mesh>
-    <mesh castShadow scale={styledHero ? [.86,1.06,.78] : [1,1,1]}><sphereGeometry args={[.37,20,16]} /><meshStandardMaterial color={styledHero ? '#175b61' : returning ? '#8fcbb4' : '#c8fff0'} emissive={styledHero ? '#123b41' : complete ? '#ffe398' : returning ? '#3c8c7d' : '#56d7c8'} emissiveIntensity={styledHero ? .45 : complete ? 1.55 : returning ? .28 : state.phase === 'plan' ? 1.58 : 1.14} roughness={styledHero ? .72 : .44} metalness={styledHero ? .16 : 0} /></mesh>
+    <mesh castShadow scale={styledHero ? [.86,1.06,.78] : [1,1,1]}><sphereGeometry args={[.37,20,16]} /><meshStandardMaterial color={styledHero ? '#1d6e71' : returning ? '#8fcbb4' : '#c8fff0'} emissive={styledHero ? '#154e53' : complete ? '#ffe398' : returning ? '#3c8c7d' : '#56d7c8'} emissiveIntensity={styledHero ? .62 : complete ? 1.55 : returning ? .28 : state.phase === 'plan' ? 1.58 : 1.14} roughness={styledHero ? .68 : .44} metalness={styledHero ? .18 : 0} /></mesh>
+    {styledHero && <mesh position={[0,.37,.1]} scale={[.76,.68,.72]} castShadow><sphereGeometry args={[.22,16,12]} /><meshStandardMaterial color="#236f72" emissive="#164d52" emissiveIntensity={.44} roughness={.58} metalness={.18} /></mesh>}
     {styledHero && <PiHeroSilhouette />}
-    <mesh position={[-.12,.06,.34]} scale={styledHero ? [1.42,1.42,1] : [1,1,1]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color={styledHero ? '#ffe38b' : '#34585a'} /></mesh>
-    <mesh position={[.12,.06,.34]} scale={styledHero ? [1.42,1.42,1] : [1,1,1]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color={styledHero ? '#ffe38b' : '#34585a'} /></mesh>
+    {styledHero && <mesh position={[0,.38,.29]} scale={[.66,.22,.08]}><sphereGeometry args={[.22,14,8]} /><meshStandardMaterial color="#0d363f" emissive="#082831" emissiveIntensity={.38} roughness={.42} metalness={.26} /></mesh>}
+    <mesh position={[-.075,.38,.34]} scale={styledHero ? [1.35,1.35,1] : [1,1,1]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color={styledHero ? '#fff0a4' : '#34585a'} /></mesh>
+    <mesh position={[.075,.38,.34]} scale={styledHero ? [1.35,1.35,1] : [1,1,1]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color={styledHero ? '#fff0a4' : '#34585a'} /></mesh>
     {styledHero ? <PiLanternCap /> : <mesh position={[0,.48,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.1,.018,6,16,Math.PI]} /><meshStandardMaterial color="#f4d77e" emissive="#b97d2e" emissiveIntensity={.75} /></mesh>}
-    <group ref={satchel} position={styledHero ? [.43,-.14,.23] : [.34,-.18,.02]} scale={styledHero ? 1.42 : 1}>
-      <mesh castShadow><boxGeometry args={[.27,.25,.18]} /><meshStandardMaterial color={styledHero ? '#a95731' : '#5e382a'} emissive={styledHero ? '#32120b' : '#000000'} emissiveIntensity={styledHero ? .32 : 0} roughness={.66} metalness={.08} /></mesh>
-      <mesh position={[0,.105,.104]}><boxGeometry args={[.22,.07,.02]} /><meshStandardMaterial color="#d2924a" emissive="#8a431e" emissiveIntensity={.45} roughness={.36} metalness={.32} /></mesh>
-      <mesh position={[0,.18,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.102,.018,6,12,Math.PI]} /><meshStandardMaterial color="#f0c573" emissive="#7c431f" emissiveIntensity={.34} roughness={.28} metalness={.48} /></mesh>
-      {styledHero && <><mesh position={[0,-.015,.112]}><sphereGeometry args={[.036,10,8]} /><meshStandardMaterial color="#ffe0a0" emissive="#ce792e" emissiveIntensity={1.2} /></mesh><pointLight position={[0,-.015,.13]} color="#ffd786" intensity={.3} distance={1.15} /></>}
+    <group ref={satchel} position={styledHero ? [.4,-.18,.23] : [.34,-.18,.02]} scale={styledHero ? 1.12 : 1}>
+      <mesh castShadow scale={[1.08,.92,1]}><boxGeometry args={[.27,.25,.18]} /><meshStandardMaterial color={styledHero ? '#a95731' : '#5e382a'} emissive={styledHero ? '#3d170d' : '#000000'} emissiveIntensity={styledHero ? .4 : 0} roughness={.61} metalness={.12} /></mesh>
+      <mesh position={[0,.1,.104]}><boxGeometry args={[.245,.065,.024]} /><meshStandardMaterial color="#e1a65b" emissive="#9b5423" emissiveIntensity={.58} roughness={.32} metalness={.4} /></mesh>
+      <mesh position={[0,.18,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.112,.018,6,12,Math.PI]} /><meshStandardMaterial color="#f4d482" emissive="#895024" emissiveIntensity={.42} roughness={.24} metalness={.54} /></mesh>
+      {styledHero && <><mesh position={[0,-.02,.113]} rotation={[Math.PI / 2,0,0]}><cylinderGeometry args={[.045,.045,.012,12]} /><meshStandardMaterial color="#fff0b8" emissive="#d88430" emissiveIntensity={1.5} roughness={.2} metalness={.42} /></mesh><mesh position={[0,-.02,.121]} rotation={[0,0,0]}><torusGeometry args={[.052,.006,6,12]} /><meshStandardMaterial color="#8e4b24" emissive="#4b1f11" emissiveIntensity={.35} roughness={.3} metalness={.45} /></mesh><pointLight position={[0,-.015,.13]} color="#ffd786" intensity={.34} distance={1.2} /></>}
       {(returning || (memoryWind && memoryWindBeat !== 'notice')) && <><mesh position={[.01,.48,.08]} rotation={[0,.24,.12]}><planeGeometry args={[.27,.19]} /><meshStandardMaterial color="#f2dfb2" emissive="#b88947" emissiveIntensity={memoryWind ? .82 : .24} side={THREE.DoubleSide} /></mesh>{returning && <pointLight position={[.01,.48,.08]} color={tokenColor} intensity={.26} distance={1.6} />}</>}
     </group>
     {returning && <mesh position={[0,.9,.02]} rotation={[0,Math.PI/4,0]}><octahedronGeometry args={[.12,0]} /><meshStandardMaterial color={tokenColor} emissive={tokenColor} emissiveIntensity={.58} roughness={.3} /></mesh>}
@@ -830,15 +833,19 @@ function PiHeroSilhouette() {
   return <group>
     <mesh position={[-.17,-.38,.02]} scale={[1,.72,1]} castShadow><sphereGeometry args={[.125,12,10]} /><meshStandardMaterial color="#123d47" roughness={.82} /></mesh>
     <mesh position={[.17,-.38,.02]} scale={[1,.72,1]} castShadow><sphereGeometry args={[.125,12,10]} /><meshStandardMaterial color="#123d47" roughness={.82} /></mesh>
-    <mesh position={[-.39,-.03,.02]} rotation={[0,0,-.34]} scale={[.72,1.45,.72]}><sphereGeometry args={[.105,10,8]} /><meshStandardMaterial color="#1d6970" roughness={.68} /></mesh>
-    <mesh position={[.39,-.03,.02]} rotation={[0,0,.34]} scale={[.72,1.45,.72]}><sphereGeometry args={[.105,10,8]} /><meshStandardMaterial color="#1d6970" roughness={.68} /></mesh>
-    <mesh position={[0,.19,.305]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.36,.018,8,32,Math.PI*1.76]} /><meshStandardMaterial color="#c7783e" emissive="#5f2813" emissiveIntensity={.34} roughness={.46} metalness={.2} /></mesh>
-    <mesh position={[0,-.12,.322]} scale={[.62,.16,.12]}><sphereGeometry args={[.22,12,8]} /><meshStandardMaterial color="#5fa8a5" emissive="#174f54" emissiveIntensity={.4} roughness={.48} /></mesh>
+    <mesh position={[-.39,-.03,.02]} rotation={[0,0,-.34]} scale={[.72,1.45,.72]}><sphereGeometry args={[.105,10,8]} /><meshStandardMaterial color="#287b7c" emissive="#164c54" emissiveIntensity={.2} roughness={.62} /></mesh>
+    <mesh position={[.39,-.03,.02]} rotation={[0,0,.34]} scale={[.72,1.45,.72]}><sphereGeometry args={[.105,10,8]} /><meshStandardMaterial color="#287b7c" emissive="#164c54" emissiveIntensity={.2} roughness={.62} /></mesh>
+    <mesh position={[0,.19,.305]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.36,.018,8,32,Math.PI*1.76]} /><meshStandardMaterial color="#dda25a" emissive="#713617" emissiveIntensity={.46} roughness={.4} metalness={.28} /></mesh>
+    <mesh position={[0,-.12,.322]} scale={[.62,.16,.12]}><sphereGeometry args={[.22,12,8]} /><meshStandardMaterial color="#78bbb3" emissive="#1f6065" emissiveIntensity={.52} roughness={.42} /></mesh>
+    <mesh position={[0,.08,-.303]} scale={[.76,.13,.06]}><sphereGeometry args={[.22,12,8]} /><meshStandardMaterial color="#173e48" emissive="#0c2c35" emissiveIntensity={.32} roughness={.52} /></mesh>
+    <mesh position={[0,.06,-.34]} rotation={[Math.PI / 2,0,0]}><circleGeometry args={[.07,10]} /><meshStandardMaterial color="#e7b265" emissive="#8e4920" emissiveIntensity={.62} roughness={.3} metalness={.35} side={THREE.DoubleSide} /></mesh>
+    <mesh position={[-.17,.09,.332]} rotation={[0,.12,.46]}><boxGeometry args={[.042,.31,.026]} /><meshStandardMaterial color="#f1bd70" emissive="#9b5423" emissiveIntensity={.5} roughness={.34} metalness={.32} /></mesh>
+    <mesh position={[.17,.09,.332]} rotation={[0,-.12,-.46]}><boxGeometry args={[.042,.31,.026]} /><meshStandardMaterial color="#f1bd70" emissive="#9b5423" emissiveIntensity={.5} roughness={.34} metalness={.32} /></mesh>
   </group>;
 }
 
 function PiLanternCap() {
-  return <group position={[0,.47,0]}>
+  return <group position={[0,.58,0]}>
     <mesh><cylinderGeometry args={[.18,.21,.075,12]} /><meshStandardMaterial color="#8f6336" roughness={.52} metalness={.62} /></mesh>
     <mesh position={[0,.15,0]}><cylinderGeometry args={[.125,.125,.24,10]} /><meshStandardMaterial color="#ffcf78" emissive="#df8b38" emissiveIntensity={1.25} roughness={.32} /></mesh>
     <mesh position={[0,.3,0]}><cylinderGeometry args={[.17,.14,.065,12]} /><meshStandardMaterial color="#8f6336" roughness={.5} metalness={.62} /></mesh>
