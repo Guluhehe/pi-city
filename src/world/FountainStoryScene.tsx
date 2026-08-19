@@ -6,6 +6,8 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { MemoryWindStreetCorner, MemoryWindStreetLighting } from './MemoryWindStreetCorner';
+import { memoryWindAssetUrl } from './memory-wind-assets';
 import {
   availableFountainQuestions,
   type FountainQuestionId,
@@ -81,6 +83,7 @@ export function FountainStoryScene({
   memoryWind = false,
   memoryWindBeat = 'notice',
   heroPi = false,
+  streetCorner = false,
   onSceneReady,
 }: {
   state: FountainSessionState;
@@ -91,6 +94,7 @@ export function FountainStoryScene({
   memoryWind?: boolean;
   memoryWindBeat?: MemoryWindBeat;
   heroPi?: boolean;
+  streetCorner?: boolean;
   onSceneReady?: () => void;
 }) {
   const available = availableFountainQuestions(state).map((question) => question.id);
@@ -100,33 +104,35 @@ export function FountainStoryScene({
     returnSeconds: storyRoute?.returnSeconds ?? RETURN_SECONDS,
     returnKind: storyRoute?.returnKind,
   }), [state, storyRoute]);
+  const cinematicStreet = streetCorner && memoryWind && missionTheme === 'kite';
   return (
     <div className="fountain-scene" aria-label="暮色中的喷泉街，Pi 会在此出发调查">
       <Canvas shadows dpr={[1, 1.8]} gl={{ antialias: true, alpha: false }} camera={{ position: [9.15, 5.9, 13.1], fov: 41, near: 0.1, far: 110 }} onCreated={() => onSceneReady?.()}>
-        <FountainRenderer />
+        <FountainRenderer night={cinematicStreet} />
         <FountainPost state={state} memoryWind={memoryWind} />
-        <DuskSky />
-        <fog attach="fog" args={['#24495a', 16, 35]} />
-        <hemisphereLight args={['#ffd9ad', '#152c43', 1.45]} />
-        <directionalLight position={[-10, 14, 6]} intensity={3.25} color="#ffbd79" castShadow shadow-mapSize={[2048, 2048]} />
-        <directionalLight position={[11, 8, -10]} intensity={.7} color="#9bdce4" />
-        <pointLight position={[0, 5.3, 0]} intensity={memoryWind ? .42 : 2.8} color="#aaffee" distance={11} />
+        <DuskSky night={cinematicStreet} />
+        <fog attach="fog" args={cinematicStreet ? ['#07131f', 9, 28] : ['#24495a', 16, 35]} />
+        <hemisphereLight args={cinematicStreet ? ['#173655', '#050b12', .48] : ['#ffd9ad', '#152c43', 1.45]} />
+        <directionalLight position={[-10, 14, 6]} intensity={cinematicStreet ? .68 : 3.25} color={cinematicStreet ? '#537fa6' : '#ffbd79'} castShadow shadow-mapSize={[2048, 2048]} />
+        <directionalLight position={[11, 8, -10]} intensity={cinematicStreet ? .38 : .7} color="#9bdce4" />
+        <pointLight position={[0, 5.3, 0]} intensity={cinematicStreet ? .08 : memoryWind ? .42 : 2.8} color="#aaffee" distance={11} />
+        {cinematicStreet && <MemoryWindStreetLighting />}
         <FountainCamera state={state} missionTheme={missionTheme} presentation={presentation} memoryWind={memoryWind} />
-        <FountainTown state={state} available={available} onSelectQuestion={onSelectQuestion} missionTheme={missionTheme} missionFacts={missionFacts} presentation={presentation} memoryWind={memoryWind} memoryWindBeat={memoryWindBeat} heroPi={heroPi} />
+        <FountainTown state={state} available={available} onSelectQuestion={onSelectQuestion} missionTheme={missionTheme} missionFacts={missionFacts} presentation={presentation} memoryWind={memoryWind} memoryWindBeat={memoryWindBeat} heroPi={heroPi} streetCorner={streetCorner} />
       </Canvas>
     </div>
   );
 }
 
-function FountainRenderer() {
+function FountainRenderer({ night }: { night: boolean }) {
   const { gl } = useThree();
   useEffect(() => {
     gl.toneMapping = THREE.ACESFilmicToneMapping;
-    gl.toneMappingExposure = 1.18;
+    gl.toneMappingExposure = night ? .78 : 1.18;
     gl.outputColorSpace = THREE.SRGBColorSpace;
     gl.shadowMap.enabled = true;
     gl.shadowMap.type = THREE.PCFSoftShadowMap;
-  }, [gl]);
+  }, [gl, night]);
   return null;
 }
 
@@ -157,14 +163,14 @@ function FountainPost({ state, memoryWind }: { state: FountainSessionState; memo
   return null;
 }
 
-function DuskSky() {
+function DuskSky({ night = false }: { night?: boolean }) {
   const material = useMemo(() => new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: false,
     uniforms: { uSun: { value: new THREE.Vector3(-.7, .42, -.5) } },
     vertexShader: 'varying vec3 vWorld; void main(){ vec4 world = modelMatrix * vec4(position, 1.0); vWorld = world.xyz; gl_Position = projectionMatrix * viewMatrix * world; }',
-    fragmentShader: 'uniform vec3 uSun; varying vec3 vWorld; void main(){ float h = normalize(vWorld).y * .5 + .5; vec3 horizon = vec3(.92,.42,.28); vec3 teal = vec3(.08,.20,.31); vec3 dusk = mix(horizon, vec3(.25,.48,.58), smoothstep(.12,.58,h)); dusk = mix(dusk, teal, smoothstep(.48,1.,h)); float glow = pow(max(0., dot(normalize(vWorld), normalize(uSun))), 18.); dusk += vec3(1.,.42,.16) * glow * .75; gl_FragColor = vec4(dusk,1.); }',
-  }), []);
+    fragmentShader: night ? 'uniform vec3 uSun; varying vec3 vWorld; void main(){ float h = normalize(vWorld).y * .5 + .5; vec3 horizon = vec3(.018,.055,.095); vec3 zenith = vec3(.006,.018,.042); vec3 sky = mix(horizon, zenith, smoothstep(.08,.88,h)); float moon = pow(max(0., dot(normalize(vWorld), normalize(uSun))), 48.); sky += vec3(.17,.28,.42) * moon; gl_FragColor = vec4(sky,1.); }' : 'uniform vec3 uSun; varying vec3 vWorld; void main(){ float h = normalize(vWorld).y * .5 + .5; vec3 horizon = vec3(.92,.42,.28); vec3 teal = vec3(.08,.20,.31); vec3 dusk = mix(horizon, vec3(.25,.48,.58), smoothstep(.12,.58,h)); dusk = mix(dusk, teal, smoothstep(.48,1.,h)); float glow = pow(max(0., dot(normalize(vWorld), normalize(uSun))), 18.); dusk += vec3(1.,.42,.16) * glow * .75; gl_FragColor = vec4(dusk,1.); }',
+  }), [night]);
   return <mesh scale={[-1, 1, 1]}><sphereGeometry args={[70, 48, 28]} /><primitive object={material} attach="material" /></mesh>;
 }
 
@@ -199,8 +205,8 @@ function FountainCamera({ state, missionTheme, presentation, memoryWind }: { sta
 
     if (memoryWind) {
       const reveal = easeInOut(elapsed / 2.5);
-      desired.set(7.15 - reveal * 3.15, 4.35 - reveal * 1.7, 9.2 - reveal * 2.0);
-      nextLookAt.set(-1.35, 1.82, .5);
+      desired.set(6.35 - reveal * 2.35, 4.15 - reveal * 1.25, 9.85 - reveal * 1.75);
+      nextLookAt.set(-.15, 1.45, .08);
     } else if (state.phase === 'plan') {
       desired.set(5.25, 3.55, 7.45);
       nextLookAt.set(.05, .88, .05);
@@ -236,6 +242,7 @@ function FountainTown({
   memoryWind,
   memoryWindBeat,
   heroPi,
+  streetCorner,
 }: {
   state: FountainSessionState;
   available: FountainQuestionId[];
@@ -246,6 +253,7 @@ function FountainTown({
   memoryWind: boolean;
   memoryWindBeat: MemoryWindBeat;
   heroPi: boolean;
+  streetCorner: boolean;
 }) {
   const hasFact = (fact: FountainSessionState['facts'][number]) => state.facts.includes(fact);
   const activeQuestion = state.phase === 'choose-question' ? available : [];
@@ -257,25 +265,26 @@ function FountainTown({
         ? presentation.target
         : 'fountain';
   const complete = state.phase === 'complete';
+  const useMemoryWindStreet = streetCorner && memoryWind && missionTheme === 'kite';
   return (
     <group>
       <HarborWater />
-      <PavedPlaza />
-      <MissionSetDressing theme={missionTheme} facts={missionFacts} />
+      {useMemoryWindStreet ? <MemoryWindStreetCorner /> : <PavedPlaza />}
+      {!useMemoryWindStreet && <MissionSetDressing theme={missionTheme} facts={missionFacts} />}
       {memoryWind && missionTheme === 'kite' && <MemoryWindPhenomenon beat={memoryWindBeat} />}
-      <StreetDressing complete={complete} />
-      <FountainPlaza state={state} memoryWind={memoryWind} />
-      <MusicianDock visited={hasFact('melody-page')} complete={complete} active={activeQuestion.includes('melody')} onAsk={() => onSelectQuestion('melody')} />
+      {!useMemoryWindStreet && <StreetDressing complete={complete} />}
+      <FountainPlaza state={state} memoryWind={memoryWind} streetCorner={useMemoryWindStreet} />
+      {!useMemoryWindStreet && <><MusicianDock visited={hasFact('melody-page')} complete={complete} active={activeQuestion.includes('melody')} onAsk={() => onSelectQuestion('melody')} />
       <WaterCanal visited={hasFact('pressure-pattern') || hasFact('stable-water')} active={activeQuestion.includes('water') || activeQuestion.includes('stable-water')} onAsk={() => onSelectQuestion(hasFact('sync-valve') ? 'stable-water' : 'water')} />
       <WindAlley visited={hasFact('wind-refuted')} active={activeQuestion.includes('wind')} onAsk={() => onSelectQuestion('wind')} />
       <Workshop unlocked={hasFact('melody-page') && hasFact('pressure-pattern')} installed={hasFact('sync-valve')} active={state.phase === 'action'} />
       <Garden visited={hasFact('full-song')} active={activeQuestion.includes('full-song')} onAsk={() => onSelectQuestion('full-song')} />
-      <DeferredHarborLandmarks />
-      <HarborHomes />
-      <HarborBoats />
+      <DeferredHarborLandmarks /></>}
+      {!useMemoryWindStreet && <HarborHomes />}
+      {!useMemoryWindStreet && <HarborBoats />}
       <PiCompanion state={state} target={piTarget} complete={complete} presentation={presentation} memoryWind={memoryWind && missionTheme === 'kite'} memoryWindBeat={memoryWindBeat} heroPi={heroPi} />
       <PathLanterns state={state} target={piTarget} presentation={presentation} />
-      <LanternField complete={complete} />
+      {!useMemoryWindStreet && <LanternField complete={complete} />}
       <Fireflies complete={complete} />
     </group>
   );
@@ -511,7 +520,7 @@ function CelebrationRibbons() {
   return <group ref={group} position={[0,2.7,0]}>{Array.from({ length: 18 }).map((_, index) => { const angle=index/18*Math.PI*2; return <mesh key={index} position={[Math.cos(angle)*4.9,Math.sin(index*1.7)*.25,Math.sin(angle)*4.9]} rotation={[0,angle,0]}><planeGeometry args={[.06,.5]} /><meshBasicMaterial color={index%2?'#ffd274':'#a2f2dc'} transparent opacity={.72} side={THREE.DoubleSide} /></mesh>; })}</group>;
 }
 
-function FountainPlaza({ state, memoryWind }: { state: FountainSessionState; memoryWind: boolean }) {
+function FountainPlaza({ state, memoryWind, streetCorner = false }: { state: FountainSessionState; memoryWind: boolean; streetCorner?: boolean }) {
   const complete = state.phase === 'complete';
   const synced = state.facts.includes('sync-valve');
   const water = useRef<THREE.Group>(null);
@@ -523,19 +532,19 @@ function FountainPlaza({ state, memoryWind }: { state: FountainSessionState; mem
       child.scale.y = THREE.MathUtils.lerp(child.scale.y, scale, .075);
     });
   });
-  return <group position={LOCATIONS.fountain.position}>
-    <mesh receiveShadow><cylinderGeometry args={[2.22,2.5,.52,48]} /><meshStandardMaterial color="#716f69" roughness={.9} /></mesh>
-    <mesh position={[0,.34,0]}><cylinderGeometry args={[1.88,2.1,.2,48]} /><meshStandardMaterial color="#3d96a5" emissive="#1d7280" emissiveIntensity={.48} roughness={.34} metalness={.08} /></mesh>
-    <mesh position={[0,.58,0]}><cylinderGeometry args={[.88,1.04,.32,32]} /><meshStandardMaterial color="#929087" roughness={.88} /></mesh>
-    <mesh position={[0,1.38,0]} castShadow><cylinderGeometry args={[.38,.55,1.38,16]} /><meshStandardMaterial color="#c0b39b" roughness={.78} /></mesh>
-    <mesh position={[0,2.12,0]}><cylinderGeometry args={[.58,.38,.22,24]} /><meshStandardMaterial color="#e0c797" roughness={.62} metalness={.16} /></mesh>
+  return <group position={LOCATIONS.fountain.position} scale={streetCorner ? .7 : 1}>
+    <mesh receiveShadow><cylinderGeometry args={[2.22,2.5,.52,48]} /><meshStandardMaterial color={streetCorner ? '#3a494d' : '#716f69'} roughness={streetCorner ? .68 : .9} /></mesh>
+    <mesh position={[0,.34,0]}><cylinderGeometry args={[1.88,2.1,.2,48]} /><meshStandardMaterial color={streetCorner ? '#164957' : '#3d96a5'} emissive={streetCorner ? '#0a2731' : '#1d7280'} emissiveIntensity={streetCorner ? .22 : .48} roughness={.34} metalness={.08} /></mesh>
+    <mesh position={[0,.58,0]}><cylinderGeometry args={[.88,1.04,.32,32]} /><meshStandardMaterial color={streetCorner ? '#56656a' : '#929087'} roughness={.72} /></mesh>
+    <mesh position={[0,1.18,0]} castShadow><cylinderGeometry args={[.31,.44,1.05,16]} /><meshStandardMaterial color={streetCorner ? '#53666a' : '#c0b39b'} roughness={.68} /></mesh>
+    <mesh position={[0,1.79,0]}><cylinderGeometry args={[.48,.32,.18,24]} /><meshStandardMaterial color={streetCorner ? '#a77d54' : '#e0c797'} roughness={.52} metalness={.16} /></mesh>
     <group ref={water} position={[0,.52,0]}>
       {[0, Math.PI/2, Math.PI, Math.PI*1.5].map((angle, index) => <FountainJet key={index} angle={angle} bright={complete || synced} dim={memoryWind} />)}
     </group>
-    <mesh position={[-1.25,.54,1.15]} rotation={[0,.5,.2]} castShadow><coneGeometry args={[.23,.5,4]} /><meshStandardMaterial color={complete ? '#f4cd7a' : '#e8836e'} emissive={complete ? '#b77a2b' : '#000'} emissiveIntensity={complete ? .75 : 0} roughness={.75} /></mesh>
-    {complete && <mesh position={[-1.25,.82,1.15]} rotation={[0,.5,.2]}><planeGeometry args={[.22,.15]} /><meshBasicMaterial color="#fff2c8" /></mesh>}
+    {!streetCorner && <><mesh position={[-1.25,.54,1.15]} rotation={[0,.5,.2]} castShadow><coneGeometry args={[.23,.5,4]} /><meshStandardMaterial color={complete ? '#f4cd7a' : '#e8836e'} emissive={complete ? '#b77a2b' : '#000'} emissiveIntensity={complete ? .75 : 0} roughness={.75} /></mesh>
+    {complete && <mesh position={[-1.25,.82,1.15]} rotation={[0,.5,.2]}><planeGeometry args={[.22,.15]} /><meshBasicMaterial color="#fff2c8" /></mesh>}</>}
     <FountainRipples complete={complete || synced} />
-    <ThinkingTable melody={state.facts.includes('melody-page')} pressure={state.facts.includes('pressure-pattern')} rethink={state.phase === 'action' || synced || complete} />
+    {!streetCorner && <ThinkingTable melody={state.facts.includes('melody-page')} pressure={state.facts.includes('pressure-pattern')} rethink={state.phase === 'action' || synced || complete} />}
   </group>;
 }
 
@@ -713,12 +722,39 @@ function LocationHotspot({ position, color, active, visited, onClick }: { positi
 function PiCompanion({ state, target, complete, presentation, memoryWind, memoryWindBeat, heroPi }: { state: FountainSessionState; target: StoryLocationId; complete: boolean; presentation: Required<Omit<StoryRoutePresentation, 'returnKind'>> & Pick<StoryRoutePresentation, 'returnKind'>; memoryWind: boolean; memoryWindBeat: MemoryWindBeat; heroPi: boolean }) {
   const group = useRef<THREE.Group>(null);
   const satchel = useRef<THREE.Group>(null);
+  const [heroAsset, setHeroAsset] = useState<{ scene: THREE.Group; animations: THREE.AnimationClip[] } | null>(null);
+  const heroMixer = useRef<THREE.AnimationMixer | null>(null);
+  const heroActions = useRef<Record<string, THREE.AnimationAction>>({});
   const desired = useMemo(() => new THREE.Vector3(), []);
+  useEffect(() => {
+    if (!heroPi) { setHeroAsset(null); return; }
+    let alive = true;
+    const url = memoryWindAssetUrl('pi-hero');
+    if (!url) return;
+    new GLTFLoader().load(url, (gltf) => { if (alive) setHeroAsset({ scene: gltf.scene, animations: gltf.animations }); }, undefined, () => { if (alive) setHeroAsset(null); });
+    return () => { alive = false; };
+  }, [heroPi]);
+  useEffect(() => {
+    if (!heroAsset) { heroMixer.current = null; heroActions.current = {}; return; }
+    const mixer = new THREE.AnimationMixer(heroAsset.scene);
+    heroMixer.current = mixer;
+    heroActions.current = Object.fromEntries(heroAsset.animations.map((clip) => [clip.name.toLowerCase(), mixer.clipAction(clip)]));
+    return () => { mixer.stopAllAction(); heroMixer.current = null; heroActions.current = {}; };
+  }, [heroAsset]);
+  useEffect(() => {
+    if (!heroMixer.current) return;
+    const desiredAction = !memoryWind ? 'idle-observe' : memoryWindBeat === 'notice' ? 'idle-observe' : memoryWindBeat === 'hold' ? 'take-note' : 'turn-and-trot';
+    const actionKey = Object.keys(heroActions.current).find((name) => name.includes(desiredAction)) ?? Object.keys(heroActions.current)[0];
+    if (!actionKey) return;
+    Object.values(heroActions.current).forEach((action) => action.fadeOut(.18));
+    heroActions.current[actionKey].reset().fadeIn(.18).play();
+  }, [heroAsset, memoryWind, memoryWindBeat]);
   const origin = useMemo(() => new THREE.Vector3(memoryWind ? -.12 : 1.42, memoryWind ? .66 : .5, memoryWind ? 2.72 : 1.26), [memoryWind]);
   const memoryTarget = useMemo(() => new THREE.Vector3(-1.72, 1.72, 1.18), []);
   const phaseStartedAt = useRef(0);
   const lastKey = useRef('');
   useFrame(({ clock }, delta) => {
+    heroMixer.current?.update(delta);
     if (!group.current) return;
     const key = journeyStateKey(state);
     if (key !== lastKey.current) {
@@ -760,14 +796,15 @@ function PiCompanion({ state, target, complete, presentation, memoryWind, memory
   const returning = state.phase === 'return' && target !== 'fountain';
   const returnKind = presentation.returnKind ?? state.lastReturn?.kind;
   const tokenColor = returnKind === 'refuted' || returnKind === 'detour' ? '#c9c7d8' : returnKind === 'refined' || returnKind === 'fact' ? '#7ed5eb' : returnKind === 'confirmed' ? '#ffe287' : returnKind === 'reply' ? '#ffc896' : '#f5b879';
+  const usingHeroAsset = heroPi && heroAsset !== null;
   return <group ref={group} position={origin} scale={memoryWind ? 1.38 : 1}>
-    <mesh scale={state.phase === 'plan' ? 1.5 : returning ? 1.48 : 1.32}><sphereGeometry args={[.43,20,16]} /><meshBasicMaterial color={returning ? '#7cc7b3' : '#93fff0'} transparent opacity={heroPi ? .035 : memoryWind ? .055 : state.phase === 'plan' ? .22 : returning ? .14 : .13} depthWrite={false} /></mesh>
+    {usingHeroAsset ? <primitive object={heroAsset.scene} scale={.82} rotation={[0, Math.PI, 0]} /> : <><mesh scale={state.phase === 'plan' ? 1.5 : returning ? 1.48 : 1.32}><sphereGeometry args={[.43,20,16]} /><meshBasicMaterial color={returning ? '#7cc7b3' : '#93fff0'} transparent opacity={heroPi ? .035 : memoryWind ? .055 : state.phase === 'plan' ? .22 : returning ? .14 : .13} depthWrite={false} /></mesh>
     <mesh castShadow scale={heroPi ? [.86,1.06,.78] : [1,1,1]}><sphereGeometry args={[.37,20,16]} /><meshStandardMaterial color={heroPi ? '#175b61' : memoryWind ? '#62aa9e' : returning ? '#8fcbb4' : '#c8fff0'} emissive={heroPi ? '#123b41' : complete ? '#ffe398' : returning ? '#3c8c7d' : memoryWind ? '#225f59' : '#56d7c8'} emissiveIntensity={heroPi ? .45 : memoryWind ? .72 : complete ? 1.55 : returning ? .28 : state.phase === 'plan' ? 1.58 : 1.14} roughness={heroPi ? .72 : .44} metalness={heroPi ? .16 : 0} /></mesh>
     {heroPi && <PiHeroSilhouette />}
     <mesh position={[-.12,.06,.34]} scale={heroPi ? [1.42,1.42,1] : [1,1,1]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color={heroPi ? '#ffe38b' : '#34585a'} /></mesh>
     <mesh position={[.12,.06,.34]} scale={heroPi ? [1.42,1.42,1] : [1,1,1]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color={heroPi ? '#ffe38b' : '#34585a'} /></mesh>
     {heroPi ? <PiLanternCap /> : <mesh position={[0,.48,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.1,.018,6,16,Math.PI]} /><meshStandardMaterial color="#f4d77e" emissive="#b97d2e" emissiveIntensity={memoryWind ? 1.22 : .75} /></mesh>}
-    <group ref={satchel} position={heroPi ? [.39,-.14,.02] : [.34,-.18,.02]} scale={heroPi ? 1.24 : 1}><mesh><boxGeometry args={[.24,.22,.17]} /><meshStandardMaterial color="#5e382a" roughness={.78} /></mesh><mesh position={[0,.17,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.085,.015,6,12,Math.PI]} /><meshStandardMaterial color="#e2bd7b" /></mesh>{(returning || (memoryWind && memoryWindBeat !== 'notice')) && <><mesh position={[.01,.48,.08]} rotation={[0,.24,.12]}><planeGeometry args={[.24,.17]} /><meshStandardMaterial color="#f2dfb2" emissive="#b88947" emissiveIntensity={memoryWind ? .66 : .24} side={THREE.DoubleSide} /></mesh>{returning && <pointLight position={[.01,.48,.08]} color={tokenColor} intensity={.26} distance={1.6} />}</>}</group>
+    <group ref={satchel} position={heroPi ? [.39,-.14,.02] : [.34,-.18,.02]} scale={heroPi ? 1.24 : 1}><mesh><boxGeometry args={[.24,.22,.17]} /><meshStandardMaterial color="#5e382a" roughness={.78} /></mesh><mesh position={[0,.17,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.085,.015,6,12,Math.PI]} /><meshStandardMaterial color="#e2bd7b" /></mesh>{(returning || (memoryWind && memoryWindBeat !== 'notice')) && <><mesh position={[.01,.48,.08]} rotation={[0,.24,.12]}><planeGeometry args={[.24,.17]} /><meshStandardMaterial color="#f2dfb2" emissive="#b88947" emissiveIntensity={memoryWind ? .66 : .24} side={THREE.DoubleSide} /></mesh>{returning && <pointLight position={[.01,.48,.08]} color={tokenColor} intensity={.26} distance={1.6} />}</>}</group></>}
     {returning && <mesh position={[0,.9,.02]} rotation={[0,Math.PI/4,0]}><octahedronGeometry args={[.12,0]} /><meshStandardMaterial color={tokenColor} emissive={tokenColor} emissiveIntensity={.58} roughness={.3} /></mesh>}
     <pointLight position={[0,.1,0]} color={heroPi ? '#ffd57d' : memoryWind ? '#a5f5de' : complete ? '#ffe3a3' : returning ? '#72b9a7' : '#adfff0'} intensity={heroPi ? .95 : memoryWind ? .68 : state.phase === 'plan' ? 2.15 : returning ? .38 : 1.45} distance={returning ? 1.8 : 3.4} />
   </group>;
