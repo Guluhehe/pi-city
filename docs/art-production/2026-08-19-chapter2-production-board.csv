@@ -1,0 +1,11 @@
+batch,priority,asset_id,asset_name,asset_type,chapter,deliverables,required_maps_or_animation,acceptance_camera_or_test,dependency,status
+P0,0,pi-hero,Pi 英雄角色,角色GLB,第二章,pi-hero.glb + 骨架 + 动画片段,"BaseColor/Normal/Roughness/Metallic；idle-observe、take-note、turn-and-trot","近景：Pi在前景看见记忆风；黑色剪影、帽灯、双肩包、短腿和手臂可辨",无,规范冻结；待建模
+P0,0,pi-materials,Pi 材质包,纹理包,第二章,pi-hero 贴图集,"深青漆、棕皮革、磨损铜、暖玻璃、纸页","琥珀前景灯 + 蓝夜冷填光下五类材质不混淆",pi-hero,规范冻结；待纹理
+P1,1,red-door-house,红门窄屋,建筑GLB,第二章,memory-wind-red-door-house.glb,"BaseColor/Normal/Roughness/AO；共享trim sheet","固定英雄镜头远景：红门、台阶、屋檐和窗光构成可抵达目的地",pi-hero,规范冻结；待建模
+P1,1,wet-stone-kit,湿石与码头模块,模块化环境GLB,第二章,wet-stone-kit.glb,"石/木/铜三套共享材质与trim sheet","前景湿石承受近景；台阶、码头柱、系船环可无缝拼接",red-door-house,规范冻结；待建模
+P1,1,foreground-lantern,前景铜灯,道具GLB,第二章,foreground-lantern.glb,"铜/玻璃材质；独立暖色发光材质区","轻景深前景下轮廓、玻璃与金属高光仍可读",wet-stone-kit,规范冻结；待建模
+P2,2,memory-wind-set,记忆风套件,英雄道具GLB,第二章,memory-wind-set.glb,"红布风筝尾、纸页、线绳；双面纸材质","中景：风筝、纸页与记忆线可随任务状态重排",pi-hero,规范冻结；待建模
+P2,2,archive-door,档案馆小门与钥匙,建筑+道具GLB,第二章,archive-door-keys.glb,"木/铜/纸；钥匙独立网格","第二委托：两把钥匙和锁孔拓印在近景可辨",wet-stone-kit,规范冻结；待建模
+P3,3,rain-cinema-set,雨天露天电影套件,建筑+道具GLB,第二章,rain-cinema-set.glb,"油布、布幕、木、玻璃、票根","第三委托：雨棚、屏幕、票根清楚表达两格小包选择",wet-stone-kit,规范冻结；待建模
+P4,4,librarian,图书管理员,居民角色GLB,第二章,librarian.glb + idle,"布料、皮革、纸张；至少idle动画","钥匙委托中可作为明确交接对象出现",archive-door,规范冻结；待建模
+P4,4,projectionist,放映员,居民角色GLB,第二章,projectionist.glb + idle,"布料、皮革、铜；至少idle动画","电影委托中能与屏幕/雨棚形成清楚关系",rain-cinema-set,规范冻结；待建模

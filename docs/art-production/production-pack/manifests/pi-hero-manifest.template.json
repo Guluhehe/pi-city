@@ -1,0 +1,99 @@
+{
+  "$schema": "Pi City production asset manifest v1",
+  "assetId": "pi-hero",
+  "assetName": "Pi Hero Character",
+  "deliveryState": "draft",
+  "glb": {
+    "file": "pi-hero.glb",
+    "format": "GLB 2.0",
+    "upAxis": "Y",
+    "forwardAxis": "-Z",
+    "unit": "meter",
+    "heightMeters": 1.25,
+    "triangles": 0,
+    "meshNodes": [],
+    "materials": []
+  },
+  "textures": [
+    {
+      "material": "pi_painted_teal",
+      "baseColor": "",
+      "normal": "",
+      "roughness": "",
+      "metallic": "",
+      "resolution": ""
+    },
+    {
+      "material": "pi_leather",
+      "baseColor": "",
+      "normal": "",
+      "roughness": "",
+      "metallic": "",
+      "resolution": ""
+    },
+    {
+      "material": "pi_brass",
+      "baseColor": "",
+      "normal": "",
+      "roughness": "",
+      "metallic": "",
+      "resolution": ""
+    },
+    {
+      "material": "pi_warm_glass",
+      "baseColor": "",
+      "normal": "",
+      "roughness": "",
+      "metallic": "",
+      "resolution": ""
+    },
+    {
+      "material": "pi_paper",
+      "baseColor": "",
+      "normal": "",
+      "roughness": "",
+      "metallic": "",
+      "resolution": ""
+    }
+  ],
+  "skeleton": {
+    "rootNode": "Armature",
+    "boneCount": 0,
+    "hasScaleAnimation": false
+  },
+  "animations": [
+    {
+      "name": "idle-observe",
+      "fps": 30,
+      "durationSeconds": 0,
+      "loop": true
+    },
+    {
+      "name": "take-note",
+      "fps": 30,
+      "durationSeconds": 0,
+      "loop": false
+    },
+    {
+      "name": "turn-and-trot",
+      "fps": 30,
+      "durationSeconds": 0,
+      "loop": false
+    }
+  ],
+  "preview": {
+    "front": "pi-hero-preview-front.png",
+    "side": "pi-hero-preview-side.png",
+    "heroCamera": "pi-hero-preview-hero-camera.png"
+  },
+  "qa": {
+    "nonManifoldGeometry": false,
+    "flippedNormals": false,
+    "externalTextures": false,
+    "unpackedAssets": false,
+    "notes": ""
+  },
+  "knownLimitations": [],
+  "author": "",
+  "exportedAt": ""
+}

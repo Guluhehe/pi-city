@@ -1,0 +1,66 @@
+{
+  "$schema": "Pi City production environment manifest v1",
+  "chapter": "chapter-2-memory-wind",
+  "deliveryState": "draft",
+  "assets": [
+    {
+      "assetId": "red-door-house",
+      "file": "memory-wind-red-door-house.glb",
+      "role": "hero destination building",
+      "triangles": 0,
+      "materials": ["deep_wood", "red_painted_wood", "warm_glass", "aged_brass"],
+      "requiredNodes": ["red_door", "front_steps", "window_warm", "roof_eave"],
+      "preview": "red-door-house-hero-camera.png"
+    },
+    {
+      "assetId": "wet-stone-kit",
+      "file": "wet-stone-kit.glb",
+      "role": "modular ground and dock kit",
+      "triangles": 0,
+      "materials": ["wet_stone", "deep_wood", "aged_brass"],
+      "requiredNodes": ["stone_2m", "stone_stairs", "dock_post", "mooring_ring"],
+      "preview": "wet-stone-kit-closeup.png"
+    },
+    {
+      "assetId": "foreground-lantern",
+      "file": "foreground-lantern.glb",
+      "role": "foreground practical light",
+      "triangles": 0,
+      "materials": ["aged_brass", "warm_glass", "deep_wood"],
+      "requiredNodes": ["lantern_body", "glass_panels", "light_anchor"],
+      "preview": "foreground-lantern-closeup.png"
+    },
+    {
+      "assetId": "memory-wind-set",
+      "file": "memory-wind-set.glb",
+      "role": "stateful hero prop set",
+      "triangles": 0,
+      "materials": ["crimson_fabric", "aged_paper", "rope", "warm_glass"],
+      "requiredNodes": ["kite", "paper_pages", "rope_trails", "route_anchor"],
+      "preview": "memory-wind-observe-reframe.png"
+    }
+  ],
+  "sharedMaterials": [
+    {
+      "name": "memory_wind_trim",
+      "baseColor": "memory-wind-trim-basecolor.png",
+      "normal": "memory-wind-trim-normal.png",
+      "roughness": "memory-wind-trim-roughness.png",
+      "metallic": "memory-wind-trim-metallic.png",
+      "resolution": ""
+    }
+  ],
+  "sceneContract": {
+    "heroCamera": "foreground lantern left / Pi lower left / memory wind center / red door upper right",
+    "requiredStates": ["observe", "reframe"],
+    "requiredLightRoles": ["cool moon environment", "foreground lantern", "Pi hat lamp", "red door or memory-wind destination light"]
+  },
+  "qa": {
+    "externalTextures": false,
+    "flippedNormals": false,
+    "missingRequiredNodes": [],
+    "knownLimitations": []
+  },
+  "author": "",
+  "exportedAt": ""
+}
