@@ -23,23 +23,34 @@ export function CityStoryHub({ campaign, onBeginMission, onOpenArchives }: { cam
   const [showDiscoveries, setShowDiscoveries] = useState(false);
   const [memoryWindStage, setMemoryWindStage] = useState<'intro' | 'invite' | 'explore'>('intro');
   const [memoryWindReady, setMemoryWindReady] = useState(false);
+  const [blindPromptReady, setBlindPromptReady] = useState(false);
+  const [blindOpeningComplete, setBlindOpeningComplete] = useState(false);
+  const [blindResponse, setBlindResponse] = useState('');
   const nextMission = (Object.values(CITY_MISSIONS) as Array<typeof CITY_MISSIONS[CityMissionId]>).find((mission) => isMissionUnlocked(campaign, mission.id) && !campaign.completedMissions.includes(mission.id));
   const latest = campaign.completedMissions.at(-1);
   const activeChapter: CityChapter = nextMission?.chapter ?? (latest ? CITY_MISSIONS[latest].chapter : 1);
   const [selectedChapter, setSelectedChapter] = useState<CityChapter>(activeChapter);
   const selected = CHAPTERS.find((chapter) => chapter.id === selectedChapter) ?? CHAPTERS[0];
   const memoryWindActive = selectedChapter === 2 && nextMission?.id === 'kite';
-  const artPrototype = new URLSearchParams(window.location.search).get('artPrototype') === 'memory-wind';
+  const search = new URLSearchParams(window.location.search);
+  const artPrototype = search.get('artPrototype') === 'memory-wind';
+  const blindOpeningRequested = search.get('blindOpening') === '1';
+  const blindOpeningActive = memoryWindActive && blindOpeningRequested && !blindOpeningComplete;
   useEffect(() => {
     setMemoryWindReady(false);
     setMemoryWindStage(memoryWindActive ? 'intro' : 'explore');
-  }, [memoryWindActive]);
+    setBlindPromptReady(false);
+    setBlindResponse('');
+    setBlindOpeningComplete(!blindOpeningRequested);
+  }, [blindOpeningRequested, memoryWindActive]);
   useEffect(() => {
-    if (!memoryWindActive || !memoryWindReady) return;
-    const invite = window.setTimeout(() => setMemoryWindStage('invite'), 2400);
-    const explore = window.setTimeout(() => setMemoryWindStage('explore'), 16000);
-    return () => { window.clearTimeout(invite); window.clearTimeout(explore); };
-  }, [memoryWindActive, memoryWindReady]);
+    if (!memoryWindActive || !memoryWindReady || memoryWindStage !== 'intro') return;
+    const invite = window.setTimeout(() => {
+      if (blindOpeningActive) setBlindPromptReady(true);
+      else setMemoryWindStage('invite');
+    }, blindOpeningActive ? 3000 : 2400);
+    return () => window.clearTimeout(invite);
+  }, [blindOpeningActive, memoryWindActive, memoryWindReady, memoryWindStage]);
   const chapterMissions = (Object.values(CITY_MISSIONS) as Array<typeof CITY_MISSIONS[CityMissionId]>).filter((mission) => mission.chapter === selectedChapter);
   const completed = campaign.completedMissions.length;
   const discoveries = campaign.discoveries.map((id) => CITY_DISCOVERIES[id]).filter(Boolean);
@@ -48,18 +59,25 @@ export function CityStoryHub({ campaign, onBeginMission, onOpenArchives }: { cam
   }), [completed, memoryWindActive]);
 
   const stagingMemoryWind = memoryWindActive && memoryWindStage !== 'explore';
-  return <section className={`city-hub trust-${completed} chapter-${selectedChapter} ${memoryWindActive ? `memory-wind-stage-${memoryWindStage}` : ''}`} aria-label="Pi City 心愿码头">
+  return <section className={`city-hub trust-${completed} chapter-${selectedChapter} ${memoryWindActive ? `memory-wind-stage-${memoryWindStage}` : ''} ${blindOpeningActive ? 'blind-opening' : ''}`} aria-label="Pi City 心愿码头">
     <FountainStoryScene state={backdrop} onSelectQuestion={() => {}} missionTheme={memoryWindActive ? 'kite' : 'fountain'} memoryWind={memoryWindActive} memoryWindBeat={memoryWindStage === 'intro' ? 'notice' : 'hold'} heroPi={artPrototype} onSceneReady={() => setMemoryWindReady(true)} />
     <header className="hub-topbar">
       <div><small>PI 的城市故事 · 第{selectedChapter}章</small><strong>心愿码头</strong></div>
       <div className="hub-top-actions"><button onClick={() => setShowDiscoveries((value) => !value)}>发现册 <em>{discoveries.length}/{Object.keys(CITY_DISCOVERIES).length}</em></button><button onClick={onOpenArchives}>Pi 档案馆</button></div>
     </header>
 
-    {memoryWindActive && <section className="memory-wind-invite" aria-live="polite">
+    {memoryWindActive && !blindOpeningActive && <section className="memory-wind-invite" aria-live="polite">
       <p>风把一段旧记忆吹散了。</p>
       <strong>Pi 先抬头看见了它。</strong>
       <span>“我们先别急着猜。”</span>
       <button onClick={() => onBeginMission('kite')}>和 Pi 一起看看 <i>→</i></button>
+    </section>}
+
+    {blindOpeningActive && blindPromptReady && <section className="blind-opening-prompt" aria-live="polite" aria-label="盲测记录">
+      <p>请只依据刚才的画面回答。</p>
+      <label htmlFor="blind-opening-response">你觉得这个小角色正在干什么？</label>
+      <textarea id="blind-opening-response" value={blindResponse} onChange={(event) => setBlindResponse(event.target.value)} placeholder="用自己的话写下观察" />
+      <button disabled={!blindResponse.trim()} onClick={() => { setBlindOpeningComplete(true); setBlindPromptReady(false); setMemoryWindStage('invite'); }}>记录后继续 <i>→</i></button>
     </section>}
 
     {!stagingMemoryWind && <section className="hub-hero">

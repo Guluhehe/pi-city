@@ -45,3 +45,10 @@
 .memory-wind-stage-explore .trust-map { top: 24%; }
 .memory-wind-stage-explore .wish-dock { max-height: min(268px, 37vh); background: linear-gradient(0deg, rgba(7, 23, 33, .88), rgba(7, 23, 33, .56)); }
 @media (max-width: 780px) { .memory-wind-stage-intro .memory-wind-invite { left: 16px; bottom: 20px; } }
+
+/* GPT Round 3 P0: do not leak the correct interpretation into the blind opening test. */
+.blind-opening .hub-topbar { display: none; }
+.blind-opening::after { background: linear-gradient(0deg, rgba(4, 18, 31, .18), transparent 48%); }
+.blind-opening-prompt { position: absolute; z-index: 6; left: clamp(22px, 7vw, 96px); bottom: clamp(26px, 7vh, 74px); width: min(340px, calc(100% - 44px)); padding: 16px 18px; border: 1px solid rgba(255, 231, 176, .38); border-radius: 16px; background: rgba(9, 28, 39, .86); box-shadow: 0 16px 42px rgba(0, 8, 17, .35); color: #fff4db; backdrop-filter: blur(10px); }
+.blind-opening-prompt p { margin: 0 0 8px; color: rgba(247, 213, 143, .78); font: 10px ui-monospace, monospace; letter-spacing: .05em; }.blind-opening-prompt label { display: block; font: 500 18px/1.2 Georgia, "Songti SC", serif; }.blind-opening-prompt textarea { display: block; width: 100%; min-height: 70px; box-sizing: border-box; margin-top: 12px; border: 1px solid rgba(255, 235, 188, .24); border-radius: 9px; padding: 9px 10px; resize: vertical; background: rgba(255, 250, 231, .08); color: #fff6de; font: 12px/1.45 ui-rounded, system-ui, sans-serif; }.blind-opening-prompt textarea::placeholder { color: rgba(255, 243, 214, .42); }.blind-opening-prompt button { margin-top: 11px; border: 1px solid rgba(255, 220, 151, .68); border-radius: 999px; padding: 8px 11px; background: #fff1d0; color: #39575a; font: 600 11px ui-rounded, system-ui, sans-serif; }.blind-opening-prompt button:disabled { opacity: .45; cursor: not-allowed; }
+@media (max-width: 780px) { .blind-opening-prompt { left: 16px; bottom: 20px; width: min(340px, calc(100% - 32px)); } }
