@@ -29,6 +29,7 @@ export function CityStoryHub({ campaign, onBeginMission, onOpenArchives }: { cam
   const [selectedChapter, setSelectedChapter] = useState<CityChapter>(activeChapter);
   const selected = CHAPTERS.find((chapter) => chapter.id === selectedChapter) ?? CHAPTERS[0];
   const memoryWindActive = selectedChapter === 2 && nextMission?.id === 'kite';
+  const artPrototype = new URLSearchParams(window.location.search).get('artPrototype') === 'memory-wind';
   useEffect(() => {
     setMemoryWindReady(false);
     setMemoryWindStage(memoryWindActive ? 'intro' : 'explore');
@@ -48,7 +49,7 @@ export function CityStoryHub({ campaign, onBeginMission, onOpenArchives }: { cam
 
   const stagingMemoryWind = memoryWindActive && memoryWindStage !== 'explore';
   return <section className={`city-hub trust-${completed} chapter-${selectedChapter} ${memoryWindActive ? `memory-wind-${memoryWindStage}` : ''}`} aria-label="Pi City 心愿码头">
-    <FountainStoryScene state={backdrop} onSelectQuestion={() => {}} missionTheme={memoryWindActive ? 'kite' : 'fountain'} memoryWind={memoryWindActive} memoryWindBeat={memoryWindStage === 'intro' ? 'notice' : 'hold'} onSceneReady={() => setMemoryWindReady(true)} />
+    <FountainStoryScene state={backdrop} onSelectQuestion={() => {}} missionTheme={memoryWindActive ? 'kite' : 'fountain'} memoryWind={memoryWindActive} memoryWindBeat={memoryWindStage === 'intro' ? 'notice' : 'hold'} heroPi={artPrototype} onSceneReady={() => setMemoryWindReady(true)} />
     <header className="hub-topbar">
       <div><small>PI 的城市故事 · 第{selectedChapter}章</small><strong>心愿码头</strong></div>
       <div className="hub-top-actions"><button onClick={() => setShowDiscoveries((value) => !value)}>发现册 <em>{discoveries.length}/{Object.keys(CITY_DISCOVERIES).length}</em></button><button onClick={onOpenArchives}>Pi 档案馆</button></div>

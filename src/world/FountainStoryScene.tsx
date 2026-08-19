@@ -80,6 +80,7 @@ export function FountainStoryScene({
   storyRoute,
   memoryWind = false,
   memoryWindBeat = 'notice',
+  heroPi = false,
   onSceneReady,
 }: {
   state: FountainSessionState;
@@ -89,6 +90,7 @@ export function FountainStoryScene({
   storyRoute?: StoryRoutePresentation;
   memoryWind?: boolean;
   memoryWindBeat?: MemoryWindBeat;
+  heroPi?: boolean;
   onSceneReady?: () => void;
 }) {
   const available = availableFountainQuestions(state).map((question) => question.id);
@@ -110,7 +112,7 @@ export function FountainStoryScene({
         <directionalLight position={[11, 8, -10]} intensity={.7} color="#9bdce4" />
         <pointLight position={[0, 5.3, 0]} intensity={memoryWind ? .42 : 2.8} color="#aaffee" distance={11} />
         <FountainCamera state={state} missionTheme={missionTheme} presentation={presentation} memoryWind={memoryWind} />
-        <FountainTown state={state} available={available} onSelectQuestion={onSelectQuestion} missionTheme={missionTheme} missionFacts={missionFacts} presentation={presentation} memoryWind={memoryWind} memoryWindBeat={memoryWindBeat} />
+        <FountainTown state={state} available={available} onSelectQuestion={onSelectQuestion} missionTheme={missionTheme} missionFacts={missionFacts} presentation={presentation} memoryWind={memoryWind} memoryWindBeat={memoryWindBeat} heroPi={heroPi} />
       </Canvas>
     </div>
   );
@@ -233,6 +235,7 @@ function FountainTown({
   presentation,
   memoryWind,
   memoryWindBeat,
+  heroPi,
 }: {
   state: FountainSessionState;
   available: FountainQuestionId[];
@@ -242,6 +245,7 @@ function FountainTown({
   presentation: Required<Omit<StoryRoutePresentation, 'returnKind'>> & Pick<StoryRoutePresentation, 'returnKind'>;
   memoryWind: boolean;
   memoryWindBeat: MemoryWindBeat;
+  heroPi: boolean;
 }) {
   const hasFact = (fact: FountainSessionState['facts'][number]) => state.facts.includes(fact);
   const activeQuestion = state.phase === 'choose-question' ? available : [];
@@ -269,7 +273,7 @@ function FountainTown({
       <DeferredHarborLandmarks />
       <HarborHomes />
       <HarborBoats />
-      <PiCompanion state={state} target={piTarget} complete={complete} presentation={presentation} memoryWind={memoryWind && missionTheme === 'kite'} memoryWindBeat={memoryWindBeat} />
+      <PiCompanion state={state} target={piTarget} complete={complete} presentation={presentation} memoryWind={memoryWind && missionTheme === 'kite'} memoryWindBeat={memoryWindBeat} heroPi={heroPi} />
       <PathLanterns state={state} target={piTarget} presentation={presentation} />
       <LanternField complete={complete} />
       <Fireflies complete={complete} />
@@ -706,7 +710,7 @@ function LocationHotspot({ position, color, active, visited, onClick }: { positi
   </group>;
 }
 
-function PiCompanion({ state, target, complete, presentation, memoryWind, memoryWindBeat }: { state: FountainSessionState; target: StoryLocationId; complete: boolean; presentation: Required<Omit<StoryRoutePresentation, 'returnKind'>> & Pick<StoryRoutePresentation, 'returnKind'>; memoryWind: boolean; memoryWindBeat: MemoryWindBeat }) {
+function PiCompanion({ state, target, complete, presentation, memoryWind, memoryWindBeat, heroPi }: { state: FountainSessionState; target: StoryLocationId; complete: boolean; presentation: Required<Omit<StoryRoutePresentation, 'returnKind'>> & Pick<StoryRoutePresentation, 'returnKind'>; memoryWind: boolean; memoryWindBeat: MemoryWindBeat; heroPi: boolean }) {
   const group = useRef<THREE.Group>(null);
   const satchel = useRef<THREE.Group>(null);
   const desired = useMemo(() => new THREE.Vector3(), []);
@@ -757,14 +761,34 @@ function PiCompanion({ state, target, complete, presentation, memoryWind, memory
   const returnKind = presentation.returnKind ?? state.lastReturn?.kind;
   const tokenColor = returnKind === 'refuted' || returnKind === 'detour' ? '#c9c7d8' : returnKind === 'refined' || returnKind === 'fact' ? '#7ed5eb' : returnKind === 'confirmed' ? '#ffe287' : returnKind === 'reply' ? '#ffc896' : '#f5b879';
   return <group ref={group} position={origin} scale={memoryWind ? 1.38 : 1}>
-    <mesh scale={state.phase === 'plan' ? 1.5 : returning ? 1.48 : 1.32}><sphereGeometry args={[.43,20,16]} /><meshBasicMaterial color={returning ? '#7cc7b3' : '#93fff0'} transparent opacity={memoryWind ? .055 : state.phase === 'plan' ? .22 : returning ? .14 : .13} depthWrite={false} /></mesh>
-    <mesh castShadow><sphereGeometry args={[.37,20,16]} /><meshStandardMaterial color={memoryWind ? '#62aa9e' : returning ? '#8fcbb4' : '#c8fff0'} emissive={complete ? '#ffe398' : returning ? '#3c8c7d' : memoryWind ? '#225f59' : '#56d7c8'} emissiveIntensity={memoryWind ? .72 : complete ? 1.55 : returning ? .28 : state.phase === 'plan' ? 1.58 : 1.14} roughness={.44} /></mesh>
-    <mesh position={[-.12,.06,.34]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color="#34585a" /></mesh>
-    <mesh position={[.12,.06,.34]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color="#34585a" /></mesh>
-    <mesh position={[0,.48,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.1,.018,6,16,Math.PI]} /><meshStandardMaterial color="#f4d77e" emissive="#b97d2e" emissiveIntensity={memoryWind ? 1.22 : .75} /></mesh>
-    <group ref={satchel} position={[.34,-.18,.02]}><mesh><boxGeometry args={[.24,.22,.17]} /><meshStandardMaterial color="#ad6c48" roughness={.77} /></mesh><mesh position={[0,.17,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.085,.015,6,12,Math.PI]} /><meshStandardMaterial color="#e2bd7b" /></mesh>{(returning || (memoryWind && memoryWindBeat !== 'notice')) && <><mesh position={[.01,.48,.08]} rotation={[0,.24,.12]}><planeGeometry args={[.24,.17]} /><meshStandardMaterial color="#f2dfb2" emissive="#b88947" emissiveIntensity={memoryWind ? .66 : .24} side={THREE.DoubleSide} /></mesh>{returning && <pointLight position={[.01,.48,.08]} color={tokenColor} intensity={.26} distance={1.6} />}</>}</group>
+    <mesh scale={state.phase === 'plan' ? 1.5 : returning ? 1.48 : 1.32}><sphereGeometry args={[.43,20,16]} /><meshBasicMaterial color={returning ? '#7cc7b3' : '#93fff0'} transparent opacity={heroPi ? .035 : memoryWind ? .055 : state.phase === 'plan' ? .22 : returning ? .14 : .13} depthWrite={false} /></mesh>
+    <mesh castShadow scale={heroPi ? [.86,1.06,.78] : [1,1,1]}><sphereGeometry args={[.37,20,16]} /><meshStandardMaterial color={heroPi ? '#175b61' : memoryWind ? '#62aa9e' : returning ? '#8fcbb4' : '#c8fff0'} emissive={heroPi ? '#123b41' : complete ? '#ffe398' : returning ? '#3c8c7d' : memoryWind ? '#225f59' : '#56d7c8'} emissiveIntensity={heroPi ? .45 : memoryWind ? .72 : complete ? 1.55 : returning ? .28 : state.phase === 'plan' ? 1.58 : 1.14} roughness={heroPi ? .72 : .44} metalness={heroPi ? .16 : 0} /></mesh>
+    {heroPi && <PiHeroSilhouette />}
+    <mesh position={[-.12,.06,.34]} scale={heroPi ? [1.42,1.42,1] : [1,1,1]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color={heroPi ? '#ffe38b' : '#34585a'} /></mesh>
+    <mesh position={[.12,.06,.34]} scale={heroPi ? [1.42,1.42,1] : [1,1,1]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color={heroPi ? '#ffe38b' : '#34585a'} /></mesh>
+    {heroPi ? <PiLanternCap /> : <mesh position={[0,.48,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.1,.018,6,16,Math.PI]} /><meshStandardMaterial color="#f4d77e" emissive="#b97d2e" emissiveIntensity={memoryWind ? 1.22 : .75} /></mesh>}
+    <group ref={satchel} position={heroPi ? [.39,-.14,.02] : [.34,-.18,.02]} scale={heroPi ? 1.24 : 1}><mesh><boxGeometry args={[.24,.22,.17]} /><meshStandardMaterial color="#5e382a" roughness={.78} /></mesh><mesh position={[0,.17,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.085,.015,6,12,Math.PI]} /><meshStandardMaterial color="#e2bd7b" /></mesh>{(returning || (memoryWind && memoryWindBeat !== 'notice')) && <><mesh position={[.01,.48,.08]} rotation={[0,.24,.12]}><planeGeometry args={[.24,.17]} /><meshStandardMaterial color="#f2dfb2" emissive="#b88947" emissiveIntensity={memoryWind ? .66 : .24} side={THREE.DoubleSide} /></mesh>{returning && <pointLight position={[.01,.48,.08]} color={tokenColor} intensity={.26} distance={1.6} />}</>}</group>
     {returning && <mesh position={[0,.9,.02]} rotation={[0,Math.PI/4,0]}><octahedronGeometry args={[.12,0]} /><meshStandardMaterial color={tokenColor} emissive={tokenColor} emissiveIntensity={.58} roughness={.3} /></mesh>}
-    <pointLight position={[0,.1,0]} color={memoryWind ? '#a5f5de' : complete ? '#ffe3a3' : returning ? '#72b9a7' : '#adfff0'} intensity={memoryWind ? .68 : state.phase === 'plan' ? 2.15 : returning ? .38 : 1.45} distance={returning ? 1.8 : 3.4} />
+    <pointLight position={[0,.1,0]} color={heroPi ? '#ffd57d' : memoryWind ? '#a5f5de' : complete ? '#ffe3a3' : returning ? '#72b9a7' : '#adfff0'} intensity={heroPi ? .95 : memoryWind ? .68 : state.phase === 'plan' ? 2.15 : returning ? .38 : 1.45} distance={returning ? 1.8 : 3.4} />
+  </group>;
+}
+
+function PiHeroSilhouette() {
+  return <group>
+    <mesh position={[-.17,-.38,.02]} scale={[1,.72,1]} castShadow><sphereGeometry args={[.125,12,10]} /><meshStandardMaterial color="#123d47" roughness={.82} /></mesh>
+    <mesh position={[.17,-.38,.02]} scale={[1,.72,1]} castShadow><sphereGeometry args={[.125,12,10]} /><meshStandardMaterial color="#123d47" roughness={.82} /></mesh>
+    <mesh position={[-.39,-.03,.02]} rotation={[0,0,-.34]} scale={[.72,1.45,.72]}><sphereGeometry args={[.105,10,8]} /><meshStandardMaterial color="#1d6970" roughness={.68} /></mesh>
+    <mesh position={[.39,-.03,.02]} rotation={[0,0,.34]} scale={[.72,1.45,.72]}><sphereGeometry args={[.105,10,8]} /><meshStandardMaterial color="#1d6970" roughness={.68} /></mesh>
+    <mesh position={[0,.19,.305]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.36,.018,8,32,Math.PI*1.76]} /><meshStandardMaterial color="#7d4a2f" roughness={.56} metalness={.14} /></mesh>
+  </group>;
+}
+
+function PiLanternCap() {
+  return <group position={[0,.47,0]}>
+    <mesh><cylinderGeometry args={[.18,.21,.075,12]} /><meshStandardMaterial color="#8f6336" roughness={.52} metalness={.62} /></mesh>
+    <mesh position={[0,.15,0]}><cylinderGeometry args={[.125,.125,.24,10]} /><meshStandardMaterial color="#ffcf78" emissive="#df8b38" emissiveIntensity={1.25} roughness={.32} /></mesh>
+    <mesh position={[0,.3,0]}><cylinderGeometry args={[.17,.14,.065,12]} /><meshStandardMaterial color="#8f6336" roughness={.5} metalness={.62} /></mesh>
+    <mesh position={[0,.36,0]}><sphereGeometry args={[.052,10,8]} /><meshStandardMaterial color="#c58d4b" metalness={.72} roughness={.42} /></mesh>
   </group>;
 }
 
