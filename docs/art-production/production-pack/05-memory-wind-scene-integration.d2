@@ -1,0 +1,79 @@
+direction: right
+
+title: "第二章：资产融入现有港口的场景合同" {
+  shape: text
+  style.font-size: 26
+  style.font-color: "#193848"
+}
+
+harbor: "现有港口世界\n保留：水体、远景GLB、任务状态机" {
+  shape: rectangle
+  style.fill: "#E6EEF0"
+  style.stroke: "#193848"
+  style.stroke-width: 2
+}
+
+foreground: "A 前景港口\n铜灯 · 湿石 · 系船环\n职责：尺度与陪伴感" {
+  shape: rectangle
+  style.fill: "#F5E7D0"
+  style.stroke: "#B45309"
+}
+
+pi: "Pi 英雄GLB\n观察 / 取纸 / 转身小跑\n职责：玩家的行动代理" {
+  shape: rectangle
+  style.fill: "#DCE9E5"
+  style.stroke: "#2C7562"
+}
+
+memory: "B 记忆风泉台\n风筝 · 纸页 · 线绳\nobserve → route" {
+  shape: rectangle
+  style.fill: "#F7DEE0"
+  style.stroke: "#991B1B"
+}
+
+redDoor: "C 红门街角\n窄屋 · 台阶 · 暖窗\n职责：风筝任务目的地" {
+  shape: rectangle
+  style.fill: "#F1E1D1"
+  style.stroke: "#991B1B"
+}
+
+archive: "D 档案小门\n钥匙 · 锁孔 · 管理员\nclosed → clue → open" {
+  shape: rectangle
+  style.fill: "#E5E8F2"
+  style.stroke: "#58698D"
+}
+
+cinema: "E 雨天银幕\n雨棚 · 银幕 · 票根\nfolded → prepped → open" {
+  shape: rectangle
+  style.fill: "#E4EFF2"
+  style.stroke: "#4A7A91"
+}
+
+kite: "风筝委托\n旧风向 → 新风筝线 → 屋顶红门" {
+  shape: rectangle
+  style.fill: "#FFFDF8"
+  style.stroke: "#991B1B"
+}
+keys: "钥匙委托\n拓印 → 弯齿 → 档案门" {
+  shape: rectangle
+  style.fill: "#FFFDF8"
+  style.stroke: "#58698D"
+}
+movie: "电影委托\n雨云照片 + 天气册 → 雨棚" {
+  shape: rectangle
+  style.fill: "#FFFDF8"
+  style.stroke: "#4A7A91"
+}
+
+harbor -> foreground: "保留港口尺度"
+foreground -> pi: "玩家先遇见Pi"
+pi -> memory: "看见异常"
+memory -> redDoor: "带回后重排为路线"
+pi -> redDoor: "沿路线小跑"
+redDoor -> kite: "完成后：绳路与暖窗永久保留"
+pi -> archive: "新证据改变初选"
+archive -> keys: "完成后：门内小灯开启"
+pi -> cinema: "两格小包选择"
+cinema -> movie: "完成后：雨棚和银幕亮起"
+redDoor -> archive: "共享木/铜/湿石材质语言"
+archive -> cinema: "共享湿石/铜灯；避免复制红布风筝"

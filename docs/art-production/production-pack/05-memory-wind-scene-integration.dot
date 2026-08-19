@@ -1,0 +1,29 @@
+digraph integration {
+  graph [rankdir=LR, bgcolor="#F6F2EA", pad="0.35", nodesep="0.38", ranksep="0.8", fontname="Noto Sans CJK SC"];
+  node [shape=box, style="rounded,filled", fontname="Noto Sans CJK SC", fontsize=14, color="#193848", fontcolor="#193848", margin="0.18,0.12"];
+  edge [fontname="Noto Sans CJK SC", fontsize=11, color="#596A73", fontcolor="#41515A", arrowsize=0.8];
+
+  harbor [label="现有港口世界\n保留水体、远景GLB、任务状态机", fillcolor="#E6EEF0"];
+  foreground [label="A 前景港口\n铜灯 · 湿石 · 系船环\n尺度与陪伴感", fillcolor="#F5E7D0", color="#B45309"];
+  pi [label="Pi 英雄GLB\n观察 / 取纸 / 转身小跑\n玩家的行动代理", fillcolor="#DCE9E5", color="#2C7562"];
+  memory [label="B 记忆风泉台\n风筝 · 纸页 · 线绳\nobserve → route", fillcolor="#F7DEE0", color="#991B1B"];
+  red [label="C 红门街角\n窄屋 · 台阶 · 暖窗\n风筝任务目的地", fillcolor="#F1E1D1", color="#991B1B"];
+  archive [label="D 档案小门\n钥匙 · 锁孔 · 管理员\nclosed → clue → open", fillcolor="#E5E8F2", color="#58698D"];
+  cinema [label="E 雨天银幕\n雨棚 · 银幕 · 票根\nfolded → prepped → open", fillcolor="#E4EFF2", color="#4A7A91"];
+  kite [label="风筝委托\n旧风向 → 新风筝线 → 屋顶红门", fillcolor="#FFFDF8", color="#991B1B"];
+  keys [label="钥匙委托\n拓印 → 弯齿 → 档案门", fillcolor="#FFFDF8", color="#58698D"];
+  movie [label="电影委托\n雨云照片 + 天气册 → 雨棚", fillcolor="#FFFDF8", color="#4A7A91"];
+
+  harbor -> foreground [label="保留港口尺度"];
+  foreground -> pi [label="玩家先遇见Pi"];
+  pi -> memory [label="看见异常"];
+  memory -> red [label="带回后重排为路线", color="#991B1B"];
+  pi -> red [label="沿路线小跑"];
+  red -> kite [label="完成：绳路与暖窗永久保留", color="#991B1B"];
+  pi -> archive [label="新证据改变初选"];
+  archive -> keys [label="完成：门内小灯开启", color="#58698D"];
+  pi -> cinema [label="两格小包选择"];
+  cinema -> movie [label="完成：雨棚和银幕亮起", color="#4A7A91"];
+  red -> archive [label="共享木/铜/湿石", style=dashed];
+  archive -> cinema [label="共享湿石/铜灯；不复制红布", style=dashed];
+}
