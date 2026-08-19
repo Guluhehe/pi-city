@@ -12,13 +12,13 @@ const context = await browser.newContext({ viewport: { width: 1280, height: 720 
 const page = await context.newPage();
 try {
   await page.goto(`${baseUrl}/?story=2`, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => document.querySelector('.city-hub')?.classList.contains('memory-wind-intro'));
+  await page.waitForFunction(() => document.querySelector('.city-hub')?.classList.contains('memory-wind-stage-intro'));
   await wait(900);
   await page.screenshot({ path: path.join(output, '01-phenomenon-notice.png') });
-  await page.waitForFunction(() => document.querySelector('.city-hub')?.classList.contains('memory-wind-invite'));
+  await page.waitForFunction(() => document.querySelector('.city-hub')?.classList.contains('memory-wind-stage-invite'));
   await wait(3000);
   await page.screenshot({ path: path.join(output, '02-single-invite.png') });
-  await page.waitForFunction(() => document.querySelector('.city-hub')?.classList.contains('memory-wind-explore'));
+  await page.waitForFunction(() => document.querySelector('.city-hub')?.classList.contains('memory-wind-stage-explore'));
   await wait(350);
   await page.screenshot({ path: path.join(output, '03-city-explore.png') });
 } finally {

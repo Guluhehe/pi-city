@@ -103,14 +103,15 @@ export function FountainStoryScene({
   return (
     <div className="fountain-scene" aria-label="暮色中的喷泉街，Pi 会在此出发调查">
       <Canvas shadows dpr={[1, 1.8]} gl={{ antialias: true, alpha: false }} camera={{ position: [9.15, 5.9, 13.1], fov: 41, near: 0.1, far: 110 }} onCreated={() => onSceneReady?.()}>
-        <FountainRenderer />
-        <FountainPost state={state} memoryWind={memoryWind} />
-        <DuskSky />
-        <fog attach="fog" args={['#24495a', 16, 35]} />
-        <hemisphereLight args={['#ffd9ad', '#152c43', 1.45]} />
-        <directionalLight position={[-10, 14, 6]} intensity={3.25} color="#ffbd79" castShadow shadow-mapSize={[2048, 2048]} />
-        <directionalLight position={[11, 8, -10]} intensity={.7} color="#9bdce4" />
-        <pointLight position={[0, 5.3, 0]} intensity={memoryWind ? .42 : 2.8} color="#aaffee" distance={11} />
+        <FountainRenderer cinematic={memoryWind && missionTheme === 'kite'} />
+        {!memoryWind && <FountainPost state={state} memoryWind={memoryWind} />}
+        <DuskSky cinematic={memoryWind && missionTheme === 'kite'} />
+        <fog attach="fog" args={memoryWind && missionTheme === 'kite' ? ['#274a5a', 13, 31] : ['#24495a', 16, 35]} />
+        <hemisphereLight args={memoryWind && missionTheme === 'kite' ? ['#9fb3c8', '#112b3b', 1.08] : ['#ffd9ad', '#152c43', 1.45]} />
+        <directionalLight position={[-10, 14, 6]} intensity={memoryWind && missionTheme === 'kite' ? 2.05 : 3.25} color={memoryWind && missionTheme === 'kite' ? '#ffd09d' : '#ffbd79'} castShadow shadow-mapSize={[2048, 2048]} />
+        <directionalLight position={[11, 8, -10]} intensity={memoryWind && missionTheme === 'kite' ? .92 : .7} color={memoryWind && missionTheme === 'kite' ? '#78a9c5' : '#9bdce4'} />
+        <pointLight position={[0, 5.3, 0]} intensity={memoryWind ? .2 : 2.8} color="#aaffee" distance={11} />
+        {memoryWind && missionTheme === 'kite' && <><pointLight position={[-4.7, 2.2, 2.7]} intensity={1.12} color="#ffc36f" distance={5.2} /><pointLight position={[4.9, 2.1, -3.75]} intensity={1.18} color="#ffb96c" distance={4.8} /></>}
         <FountainCamera state={state} missionTheme={missionTheme} presentation={presentation} memoryWind={memoryWind} />
         <FountainTown state={state} available={available} onSelectQuestion={onSelectQuestion} missionTheme={missionTheme} missionFacts={missionFacts} presentation={presentation} memoryWind={memoryWind} memoryWindBeat={memoryWindBeat} heroPi={heroPi} />
       </Canvas>
@@ -118,15 +119,15 @@ export function FountainStoryScene({
   );
 }
 
-function FountainRenderer() {
+function FountainRenderer({ cinematic = false }: { cinematic?: boolean }) {
   const { gl } = useThree();
   useEffect(() => {
     gl.toneMapping = THREE.ACESFilmicToneMapping;
-    gl.toneMappingExposure = 1.18;
+    gl.toneMappingExposure = cinematic ? .82 : 1.18;
     gl.outputColorSpace = THREE.SRGBColorSpace;
     gl.shadowMap.enabled = true;
     gl.shadowMap.type = THREE.PCFSoftShadowMap;
-  }, [gl]);
+  }, [cinematic, gl]);
   return null;
 }
 
@@ -157,14 +158,16 @@ function FountainPost({ state, memoryWind }: { state: FountainSessionState; memo
   return null;
 }
 
-function DuskSky() {
+function DuskSky({ cinematic = false }: { cinematic?: boolean }) {
   const material = useMemo(() => new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: false,
-    uniforms: { uSun: { value: new THREE.Vector3(-.7, .42, -.5) } },
-    vertexShader: 'varying vec3 vWorld; void main(){ vec4 world = modelMatrix * vec4(position, 1.0); vWorld = world.xyz; gl_Position = projectionMatrix * viewMatrix * world; }',
-    fragmentShader: 'uniform vec3 uSun; varying vec3 vWorld; void main(){ float h = normalize(vWorld).y * .5 + .5; vec3 horizon = vec3(.92,.42,.28); vec3 teal = vec3(.08,.20,.31); vec3 dusk = mix(horizon, vec3(.25,.48,.58), smoothstep(.12,.58,h)); dusk = mix(dusk, teal, smoothstep(.48,1.,h)); float glow = pow(max(0., dot(normalize(vWorld), normalize(uSun))), 18.); dusk += vec3(1.,.42,.16) * glow * .75; gl_FragColor = vec4(dusk,1.); }',
-  }), []);
+    uniforms: { uSun: { value: new THREE.Vector3(-.7, cinematic ? .24 : .42, -.5) } },
+    vertexShader: 'varying vec3 vWorld; void main(){ vec4 world = modelMatrix * vec4(position, 1.0); vWorld = world.xyz; gl_Position = projectionMatrix*viewMatrix*world; }',
+    fragmentShader: cinematic
+      ? 'uniform vec3 uSun; varying vec3 vWorld; void main(){ float h=normalize(vWorld).y*.5+.5; vec3 horizon=vec3(.16,.31,.40); vec3 upper=vec3(.025,.10,.18); vec3 dusk=mix(horizon,upper,smoothstep(.16,.9,h)); float glow=pow(max(0.,dot(normalize(vWorld),normalize(uSun))),22.); dusk+=vec3(1.,.50,.24)*glow*.42; gl_FragColor=vec4(dusk,1.); }'
+      : 'uniform vec3 uSun; varying vec3 vWorld; void main(){ float h = normalize(vWorld).y * .5 + .5; vec3 horizon = vec3(.92,.42,.28); vec3 teal = vec3(.08,.20,.31); vec3 dusk = mix(horizon, vec3(.25,.48,.58), smoothstep(.12,.58,h)); dusk = mix(dusk, teal, smoothstep(.48,1.,h)); float glow = pow(max(0., dot(normalize(vWorld), normalize(uSun))), 18.); dusk += vec3(1.,.42,.16) * glow * .75; gl_FragColor = vec4(dusk,1.); }',
+  }), [cinematic]);
   return <mesh scale={[-1, 1, 1]}><sphereGeometry args={[70, 48, 28]} /><primitive object={material} attach="material" /></mesh>;
 }
 
@@ -199,8 +202,8 @@ function FountainCamera({ state, missionTheme, presentation, memoryWind }: { sta
 
     if (memoryWind) {
       const reveal = easeInOut(elapsed / 2.5);
-      desired.set(7.15 - reveal * 3.15, 4.35 - reveal * 1.7, 9.2 - reveal * 2.0);
-      nextLookAt.set(-1.35, 1.82, .5);
+      desired.set(7.85 - reveal * 2.15, 3.12 - reveal * .48, 10.45 - reveal * 1.3);
+      nextLookAt.set(-.58, 1.28, .12);
     } else if (state.phase === 'plan') {
       desired.set(5.25, 3.55, 7.45);
       nextLookAt.set(.05, .88, .05);
@@ -260,7 +263,8 @@ function FountainTown({
   return (
     <group>
       <HarborWater />
-      <PavedPlaza />
+      <PavedPlaza cinematic={memoryWind && missionTheme === 'kite'} />
+      {memoryWind && missionTheme === 'kite' && <MemoryWindHarborLayer />}
       <MissionSetDressing theme={missionTheme} facts={missionFacts} />
       {memoryWind && missionTheme === 'kite' && <MemoryWindPhenomenon beat={memoryWindBeat} />}
       <StreetDressing complete={complete} />
@@ -271,7 +275,7 @@ function FountainTown({
       <Workshop unlocked={hasFact('melody-page') && hasFact('pressure-pattern')} installed={hasFact('sync-valve')} active={state.phase === 'action'} />
       <Garden visited={hasFact('full-song')} active={activeQuestion.includes('full-song')} onAsk={() => onSelectQuestion('full-song')} />
       <DeferredHarborLandmarks />
-      <HarborHomes />
+      <HarborHomes cinematic={memoryWind && missionTheme === 'kite'} />
       <HarborBoats />
       <PiCompanion state={state} target={piTarget} complete={complete} presentation={presentation} memoryWind={memoryWind && missionTheme === 'kite'} memoryWindBeat={memoryWindBeat} heroPi={heroPi} />
       <PathLanterns state={state} target={piTarget} presentation={presentation} />
@@ -316,6 +320,31 @@ function MemoryWindPhenomenon({ beat }: { beat: MemoryWindBeat }) {
     {[-.74,.82].map((x) => <group key={x} position={[x,.32,0]}><mesh><sphereGeometry args={[.105,12,10]} /><meshStandardMaterial color="#ffd789" emissive="#e7a347" emissiveIntensity={1.4} /></mesh><pointLight color="#ffd58a" intensity={.72} distance={2.35} /></group>)}
     <mesh position={[0,-1.3,0]} rotation={[0,.26,0]}><cylinderGeometry args={[.018,.018,1.9,6]} /><meshStandardMaterial color="#e6c47d" /></mesh>
     {reframe && <MemoryWindRoute />}
+  </group>;
+}
+
+function MemoryWindHarborLayer() {
+  return <group>
+    <group position={[-4.7, .18, 2.7]} rotation={[0, .26, 0]}>
+      <mesh castShadow><cylinderGeometry args={[.16,.2,1.5,10]} /><meshStandardMaterial color="#1d2b31" roughness={.58} metalness={.48} /></mesh>
+      <mesh position={[0,1.05,0]}><cylinderGeometry args={[.32,.26,.42,10]} /><meshStandardMaterial color="#a26f39" roughness={.42} metalness={.55} /></mesh>
+      <mesh position={[0,1.05,.01]}><cylinderGeometry args={[.22,.2,.27,10]} /><meshStandardMaterial color="#ffca72" emissive="#cc7628" emissiveIntensity={1.28} roughness={.24} /></mesh>
+      <pointLight position={[0,1.05,.28]} intensity={1.16} distance={5.4} color="#ffc370" />
+    </group>
+    <group position={[-3.35,.24,1.92]} rotation={[0,.12,0]}>
+      <mesh rotation={[-Math.PI/2,0,0]}><torusGeometry args={[.48,.045,8,24]} /><meshStandardMaterial color="#7e512f" roughness={.42} metalness={.54} /></mesh>
+      <mesh position={[.58,.14,.12]} rotation={[0,.18,0]}><cylinderGeometry args={[.09,.12,.42,8]} /><meshStandardMaterial color="#3e322a" roughness={.76} /></mesh>
+    </group>
+    <group position={[3.85,.22,-4.65]} rotation={[0,-.56,0]} scale={.78}>
+      <mesh castShadow receiveShadow position={[0,1.35,0]}><boxGeometry args={[2.42,2.7,1.38]} /><meshStandardMaterial color="#52383a" roughness={.9} /></mesh>
+      <mesh position={[0,2.76,0]} rotation={[0,0,.14]}><boxGeometry args={[2.7,.2,1.66]} /><meshStandardMaterial color="#202d36" roughness={.68} metalness={.08} /></mesh>
+      <mesh position={[0,1.08,.705]}><boxGeometry args={[.62,1.36,.035]} /><meshStandardMaterial color="#a84b42" roughness={.72} /></mesh>
+      <mesh position={[0,1.08,.733]}><boxGeometry args={[.12,.12,.035]} /><meshStandardMaterial color="#e8bb66" emissive="#a76829" emissiveIntensity={.72} roughness={.3} metalness={.34} /></mesh>
+      {[-.72,.72].map((x) => <group key={x} position={[x,1.78,.715]}><mesh><boxGeometry args={[.38,.44,.035]} /><meshStandardMaterial color="#ffcb79" emissive="#b96827" emissiveIntensity={1.12} roughness={.28} /></mesh><mesh position={[0,.26,.01]}><boxGeometry args={[.44,.035,.05]} /><meshStandardMaterial color="#2b2322" /></mesh></group>)}
+      <mesh position={[0,.22,.96]}><boxGeometry args={[1.22,.18,.64]} /><meshStandardMaterial color="#6d655c" roughness={.94} /></mesh>
+      <mesh position={[0,.11,1.32]}><boxGeometry args={[.96,.18,.52]} /><meshStandardMaterial color="#777064" roughness={.94} /></mesh>
+      <pointLight position={[0,1.62,.95]} intensity={1.34} distance={4.9} color="#ffb967" />
+    </group>
   </group>;
 }
 
@@ -409,10 +438,10 @@ function HarborWater() {
   </mesh>;
 }
 
-function PavedPlaza() {
+function PavedPlaza({ cinematic = false }: { cinematic?: boolean }) {
   const stones = useMemo(() => {
     const next: { x: number; z: number; width: number; depth: number; rotation: number; color: string }[] = [];
-    const palette = ['#a89f8d', '#c0b093', '#8f9189', '#b4a58e', '#9ba09a', '#c8b99e'];
+    const palette = cinematic ? ['#5b5f60', '#726b61', '#4d5960', '#807465', '#616c6b', '#887968'] : ['#a89f8d', '#c0b093', '#8f9189', '#b4a58e', '#9ba09a', '#c8b99e'];
     for (let row = 0, z = -8.55; z <= 8.3; row += 1, z += 1.02) {
       const rowOffset = row % 2 ? .44 : 0;
       for (let x = -9.15 + rowOffset; x <= 9.1; x += 1.03) {
@@ -433,12 +462,12 @@ function PavedPlaza() {
       }
     }
     return next;
-  }, []);
+  }, [cinematic]);
   return <group>
-    <mesh position={[0, -.02, 0]} receiveShadow><cylinderGeometry args={[10.25, 10.9, .42, 72]} /><meshStandardMaterial color="#76695e" roughness={.94} /></mesh>
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0,.205,0]} receiveShadow><ringGeometry args={[2.34,9.65,72]} /><meshStandardMaterial color="#c8b89d" roughness={.94} /></mesh>
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0,.218,0]}><ringGeometry args={[2.38,2.5,56]} /><meshStandardMaterial color="#80796f" roughness={.83} /></mesh>
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0,.22,0]}><ringGeometry args={[5.38,5.48,64]} /><meshStandardMaterial color="#a29481" roughness={.88} /></mesh>
+    <mesh position={[0, -.02, 0]} receiveShadow><cylinderGeometry args={[10.25, 10.9, .42, 72]} /><meshStandardMaterial color={cinematic ? '#42494b' : '#76695e'} roughness={.94} /></mesh>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0,.205,0]} receiveShadow><ringGeometry args={[2.34,9.65,72]} /><meshStandardMaterial color={cinematic ? '#5e625e' : '#c8b89d'} roughness={.94} /></mesh>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0,.218,0]}><ringGeometry args={[2.38,2.5,56]} /><meshStandardMaterial color={cinematic ? '#494e4f' : '#80796f'} roughness={.83} /></mesh>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0,.22,0]}><ringGeometry args={[5.38,5.48,64]} /><meshStandardMaterial color={cinematic ? '#62615a' : '#a29481'} roughness={.88} /></mesh>
     {stones.map((stone, index) => <mesh key={index} position={[stone.x,.23,stone.z]} rotation={[0,stone.rotation,0]} receiveShadow><boxGeometry args={[stone.width,.045,stone.depth]} /><meshStandardMaterial color={stone.color} roughness={.98} /></mesh>)}
     <DockDeck position={[-5.2,.25,-1.6]} size={[4.55,3.35]} />
     <DockDeck position={[-2.7,.25,3.8]} size={[3.85,2.95]} />
@@ -523,11 +552,11 @@ function FountainPlaza({ state, memoryWind }: { state: FountainSessionState; mem
       child.scale.y = THREE.MathUtils.lerp(child.scale.y, scale, .075);
     });
   });
-  return <group position={LOCATIONS.fountain.position}>
-    <mesh receiveShadow><cylinderGeometry args={[2.22,2.5,.52,48]} /><meshStandardMaterial color="#716f69" roughness={.9} /></mesh>
-    <mesh position={[0,.34,0]}><cylinderGeometry args={[1.88,2.1,.2,48]} /><meshStandardMaterial color="#3d96a5" emissive="#1d7280" emissiveIntensity={.48} roughness={.34} metalness={.08} /></mesh>
-    <mesh position={[0,.58,0]}><cylinderGeometry args={[.88,1.04,.32,32]} /><meshStandardMaterial color="#929087" roughness={.88} /></mesh>
-    <mesh position={[0,1.38,0]} castShadow><cylinderGeometry args={[.38,.55,1.38,16]} /><meshStandardMaterial color="#c0b39b" roughness={.78} /></mesh>
+  return     <group position={LOCATIONS.fountain.position} scale={memoryWind ? .64 : 1}>
+    <mesh receiveShadow><cylinderGeometry args={[2.22,2.5,.52,48]} /><meshStandardMaterial color={memoryWind ? '#4b4e4d' : '#716f69'} roughness={.9} /></mesh>
+    <mesh position={[0,.34,0]}><cylinderGeometry args={[1.88,2.1,.2,48]} /><meshStandardMaterial color={memoryWind ? '#20586b' : '#3d96a5'} emissive={memoryWind ? '#0d3340' : '#1d7280'} emissiveIntensity={memoryWind ? .14 : .48} roughness={memoryWind ? .64 : .34} metalness={.08} /></mesh>
+    <mesh position={[0,.58,0]}><cylinderGeometry args={[.88,1.04,.32,32]} /><meshStandardMaterial color={memoryWind ? '#6a665d' : '#929087'} roughness={.88} /></mesh>
+    <mesh position={[0,1.38,0]} castShadow><cylinderGeometry args={[.38,.55,1.38,16]} /><meshStandardMaterial color={memoryWind ? '#8f7b61' : '#c0b39b'} roughness={.78} /></mesh>
     <mesh position={[0,2.12,0]}><cylinderGeometry args={[.58,.38,.22,24]} /><meshStandardMaterial color="#e0c797" roughness={.62} metalness={.16} /></mesh>
     <group ref={water} position={[0,.52,0]}>
       {[0, Math.PI/2, Math.PI, Math.PI*1.5].map((angle, index) => <FountainJet key={index} angle={angle} bright={complete || synced} dim={memoryWind} />)}
@@ -714,7 +743,7 @@ function PiCompanion({ state, target, complete, presentation, memoryWind, memory
   const group = useRef<THREE.Group>(null);
   const satchel = useRef<THREE.Group>(null);
   const desired = useMemo(() => new THREE.Vector3(), []);
-  const origin = useMemo(() => new THREE.Vector3(memoryWind ? -.12 : 1.42, memoryWind ? .66 : .5, memoryWind ? 2.72 : 1.26), [memoryWind]);
+  const origin = useMemo(() => new THREE.Vector3(memoryWind ? -1.18 : 1.42, memoryWind ? .54 : .5, memoryWind ? 1.92 : 1.26), [memoryWind]);
   const memoryTarget = useMemo(() => new THREE.Vector3(-1.72, 1.72, 1.18), []);
   const phaseStartedAt = useRef(0);
   const lastKey = useRef('');
@@ -760,16 +789,17 @@ function PiCompanion({ state, target, complete, presentation, memoryWind, memory
   const returning = state.phase === 'return' && target !== 'fountain';
   const returnKind = presentation.returnKind ?? state.lastReturn?.kind;
   const tokenColor = returnKind === 'refuted' || returnKind === 'detour' ? '#c9c7d8' : returnKind === 'refined' || returnKind === 'fact' ? '#7ed5eb' : returnKind === 'confirmed' ? '#ffe287' : returnKind === 'reply' ? '#ffc896' : '#f5b879';
-  return <group ref={group} position={origin} scale={memoryWind ? 1.38 : 1}>
-    <mesh scale={state.phase === 'plan' ? 1.5 : returning ? 1.48 : 1.32}><sphereGeometry args={[.43,20,16]} /><meshBasicMaterial color={returning ? '#7cc7b3' : '#93fff0'} transparent opacity={heroPi ? .035 : memoryWind ? .055 : state.phase === 'plan' ? .22 : returning ? .14 : .13} depthWrite={false} /></mesh>
-    <mesh castShadow scale={heroPi ? [.86,1.06,.78] : [1,1,1]}><sphereGeometry args={[.37,20,16]} /><meshStandardMaterial color={heroPi ? '#175b61' : memoryWind ? '#62aa9e' : returning ? '#8fcbb4' : '#c8fff0'} emissive={heroPi ? '#123b41' : complete ? '#ffe398' : returning ? '#3c8c7d' : memoryWind ? '#225f59' : '#56d7c8'} emissiveIntensity={heroPi ? .45 : memoryWind ? .72 : complete ? 1.55 : returning ? .28 : state.phase === 'plan' ? 1.58 : 1.14} roughness={heroPi ? .72 : .44} metalness={heroPi ? .16 : 0} /></mesh>
-    {heroPi && <PiHeroSilhouette />}
-    <mesh position={[-.12,.06,.34]} scale={heroPi ? [1.42,1.42,1] : [1,1,1]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color={heroPi ? '#ffe38b' : '#34585a'} /></mesh>
-    <mesh position={[.12,.06,.34]} scale={heroPi ? [1.42,1.42,1] : [1,1,1]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color={heroPi ? '#ffe38b' : '#34585a'} /></mesh>
-    {heroPi ? <PiLanternCap /> : <mesh position={[0,.48,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.1,.018,6,16,Math.PI]} /><meshStandardMaterial color="#f4d77e" emissive="#b97d2e" emissiveIntensity={memoryWind ? 1.22 : .75} /></mesh>}
-    <group ref={satchel} position={heroPi ? [.39,-.14,.02] : [.34,-.18,.02]} scale={heroPi ? 1.24 : 1}><mesh><boxGeometry args={[.24,.22,.17]} /><meshStandardMaterial color="#5e382a" roughness={.78} /></mesh><mesh position={[0,.17,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.085,.015,6,12,Math.PI]} /><meshStandardMaterial color="#e2bd7b" /></mesh>{(returning || (memoryWind && memoryWindBeat !== 'notice')) && <><mesh position={[.01,.48,.08]} rotation={[0,.24,.12]}><planeGeometry args={[.24,.17]} /><meshStandardMaterial color="#f2dfb2" emissive="#b88947" emissiveIntensity={memoryWind ? .66 : .24} side={THREE.DoubleSide} /></mesh>{returning && <pointLight position={[.01,.48,.08]} color={tokenColor} intensity={.26} distance={1.6} />}</>}</group>
+  const styledHero = heroPi || memoryWind;
+  return <group ref={group} position={origin} scale={memoryWind ? 1.55 : 1}>
+    <mesh scale={state.phase === 'plan' ? 1.5 : returning ? 1.48 : 1.32}><sphereGeometry args={[.43,20,16]} /><meshBasicMaterial color={returning ? '#7cc7b3' : '#93fff0'} transparent opacity={styledHero ? .035 : state.phase === 'plan' ? .22 : returning ? .14 : .13} depthWrite={false} /></mesh>
+    <mesh castShadow scale={styledHero ? [.86,1.06,.78] : [1,1,1]}><sphereGeometry args={[.37,20,16]} /><meshStandardMaterial color={styledHero ? '#175b61' : returning ? '#8fcbb4' : '#c8fff0'} emissive={styledHero ? '#123b41' : complete ? '#ffe398' : returning ? '#3c8c7d' : '#56d7c8'} emissiveIntensity={styledHero ? .45 : complete ? 1.55 : returning ? .28 : state.phase === 'plan' ? 1.58 : 1.14} roughness={styledHero ? .72 : .44} metalness={styledHero ? .16 : 0} /></mesh>
+    {styledHero && <PiHeroSilhouette />}
+    <mesh position={[-.12,.06,.34]} scale={styledHero ? [1.42,1.42,1] : [1,1,1]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color={styledHero ? '#ffe38b' : '#34585a'} /></mesh>
+    <mesh position={[.12,.06,.34]} scale={styledHero ? [1.42,1.42,1] : [1,1,1]}><sphereGeometry args={[.035,10,8]} /><meshBasicMaterial color={styledHero ? '#ffe38b' : '#34585a'} /></mesh>
+    {styledHero ? <PiLanternCap /> : <mesh position={[0,.48,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.1,.018,6,16,Math.PI]} /><meshStandardMaterial color="#f4d77e" emissive="#b97d2e" emissiveIntensity={.75} /></mesh>}
+    <group ref={satchel} position={styledHero ? [.39,-.14,.02] : [.34,-.18,.02]} scale={styledHero ? 1.24 : 1}><mesh><boxGeometry args={[.24,.22,.17]} /><meshStandardMaterial color="#5e382a" roughness={.78} /></mesh><mesh position={[0,.17,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.085,.015,6,12,Math.PI]} /><meshStandardMaterial color="#e2bd7b" /></mesh>{(returning || (memoryWind && memoryWindBeat !== 'notice')) && <><mesh position={[.01,.48,.08]} rotation={[0,.24,.12]}><planeGeometry args={[.24,.17]} /><meshStandardMaterial color="#f2dfb2" emissive="#b88947" emissiveIntensity={memoryWind ? .66 : .24} side={THREE.DoubleSide} /></mesh>{returning && <pointLight position={[.01,.48,.08]} color={tokenColor} intensity={.26} distance={1.6} />}</>}</group>
     {returning && <mesh position={[0,.9,.02]} rotation={[0,Math.PI/4,0]}><octahedronGeometry args={[.12,0]} /><meshStandardMaterial color={tokenColor} emissive={tokenColor} emissiveIntensity={.58} roughness={.3} /></mesh>}
-    <pointLight position={[0,.1,0]} color={heroPi ? '#ffd57d' : memoryWind ? '#a5f5de' : complete ? '#ffe3a3' : returning ? '#72b9a7' : '#adfff0'} intensity={heroPi ? .95 : memoryWind ? .68 : state.phase === 'plan' ? 2.15 : returning ? .38 : 1.45} distance={returning ? 1.8 : 3.4} />
+    <pointLight position={[0,.1,0]} color={styledHero ? '#ffd57d' : complete ? '#ffe3a3' : returning ? '#72b9a7' : '#adfff0'} intensity={styledHero ? .95 : state.phase === 'plan' ? 2.15 : returning ? .38 : 1.45} distance={returning ? 1.8 : 3.4} />
   </group>;
 }
 
@@ -837,14 +867,17 @@ function HarborLandmark({ model, position, rotation, scale }: { model: string; p
   return <group position={position} rotation={rotation} scale={scale}><primitive object={scene} /></group>;
 }
 
-function HarborHomes() {
+function HarborHomes({ cinematic = false }: { cinematic?: boolean }) {
+  const walls = cinematic ? ['#334a54', '#6a4943', '#405e59', '#665646', '#3e4d5d'] : ['#536b79', '#9e6f59', '#708d77'];
   return <group position={[0,0,-10]}>{Array.from({length: 15}).map((_, index) => {
     const x = -12 + index * 1.7;
     const height = 1.45 + (index % 4) * .38;
+    const color = walls[index % walls.length];
     return <group key={index} position={[x,height/2,0]}>
-      <mesh castShadow><boxGeometry args={[1.38,height,1.22]} /><meshStandardMaterial color={index % 3 === 0 ? '#536b79' : index % 3 === 1 ? '#9e6f59' : '#708d77'} roughness={.93} /></mesh>
-      <mesh position={[0,height/2+.14,0]} rotation={[0,0,index%2?.12:-.12]}><boxGeometry args={[1.48,.16,1.36]} /><meshStandardMaterial color="#334353" roughness={.78} /></mesh>
-      {index%2===0 && <mesh position={[0,.1,.63]}><boxGeometry args={[.35,.28,.025]} /><meshStandardMaterial color="#ffcf7b" emissive="#b66d28" emissiveIntensity={1.15} /></mesh>}
+      <mesh castShadow receiveShadow><boxGeometry args={[1.38,height,1.22]} /><meshStandardMaterial color={color} roughness={.88} /></mesh>
+      <mesh position={[0,height/2+.14,0]} rotation={[0,0,index%2?.12:-.12]}><boxGeometry args={[1.48,.16,1.36]} /><meshStandardMaterial color={cinematic ? '#17242e' : '#334353'} roughness={.68} metalness={.08} /></mesh>
+      {cinematic && <><mesh position={[-.42,height/2-.38,.625]}><boxGeometry args={[.22,.36,.028]} /><meshStandardMaterial color="#f5bd67" emissive="#9d5426" emissiveIntensity={.76} roughness={.24} /></mesh><mesh position={[.42,height/2-.38,.625]}><boxGeometry args={[.22,.36,.028]} /><meshStandardMaterial color="#f5bd67" emissive="#9d5426" emissiveIntensity={.76} roughness={.24} /></mesh>{index % 3 === 0 && <mesh position={[.38,height/2+.56,-.18]}><cylinderGeometry args={[.09,.12,.72,8]} /><meshStandardMaterial color="#202b30" roughness={.84} /></mesh>}</>}
+      {!cinematic && index%2===0 && <mesh position={[0,.1,.63]}><boxGeometry args={[.35,.28,.025]} /><meshStandardMaterial color="#ffcf7b" emissive="#b66d28" emissiveIntensity={1.15} /></mesh>}
     </group>;
   })}</group>;
 }

@@ -26,9 +26,22 @@
 
 
 /* Chapter two vertical slice: let the world speak before the dashboard appears. */
-.memory-wind-intro::after, .memory-wind-invite::after { background: linear-gradient(90deg, rgba(4, 18, 31, .3), transparent 54%, rgba(4, 18, 31, .18)), linear-gradient(0deg, rgba(4, 18, 31, .48), transparent 64%); }
+.memory-wind-stage-intro::after, .memory-wind-stage-invite::after { background: linear-gradient(90deg, rgba(4, 18, 31, .3), transparent 54%, rgba(4, 18, 31, .18)), linear-gradient(0deg, rgba(4, 18, 31, .48), transparent 64%); }
 .memory-wind-invite { position: absolute; z-index: 5; left: clamp(22px, 8vw, 122px); bottom: clamp(42px, 10vh, 112px); width: min(310px, calc(100% - 44px)); padding: 15px 17px; border: 1px solid rgba(252, 224, 164, .28); border-radius: 18px; background: linear-gradient(140deg, rgba(16, 47, 58, .72), rgba(10, 30, 43, .46)); box-shadow: 0 18px 45px rgba(0, 10, 18, .26), inset 0 1px rgba(255,255,255,.1); color: #fff4d6; opacity: 0; transform: translateY(15px); pointer-events: none; transition: opacity .75s ease, transform .75s ease; backdrop-filter: blur(10px); }
 .memory-wind-invite p { margin: 0; color: #f4d184; font: 10px ui-monospace, monospace; letter-spacing: .06em; }.memory-wind-invite strong { display: block; margin-top: 7px; font: 500 22px/1.13 Georgia, "Songti SC", serif; }.memory-wind-invite span { display: block; margin-top: 7px; color: rgba(248, 245, 224, .72); font-size: 11px; }.memory-wind-invite button { margin-top: 13px; border: 1px solid rgba(255, 220, 151, .68); border-radius: 999px; padding: 8px 11px; background: #fff1d0; color: #39575a; font: 600 11px ui-rounded, system-ui, sans-serif; box-shadow: 0 6px 16px rgba(4, 20, 26, .2); }.memory-wind-invite button i { padding-left: 4px; color: #a3614f; font-style: normal; }
-.memory-wind-intro .memory-wind-invite { opacity: .58; transform: translateY(5px); }.memory-wind-intro .memory-wind-invite strong, .memory-wind-intro .memory-wind-invite span, .memory-wind-intro .memory-wind-invite button { display: none; }.memory-wind-invite .memory-wind-invite { opacity: 1; transform: translateY(0); pointer-events: auto; }
-.memory-wind-intro .hub-topbar, .memory-wind-invite .hub-topbar { opacity: .32; transition: opacity .7s ease; }.memory-wind-explore .hub-topbar { opacity: 1; transition: opacity .7s ease; }
+.memory-wind-stage-intro .memory-wind-invite { opacity: .58; transform: translateY(5px); }.memory-wind-stage-intro .memory-wind-invite strong, .memory-wind-stage-intro .memory-wind-invite span, .memory-wind-stage-intro .memory-wind-invite button { display: none; }.memory-wind-stage-invite .memory-wind-invite { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.memory-wind-stage-intro .hub-topbar, .memory-wind-stage-invite .hub-topbar { opacity: .32; transition: opacity .7s ease; }.memory-wind-stage-explore .hub-topbar { opacity: 1; transition: opacity .7s ease; }
 @media (max-width: 780px) { .memory-wind-invite { left: 16px; bottom: 26px; width: min(310px, calc(100% - 32px)); }.memory-wind-invite strong { font-size: 19px; } }
+
+/* Direct scene reframe: in the anomaly beat, UI must stay quieter than Pi and the world. */
+.memory-wind-stage-intro .hub-topbar { opacity: .08; }
+.memory-wind-stage-intro .memory-wind-invite { left: clamp(22px, 6vw, 82px); bottom: clamp(28px, 6vh, 58px); width: min(252px, calc(100% - 44px)); padding: 10px 13px; border-color: rgba(252, 224, 164, .16); background: rgba(9, 27, 37, .34); box-shadow: none; backdrop-filter: blur(5px); }
+.memory-wind-stage-intro .memory-wind-invite p { color: rgba(244, 209, 132, .74); font-size: 9px; }
+.memory-wind-stage-intro .memory-wind-invite::before { content: 'Pi 正在看向风里的纸页'; color: rgba(255, 244, 214, .62); font: 10px Georgia, "Songti SC", serif; }
+.memory-wind-stage-invite .hub-topbar { opacity: .42; }
+.memory-wind-stage-invite .memory-wind-invite { left: clamp(22px, 6vw, 82px); bottom: clamp(32px, 7vh, 70px); }
+.memory-wind-stage-explore .hub-hero { width: min(455px, 56vw); padding-top: clamp(52px, 9vh, 92px); }
+.memory-wind-stage-explore .hub-hero h1 { font-size: clamp(36px, 4.35vw, 58px); }
+.memory-wind-stage-explore .trust-map { top: 24%; }
+.memory-wind-stage-explore .wish-dock { max-height: min(268px, 37vh); background: linear-gradient(0deg, rgba(7, 23, 33, .88), rgba(7, 23, 33, .56)); }
+@media (max-width: 780px) { .memory-wind-stage-intro .memory-wind-invite { left: 16px; bottom: 20px; } }
