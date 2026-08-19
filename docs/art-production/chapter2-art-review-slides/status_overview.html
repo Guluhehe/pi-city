@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&family=Noto+Sans+SC:wght@300;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #E2E8F0;
+            position: relative;
+            display: flex;
+            overflow: hidden;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #3F3F46;
+        }
+        .top-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background-color: #991B1B;
+        }
+        .content-wrapper {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            padding: 80px 60px 60px 80px; /* keep top padding (title upper padding) */
+            z-index: 1;
+        }
+        .left-col {
+            flex: 0 0 40%;
+            padding-right: 40px;
+            display: flex;
+            flex-direction: column;
+        }
+        .right-col {
+            flex: 0 0 60%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 56px;
+            color: #09090B;
+            line-height: 1.2;
+            margin-bottom: 24px; /* reduced from 40 to save vertical space */
+        }
+        .point {
+            font-weight: 300;
+            font-size: 22px;
+            line-height: 1.6;
+            margin-bottom: 12px; /* reduced from 24 to save vertical space */
+            padding-left: 20px;
+            position: relative;
+        }
+        .point::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background-color: #991B1B;
+        }
+        .point strong {
+            font-weight: 700;
+            color: #09090B;
+        }
+        .chart-image {
+            width: 700px;
+            height: 440px; /* reduced from 500 to better fit height */
+            object-fit: contain;
+            border: 1px solid #D1D5DB;
+            background-color: #FFF;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="top-border"></div>
+        <div class="content-wrapper">
+            <div class="left-col">
+                <h1>12项委托都已可玩，但没有一章完成正式美术</h1>
+                <div class="point">四章共 <strong>12 个任务场景锚点</strong>均存在运行时实现。</div>
+                <div class="point">第 1、3、4 章的 <strong>9 个关键场景</strong>均为程序化占位。</div>
+                <div class="point">第 2 章：2 项为程序化占位，<strong>红门街区与风筝正式资产尚未生产</strong>。</div>
+                <div class="point">当前 <strong>5 个 GLB</strong> 均为无贴图、无动画的远景地标，不能承担电影近景。</div>
+            </div>
+            <div class="right-col">
+                <img src="/home/ubuntu/pi-city/docs/art-production/2026-08-19-asset-delivery-dashboard.png" alt="资产建模与交付状态盘点仪表板" class="chart-image">
+            </div>
+        </div>
+    </div>
+</body>
+</html>

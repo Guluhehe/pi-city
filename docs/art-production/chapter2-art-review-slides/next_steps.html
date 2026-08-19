@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&family=Noto+Sans+SC:wght@300;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #E2E8F0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #3F3F46;
+            padding: 80px 120px 0 120px;
+        }
+        .top-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background-color: #991B1B;
+        }
+        /* Shrink decorative drop-cap so it doesn't force overflow */
+        .drop-cap {
+            position: absolute;
+            top: 40px;
+            right: -20px;
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 260px; /* reduced from 400px */
+            color: rgba(153, 27, 27, 0.08);
+            line-height: 1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 64px;
+            color: #09090B;
+            line-height: 1.2;
+            margin-bottom: 60px;
+            z-index: 1;
+        }
+        .content-area {
+            display: flex;
+            flex-direction: column;
+            z-index: 1;
+            flex: 1;
+        }
+        .point {
+            font-weight: 300;
+            font-size: 28px;
+            line-height: 1.6;
+            margin-bottom: 18px; /* reduced from 30px */
+            padding-left: 24px;
+            position: relative;
+        }
+        .point::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 18px;
+            width: 10px;
+            height: 10px;
+            background-color: #991B1B;
+        }
+        .point strong {
+            font-weight: 700;
+            color: #09090B;
+        }
+        .priority-chain {
+            display: inline-block;
+            background-color: rgba(153, 27, 27, 0.1);
+            padding: 4px 12px;
+            color: #991B1B;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+        /* Reduce conclusion spacing and padding to fit within 720px while keeping content */
+        .conclusion-box {
+            margin-top: auto;
+            margin-bottom: 0; /* removed large bottom gap */
+            padding: 24px; /* reduced from 40px */
+            background-color: #09090B;
+            color: #E2E8F0;
+            border-left: 8px solid #991B1B;
+        }
+        .conclusion-box .point {
+            color: #E2E8F0;
+            margin-bottom: 0;
+            padding-left: 0;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        .conclusion-box .point::before {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="top-border"></div>
+        <div class="drop-cap">12</div>
+        <h1>本轮决策：停止低模模拟，启动资产生产</h1>
+        
+        <div class="content-area">
+            <div class="point">当前程序化街角原型已回退；<strong>默认体验保持稳定</strong>。</div>
+            
+            <div class="point">
+                <strong>第一批生产优先级：</strong><br>
+                <span class="priority-chain">Pi 英雄 GLB &rarr; 红门窄屋 &rarr; 湿石/木/铜/红布材质包 &rarr; 风筝/纸页/前景灯</span>
+            </div>
+            
+            <div class="point">第二章固定镜头通过后，才接入真实任务与后续章节。</div>
+            
+            <div class="conclusion-box">
+                <div class="point">目标不是更暗、更亮或更多特效；<br>目标是一个能被玩家相信并愿意靠近的港口街角。</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

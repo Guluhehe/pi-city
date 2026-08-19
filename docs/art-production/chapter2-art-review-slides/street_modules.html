@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&family=Noto+Sans+SC:wght@300;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #E2E8F0;
+            position: relative;
+            display: flex;
+            overflow: hidden;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #3F3F46;
+        }
+        .top-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background-color: #991B1B;
+        }
+        .drop-cap {
+            position: absolute;
+            bottom: -60px;
+            right: 40px;
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 350px;
+            color: rgba(153, 27, 27, 0.06);
+            line-height: 1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .content-wrapper {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            padding: 80px 60px 60px 80px;
+            z-index: 1;
+        }
+        .left-col {
+            flex: 0 0 45%;
+            padding-right: 40px;
+            display: flex;
+            flex-direction: column;
+        }
+        .right-col {
+            flex: 0 0 55%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 52px;
+            color: #09090B;
+            line-height: 1.2;
+            margin-bottom: 30px;
+        }
+        .point {
+            font-weight: 300;
+            font-size: 22px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .point::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background-color: #991B1B;
+        }
+        .point strong {
+            font-weight: 700;
+            color: #09090B;
+        }
+        .conclusion {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #991B1B;
+            font-weight: 700;
+            font-size: 24px;
+            color: #09090B;
+            line-height: 1.5;
+        }
+        .target-image {
+            width: 640px;
+            height: 480px;
+            object-fit: cover;
+            border: 1px solid #D1D5DB;
+            background-color: #FFF;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="top-border"></div>
+        <div class="drop-cap">07</div>
+        <div class="content-wrapper">
+            <div class="left-col">
+                <h1>红门街角必须是一套可组装的环境语言</h1>
+                <div class="point"><strong>模块</strong>：2m 墙段、窗段、红门段、内外角、屋檐、坡屋顶、台阶、码头柱与转接件。</div>
+                <div class="point"><strong>英雄资产</strong>：红门窄屋、前景铜灯、记忆风风筝骨架、远景船。</div>
+                <div class="point"><strong>生活化小件</strong>：绳结、桶、纸张、窗帘、花盆、系船环；只在镜头焦点附近加密。</div>
+                <div class="conclusion">
+                    目标不是“摆满建筑”，而是让前景—异常—目的地形成一条可走的视觉句子。
+                </div>
+            </div>
+            <div class="right-col">
+                <img src="/home/ubuntu/pi-city/demo-recordings/memory-wind/kite-return-reframe.png" alt="记忆风街角环境视觉目标" class="target-image">
+            </div>
+        </div>
+    </div>
+</body>
+</html>

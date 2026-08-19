@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&family=Noto+Sans+SC:wght@300;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #E2E8F0;
+            position: relative;
+            display: flex;
+            overflow: hidden;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #3F3F46;
+        }
+        .top-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background-color: #991B1B;
+        }
+        .drop-cap {
+            position: absolute;
+            top: 30px; /* moved up to avoid extending below the slide */
+            left: 40px;
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 350px;
+            color: rgba(153, 27, 27, 0.06);
+            line-height: 1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .content-wrapper {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            padding: 80px 60px 20px 80px; /* reduced bottom padding */
+            z-index: 1;
+        }
+        .left-col {
+            flex: 0 0 45%;
+            padding-right: 40px;
+            display: flex;
+            flex-direction: column;
+        }
+        .right-col {
+            flex: 0 0 55%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 56px;
+            color: #09090B;
+            line-height: 1.2;
+            margin-bottom: 24px; /* tightened spacing */
+        }
+        .question-block {
+            margin-bottom: 12px; /* tightened spacing between items */
+        }
+        .question-title {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 28px;
+            color: #991B1B;
+            margin-bottom: 8px;
+        }
+        .question-desc {
+            font-weight: 300;
+            font-size: 22px;
+            line-height: 1.5;
+        }
+        .conclusion {
+            margin-top: auto;
+            padding-top: 12px; /* reduced padding */
+            border-top: 2px solid #991B1B;
+            font-weight: 700;
+            font-size: 22px;
+            color: #09090B;
+            line-height: 1.5;
+        }
+        .reference-image {
+            width: 640px;
+            height: 420px; /* reduced image height to save vertical space */
+            object-fit: cover;
+            border: 1px solid #D1D5DB;
+            background-color: #FFF;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="top-border"></div>
+        <div class="drop-cap">05</div>
+        <div class="content-wrapper">
+            <div class="left-col">
+                <h1>画面必须先讲清三个问题</h1>
+                
+                <div class="question-block">
+                    <div class="question-title">Pi 在看什么？</div>
+                    <div class="question-desc">记忆风与风筝/纸页构成中景异常。</div>
+                </div>
+                
+                <div class="question-block">
+                    <div class="question-title">为什么靠近？</div>
+                    <div class="question-desc">Pi 的眼睛、帽灯和双肩包在近景中说明它是“会办事的助手”。</div>
+                </div>
+                
+                <div class="question-block">
+                    <div class="question-title">接下来去哪里？</div>
+                    <div class="question-desc">红门、台阶与一串可重排的记忆路线构成远景承诺。</div>
+                </div>
+                
+                <div class="conclusion">
+                    不允许用信息卡、光球或平均亮度代替这三层空间叙事。
+                </div>
+            </div>
+            <div class="right-col">
+                <img src="/home/ubuntu/pi-city/docs/research/2026-08-18-pi-city-mvp0-review/assets/memory-wind-street-kit-reference.png" alt="记忆风街角视觉目标" class="reference-image">
+            </div>
+        </div>
+    </div>
+</body>
+</html>

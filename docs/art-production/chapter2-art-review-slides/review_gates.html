@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&family=Noto+Sans+SC:wght@300;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #E2E8F0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #3F3F46;
+            padding: 80px 100px 0 100px;
+        }
+        .top-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background-color: #991B1B;
+        }
+        .drop-cap {
+            position: absolute;
+            top: 40px;
+            right: -20px;
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 400px;
+            color: rgba(153, 27, 27, 0.05);
+            line-height: 1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 64px;
+            color: #09090B;
+            line-height: 1.2;
+            margin-bottom: 60px;
+            z-index: 1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            z-index: 1;
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+        th, td {
+            padding: 24px 20px;
+            text-align: left;
+            font-size: 22px;
+            line-height: 1.5;
+        }
+        th {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 26px;
+            color: #09090B;
+            border-bottom: 3px solid #991B1B;
+        }
+        td {
+            font-weight: 300;
+            border-bottom: 1px solid #D1D5DB;
+        }
+        td strong {
+            font-weight: 700;
+            color: #991B1B;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .col-gate { width: 20%; font-weight: 700; color: #09090B; }
+        .col-input { width: 25%; }
+        .col-pass { width: 35%; }
+        .col-fail { width: 20%; }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="top-border"></div>
+        <div class="drop-cap">12</div>
+        <h1>交付评审分四道硬门</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-gate">评审门</th>
+                    <th class="col-input">输入</th>
+                    <th class="col-pass">通过条件</th>
+                    <th class="col-fail">不通过动作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="col-gate">灰盒</td>
+                    <td class="col-input">固定相机、比例、路线</td>
+                    <td class="col-pass">Pi—异常—红门三层清楚</td>
+                    <td class="col-fail">先改空间和相机</td>
+                </tr>
+                <tr>
+                    <td class="col-gate">Lookdev</td>
+                    <td class="col-input">真实网格与材质</td>
+                    <td class="col-pass">石、木、铜、布、皮革一眼可分</td>
+                    <td class="col-fail">改材质，不加特效</td>
+                </tr>
+                <tr>
+                    <td class="col-gate">角色</td>
+                    <td class="col-input">Pi GLB与动画</td>
+                    <td class="col-pass">三段动作无需文字也可理解</td>
+                    <td class="col-fail">回到剪影/骨架/动作</td>
+                </tr>
+                <tr>
+                    <td class="col-gate">运行时</td>
+                    <td class="col-input">真实任务回放</td>
+                    <td class="col-pass">带回发现后城市方向改变可见</td>
+                    <td class="col-fail">回到对应资产或镜头</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

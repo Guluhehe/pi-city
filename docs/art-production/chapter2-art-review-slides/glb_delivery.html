@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&family=Noto+Sans+SC:wght@300;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #E2E8F0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #3F3F46;
+            padding: 80px 100px 0 100px;
+        }
+        .top-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background-color: #991B1B;
+        }
+        .drop-cap {
+            position: absolute;
+            bottom: 0; /* moved up to avoid extending past page bottom */
+            right: 40px;
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 350px;
+            color: rgba(153, 27, 27, 0.05);
+            line-height: 1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 56px;
+            color: #09090B;
+            line-height: 1.2;
+            margin-bottom: 60px;
+            z-index: 1;
+        }
+        .grid-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px 80px; /* reduced vertical gap from 60px to 20px to save height */
+            z-index: 1;
+        }
+        .grid-item {
+            flex: 0 0 calc(50% - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+        .section-title {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 28px;
+            color: #991B1B;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #991B1B;
+            padding-bottom: 10px;
+        }
+        .point {
+            font-weight: 300;
+            font-size: 22px;
+            line-height: 1.6;
+            margin-bottom: 16px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .point::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background-color: #3F3F46;
+        }
+        .point strong {
+            font-weight: 700;
+            color: #09090B;
+        }
+        code {
+            font-family: monospace;
+            background-color: rgba(0,0,0,0.05);
+            padding: 2px 6px;
+            font-size: 20px;
+            color: #991B1B;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="top-border"></div>
+        <div class="drop-cap">10</div>
+        <h1>GLB交付要让“能加载”变成“能演出”</h1>
+        
+        <div class="grid-container">
+            <div class="grid-item">
+                <div class="section-title">文件与命名规范</div>
+                <div class="point"><strong>格式标准</strong>：统一使用 GLB 2.0 格式。</div>
+                <div class="point"><strong>命名约束</strong>：必须包含 <code>pi-hero</code>、<code>memory-wind-red-door-house</code>、<code>foreground-lantern</code>、<code>memory-wind-set</code> 等指定标识。</div>
+            </div>
+            
+            <div class="grid-item">
+                <div class="section-title">动画与材质系统</div>
+                <div class="point"><strong>角色动画</strong>：Pi 必含骨架与三段独立动画（<code>idle-observe</code>、<code>take-note</code>、<code>turn-and-trot</code>）。</div>
+                <div class="point"><strong>环境材质</strong>：建筑和道具必须使用共享材质实例与纹理图集 (Trim Sheet)，避免材质碎片化。</div>
+            </div>
+            
+            <div class="grid-item">
+                <div class="section-title">资产包交付清单</div>
+                <div class="point"><strong>核心文件</strong>：每个英雄资产均需提供网格、UV、基础色、法线、粗糙度贴图。</div>
+                <div class="point"><strong>附加文档</strong>：附带完整的材质清单与严格的尺度说明。</div>
+            </div>
+            
+            <div class="grid-item">
+                <div class="section-title">交付前质量检查 (QA)</div>
+                <div class="point"><strong>几何检查</strong>：无破面、无重叠面、无错误法线。</div>
+                <div class="point"><strong>渲染检查</strong>：无未打包贴图、无过度发光材质、确保在标准光照下表现正常。</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

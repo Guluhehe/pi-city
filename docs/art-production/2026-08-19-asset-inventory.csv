@@ -1,0 +1,25 @@
+chapter,asset_id,asset_name,category,delivery_state,runtime_state,evidence,notes
+全局,arrival-harbor,Arrival Harbor,建筑/远景地标,已交付GLB,运行时已加载,public/assets/models/arrival-harbor.glb,静态GLB；无贴图图像和无动画
+全局,session-archive,Session Archive,建筑/远景地标,已交付GLB,运行时已加载,public/assets/models/session-archive.glb,静态GLB；无贴图图像和无动画
+全局,context-works,Context Works,建筑/远景地标,已交付GLB,运行时未在记忆风首景承载近景,public/assets/models/context-works.glb,静态GLB；无贴图图像和无动画
+全局,model-core,Model Core,建筑/远景地标,已交付GLB,运行时已加载,public/assets/models/model-core.glb,静态GLB；无贴图图像和无动画
+全局,tool-works,Tool Works,建筑/远景地标,已交付GLB,运行时未在记忆风首景承载近景,public/assets/models/tool-works.glb,静态GLB；无贴图图像和无动画
+全局,pi-companion,Pi伙伴,角色,程序化占位,运行时可用,src/world/FountainStoryScene.tsx:PiCompanion,无正式角色GLB/贴图/骨架动画
+全局,street-resident,城市居民通用体,角色,程序化占位,运行时可用,src/world/FountainStoryScene.tsx:StreetResident,无按居民区分的角色资产
+全局,harbor-cat,港口猫,角色,程序化占位,运行时可用,src/world/FountainStoryScene.tsx:HarborCat,无正式角色资产
+第一章,lighthouse,灯塔及守望人场景,建筑+道具,程序化占位,任务中可用,src/world/FountainStoryScene.tsx:LighthouseMissionLandmark,无灯塔/守望人正式GLB
+第一章,parcel,邮局红门及邮包线索,建筑+道具,程序化占位,任务中可用,src/world/FountainStoryScene.tsx:ParcelMissionLandmark,无邮局/邮差/邮包正式GLB
+第一章,fountain,喷泉及乐手线索,建筑+道具,程序化占位,任务中可用,src/world/FountainStoryScene.tsx:FountainPlaza,无喷泉/乐手/纸页正式GLB
+第二章,kite,红门街区与风筝,建筑+道具,未生产正式资产,任务锚点为程序化地标,src/world/FountainStoryScene.tsx:ChapterLandmark(kite),红门窄屋/风筝/纸页是优先生产包
+第二章,keys,档案馆小门与钥匙,建筑+道具,程序化占位,任务中可用,src/world/FountainStoryScene.tsx:ChapterLandmark(keys),无档案门/钥匙正式GLB
+第二章,cinema,露天电影屏幕与雨棚,建筑+道具,程序化占位,任务中可用,src/world/FountainStoryScene.tsx:ChapterLandmark(cinema),无屏幕/雨棚/放映员正式GLB
+第三章,seed,夜花花园与种壳,建筑+道具,程序化占位,任务中可用,src/world/FountainStoryScene.tsx:ChapterLandmark(seed),无花园/种子/园丁正式GLB
+第三章,card,感谢卡展与咖啡街角,建筑+道具,程序化占位,任务中可用,src/world/FountainStoryScene.tsx:ChapterLandmark(card),无咖啡师/卡展正式GLB
+第三章,windmill,风车与刻时木片,建筑+道具,程序化占位,任务中可用,src/world/FountainStoryScene.tsx:ChapterLandmark(windmill),无风车/面粉师正式GLB
+第四章,orders,市场与剧场准备,建筑+道具,程序化占位,任务中可用,src/world/FountainStoryScene.tsx:ChapterLandmark(orders),无市场/剧场/道具正式GLB
+第四章,fogbell,雾灯塔与船铃,建筑+道具,程序化占位,任务中可用,src/world/FountainStoryScene.tsx:ChapterLandmark(fogbell),无雾灯/船铃/船长正式GLB
+第四章,festival,星光节节点与灯串,建筑+道具,程序化占位,任务中可用,src/world/FountainStoryScene.tsx:ChapterLandmark(festival),无节日节点/灯串正式GLB
+全局,concept-fountain-polish,喷泉美术方向图,概念参考,已交付概念图,非运行时资产,public/assets/concepts/fountain-polish-direction.png,仅作美术参考
+全局,concept-fountain-story,喷泉故事方向图,概念参考,已交付概念图,非运行时资产,public/assets/concepts/fountain-story-direction.png,仅作美术参考
+全局,concept-hero-preview,英雄资产预览图,概念参考,已交付概念图,非运行时资产,public/assets/hero-assets-preview.png,仅作美术参考
+全局,concept-industrial-harbor,工业港口概念图,概念参考,已交付概念图,非运行时资产,public/assets/mattes/industrial-harbor-concept.jpg,仅作美术参考

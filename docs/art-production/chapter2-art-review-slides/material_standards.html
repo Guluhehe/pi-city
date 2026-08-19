@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&family=Noto+Sans+SC:wght@300;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #E2E8F0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #3F3F46;
+            padding: 80px 100px 0 100px;
+        }
+        .top-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background-color: #991B1B;
+        }
+        .drop-cap {
+            position: absolute;
+            top: 40px;
+            left: -20px;
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 400px;
+            color: rgba(153, 27, 27, 0.05);
+            line-height: 1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 64px;
+            color: #09090B;
+            line-height: 1.2;
+            margin-bottom: 50px;
+            z-index: 1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            z-index: 1;
+            background-color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 20px; /* reduced to tighten layout */
+        }
+        th, td {
+            padding: 12px 16px; /* reduced vertical padding to save height */
+            text-align: left;
+            font-size: 22px;
+            line-height: 1.5;
+        }
+        th {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 26px;
+            color: #09090B;
+            border-bottom: 3px solid #991B1B;
+        }
+        td {
+            font-weight: 300;
+            border-bottom: 1px solid #D1D5DB;
+        }
+        td strong {
+            font-weight: 700;
+            color: #991B1B;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .col-family { width: 25%; font-weight: 700; color: #09090B; }
+        .col-specs { width: 45%; }
+        .col-objects { width: 30%; }
+        
+        .conclusion {
+            z-index: 1;
+            padding-top: 12px; /* reduced spacing */
+            border-top: 2px solid #991B1B;
+            font-weight: 700;
+            font-size: 26px;
+            color: #991B1B;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="top-border"></div>
+        <div class="drop-cap">08</div>
+        <h1>材质包决定“游戏质感”能否成立</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-family">材质族</th>
+                    <th class="col-specs">必需通道/表现</th>
+                    <th class="col-objects">适用对象</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="col-family">湿石</td>
+                    <td class="col-specs">基础色、法线、粗糙度；破碎窄高光</td>
+                    <td class="col-objects">地面、台阶、喷泉边缘</td>
+                </tr>
+                <tr>
+                    <td class="col-family">深木</td>
+                    <td class="col-specs">木纹、磨损边缘、高粗糙度</td>
+                    <td class="col-objects">窄屋、码头、窗框</td>
+                </tr>
+                <tr>
+                    <td class="col-family">青漆与皮革</td>
+                    <td class="col-specs">哑光涂层、轻度磨损、缝线/扣件</td>
+                    <td class="col-objects">Pi 主体与双肩包</td>
+                </tr>
+                <tr>
+                    <td class="col-family">铜与玻璃</td>
+                    <td class="col-specs">受控金属高光、暖色透光</td>
+                    <td class="col-objects">帽灯、前景灯、窗灯</td>
+                </tr>
+                <tr>
+                    <td class="col-family">红布与旧纸</td>
+                    <td class="col-specs">纤维/折痕、双面纸材质</td>
+                    <td class="col-objects">风筝尾、纸页、任务线索</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="conclusion">
+            禁止以每物一个纯色和统一粗糙度模拟上述材质。
+        </div>
+    </div>
+</body>
+</html>

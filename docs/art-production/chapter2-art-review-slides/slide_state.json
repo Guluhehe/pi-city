@@ -1,0 +1,145 @@
+{
+  "project_info": {
+    "title": "Pi City 第二章环境资产美术评审与交付标准",
+    "created": 1787106235.99,
+    "last_updated": 1787106590.67,
+    "total_slides": 13
+  },
+  "slides": [
+    {
+      "id": "cover",
+      "state": "edited",
+      "pageNum": 1
+    },
+    {
+      "id": "definition",
+      "state": "edited",
+      "pageNum": 2
+    },
+    {
+      "id": "status_overview",
+      "state": "edited",
+      "pageNum": 3
+    },
+    {
+      "id": "reusable_assets",
+      "state": "edited",
+      "pageNum": 4
+    },
+    {
+      "id": "chapter2_priority",
+      "state": "edited",
+      "pageNum": 5
+    },
+    {
+      "id": "visual_hierarchy",
+      "state": "edited",
+      "pageNum": 6
+    },
+    {
+      "id": "pi_hero_spec",
+      "state": "edited",
+      "pageNum": 7
+    },
+    {
+      "id": "street_modules",
+      "state": "edited",
+      "pageNum": 8
+    },
+    {
+      "id": "material_standards",
+      "state": "edited",
+      "pageNum": 9
+    },
+    {
+      "id": "glb_delivery",
+      "state": "edited",
+      "pageNum": 10
+    },
+    {
+      "id": "lighting_priority",
+      "state": "edited",
+      "pageNum": 11
+    },
+    {
+      "id": "review_gates",
+      "state": "edited",
+      "pageNum": 12
+    },
+    {
+      "id": "next_steps",
+      "state": "edited",
+      "pageNum": 13
+    }
+  ],
+  "outline": [
+    {
+      "id": "cover",
+      "title": "Pi City 第二章环境资产美术评审与交付标准",
+      "summary": "基于当前仓库资产盘点的第二章美术评审与交付标准封面。"
+    },
+    {
+      "id": "definition",
+      "title": "先统一什么算“已交付”",
+      "summary": "明确区分已交付建模、程序化占位与概念参考的验收标准。"
+    },
+    {
+      "id": "status_overview",
+      "title": "12项委托都已可玩，但没有一章完成正式美术",
+      "summary": "盘点12项委托的当前状态，指出程序化占位与正式资产的差距。",
+      "image_plan": "/home/ubuntu/pi-city/docs/art-production/2026-08-19-asset-delivery-dashboard.png - Slide 2 explicitly requests a chart showing asset modeling and delivery status dashboard (Image 32)"
+    },
+    {
+      "id": "reusable_assets",
+      "title": "当前可复用的是远景轮廓，不是镜头前世界",
+      "summary": "说明现有5个GLB仅为远景地标，缺少近景英雄角色、建筑模块和贴图。"
+    },
+    {
+      "id": "chapter2_priority",
+      "title": "第二章是唯一正确的首批生产切片",
+      "summary": "列出第二章三项委托的当前状态与首批需交付的正式资产。"
+    },
+    {
+      "id": "visual_hierarchy",
+      "title": "画面必须先讲清三个问题",
+      "summary": "明确Pi、记忆风与红门在画面中的主次关系与空间叙事要求。"
+    },
+    {
+      "id": "pi_hero_spec",
+      "title": "Pi 是英雄资产，不是功能球体",
+      "summary": "定义Pi英雄资产的剪影、材质、模型与动画规格。",
+      "image_plan": "/home/ubuntu/pi-city/demo-recordings/memory-wind/02-single-invite.png - Slide 6 requests a visual target for the Pi hero character (Image 18)"
+    },
+    {
+      "id": "street_modules",
+      "title": "红门街角必须是一套可组装的环境语言",
+      "summary": "列出红门街角所需的建筑模块、英雄资产与生活化道具。",
+      "image_plan": "/home/ubuntu/pi-city/demo-recordings/memory-wind/kite-return-reframe.png - Slide 7 requests environmental visual targets for the memory wind street corner (Image 19)"
+    },
+    {
+      "id": "material_standards",
+      "title": "材质包决定“游戏质感”能否成立",
+      "summary": "规范湿石、深木、青漆/皮革、铜/玻璃、红布/旧纸五类材质的表现要求。"
+    },
+    {
+      "id": "glb_delivery",
+      "title": "GLB交付要让“能加载”变成“能演出”",
+      "summary": "明确GLB文件命名、骨架动画、共享材质与交付前检查清单。"
+    },
+    {
+      "id": "lighting_priority",
+      "title": "灯光不是遮羞布，而是叙事优先级",
+      "summary": "阐述冷蓝环境、三处暖点与景深/雾在场景叙事中的作用。"
+    },
+    {
+      "id": "review_gates",
+      "title": "交付评审分四道硬门",
+      "summary": "定义灰盒、Lookdev、角色与运行时四道评审门槛及通过条件。"
+    },
+    {
+      "id": "next_steps",
+      "title": "本轮决策：停止低模模拟，启动资产生产",
+      "summary": "总结回退程序化街角的决定，明确第一批生产优先级与下一步行动。"
+    }
+  ]
+}

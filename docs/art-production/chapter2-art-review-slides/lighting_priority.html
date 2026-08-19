@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&family=Noto+Sans+SC:wght@300;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #E2E8F0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #3F3F46;
+            padding: 80px 100px 0 100px;
+        }
+        .top-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background-color: #991B1B;
+        }
+        .drop-cap {
+            position: absolute;
+            top: 40px;
+            left: -20px;
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 400px;
+            color: rgba(153, 27, 27, 0.05);
+            line-height: 1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 64px;
+            color: #09090B;
+            line-height: 1.2;
+            margin-bottom: 60px;
+            z-index: 1;
+        }
+        .columns-container {
+            display: flex;
+            gap: 40px;
+            z-index: 1;
+            margin-bottom: 60px;
+        }
+        .column {
+            flex: 1;
+            background-color: rgba(255, 255, 255, 0.5);
+            padding: 40px 30px;
+            border-top: 4px solid #991B1B;
+        }
+        .col-title {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 32px;
+            color: #09090B;
+            margin-bottom: 20px;
+        }
+        .col-desc {
+            font-weight: 300;
+            font-size: 24px;
+            line-height: 1.6;
+        }
+        .col-desc strong {
+            font-weight: 700;
+            color: #991B1B;
+        }
+        .conclusion-box {
+            z-index: 1;
+            padding: 30px 40px;
+            background-color: #09090B;
+            color: #E2E8F0;
+            font-size: 26px;
+            font-weight: 300;
+            line-height: 1.5;
+            display: flex;
+            align-items: center;
+        }
+        .conclusion-box strong {
+            font-weight: 700;
+            color: #FFF;
+            margin-right: 10px;
+        }
+        .conclusion-box::before {
+            content: "";
+            display: block;
+            width: 8px;
+            height: 100%;
+            background-color: #991B1B;
+            margin-right: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="top-border"></div>
+        <div class="drop-cap">11</div>
+        <h1>灯光不是遮羞布，而是叙事优先级</h1>
+        
+        <div class="columns-container">
+            <div class="column">
+                <div class="col-title">冷蓝大环境</div>
+                <div class="col-desc">
+                    让街区退后，形成深邃的夜景基调；<strong>绝不把所有建筑平均照亮</strong>，避免画面扁平化。
+                </div>
+            </div>
+            <div class="column">
+                <div class="col-title">三处暖点</div>
+                <div class="col-desc">
+                    <strong>前景灯</strong>建立尺度，<strong>Pi帽灯</strong>建立陪伴感，<strong>红门/记忆风</strong>建立任务方向。
+                </div>
+            </div>
+            <div class="column">
+                <div class="col-title">景深与雾</div>
+                <div class="col-desc">
+                    服务于前、中、远景的空间分离；<strong>严禁使用雾效来掩盖低质量的几何模型</strong>。
+                </div>
+            </div>
+        </div>
+        
+        <div class="conclusion-box">
+            <strong>实施路径：</strong> 固定英雄镜头先通过验收，再扩展到可行走视角和任务返回镜头。
+        </div>
+    </div>
+</body>
+</html>

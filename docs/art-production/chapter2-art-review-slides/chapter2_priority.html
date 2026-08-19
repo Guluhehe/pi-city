@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&family=Noto+Sans+SC:wght@300;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #E2E8F0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #3F3F46;
+            padding: 80px 100px 0 100px;
+        }
+        .top-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background-color: #991B1B;
+        }
+        .drop-cap {
+            position: absolute;
+            top: 40px;
+            right: -20px;
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 400px;
+            color: rgba(153, 27, 27, 0.05);
+            line-height: 1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 64px;
+            color: #09090B;
+            line-height: 1.2;
+            margin-bottom: 60px;
+            z-index: 1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            z-index: 1;
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+        th, td {
+            padding: 24px 20px;
+            text-align: left;
+            font-size: 22px;
+            line-height: 1.5;
+        }
+        th {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 26px;
+            color: #09090B;
+            border-bottom: 3px solid #991B1B;
+        }
+        td {
+            font-weight: 300;
+            border-bottom: 1px solid #D1D5DB;
+        }
+        td strong {
+            font-weight: 700;
+            color: #991B1B;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .col-mission { width: 20%; font-weight: 700; color: #09090B; }
+        .col-purpose { width: 25%; }
+        .col-status { width: 20%; }
+        .col-assets { width: 35%; }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="top-border"></div>
+        <div class="drop-cap">04</div>
+        <h1>第二章是唯一正确的首批生产切片</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-mission">委托</th>
+                    <th class="col-purpose">玩法目的</th>
+                    <th class="col-status">当前状态</th>
+                    <th class="col-assets">首批需交付资产</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="col-mission">找不到家的小风筝</td>
+                    <td class="col-purpose">记忆是线索，不是答案</td>
+                    <td class="col-status"><strong>红门街区未生产</strong></td>
+                    <td class="col-assets">Pi、红门窄屋、风筝、旧纸页、湿石、前景灯</td>
+                </tr>
+                <tr>
+                    <td class="col-mission">两把钥匙</td>
+                    <td class="col-purpose">新证据改变初始猜法</td>
+                    <td class="col-status">程序化占位</td>
+                    <td class="col-assets">档案门、钥匙、锁孔拓印、图书管理员</td>
+                </tr>
+                <tr>
+                    <td class="col-mission">雨天的露天电影</td>
+                    <td class="col-purpose">Pi 要选择此刻有用的东西</td>
+                    <td class="col-status">程序化占位</td>
+                    <td class="col-assets">雨棚、屏幕、放映设备、票根、放映员</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

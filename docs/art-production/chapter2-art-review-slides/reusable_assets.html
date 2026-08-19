@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&family=Noto+Sans+SC:wght@300;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #E2E8F0;
+            position: relative;
+            display: flex;
+            overflow: hidden;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #3F3F46;
+        }
+        .top-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background-color: #991B1B;
+        }
+        .drop-cap {
+            position: absolute;
+            top: 40px;
+            right: -20px;
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 400px;
+            color: rgba(153, 27, 27, 0.08);
+            line-height: 1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            padding: 80px 120px 0 120px;
+            z-index: 1;
+        }
+        h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 64px;
+            color: #09090B;
+            line-height: 1.2;
+            margin-bottom: 40px;
+            max-width: 900px;
+        }
+        .content-grid {
+            display: flex;
+            gap: 60px;
+        }
+        .col {
+            flex: 1;
+        }
+        .section-title {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 900;
+            font-size: 32px;
+            color: #991B1B;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #991B1B;
+            padding-bottom: 10px;
+        }
+        .point {
+            font-weight: 300;
+            font-size: 24px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .point::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background-color: #3F3F46;
+        }
+        .point strong {
+            font-weight: 700;
+            color: #09090B;
+        }
+        .conclusion-box {
+            margin-top: 30px;
+            padding: 30px;
+            background-color: #09090B;
+            color: #E2E8F0;
+        }
+        .conclusion-box .point {
+            color: #E2E8F0;
+            margin-bottom: 0;
+        }
+        .conclusion-box .point::before {
+            background-color: #991B1B;
+        }
+        .conclusion-box .point strong {
+            color: #FFF;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="top-border"></div>
+        <div class="drop-cap">03</div>
+        <div class="content-wrapper">
+            <h1>当前可复用的是远景轮廓，不是镜头前世界</h1>
+            
+            <div class="content-grid">
+                <div class="col">
+                    <div class="section-title">已有基础设施</div>
+                    <div class="point">现有 <strong>5 个静态 GLB</strong> 提供港口天际线与远景定位。</div>
+                    <div class="point">已有 Pi、居民、猫和 <strong>12 个任务地标</strong>的交互与状态机基础设施。</div>
+                </div>
+                <div class="col">
+                    <div class="section-title">核心资产缺口</div>
+                    <div class="point">缺乏<strong>英雄角色</strong>与居民角色模型。</div>
+                    <div class="point">缺乏<strong>建筑模块</strong>与近景道具。</div>
+                    <div class="point">缺乏贴图、骨骼和动画系统。</div>
+                </div>
+            </div>
+
+            <div class="conclusion-box">
+                <div class="point"><strong>结论：</strong>保留现有玩法与 Three.js 运行时；从<strong>资产生产</strong>而非特效补丁开始升级。</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
