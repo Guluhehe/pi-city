@@ -28,12 +28,19 @@ try {
 
   await clickWhenReady(page, '和 Pi 一起看看');
   await clickWhenReady(page, '先弄清一点点');
-  await page.getByRole('button', { name: /旧日图书馆/ }).click();
+  const canvas = page.locator('.fountain-scene canvas');
+  await canvas.click({ position: { x: 631, y: 193 } });
+  await page.locator('.pi-plan').waitFor();
   await clickWhenReady(page, '跟上 Pi');
   await clickWhenReady(page, '等 Pi 带着发现回来');
   await clickWhenReady(page, '把它记进手账');
 
-  await page.getByRole('button', { name: /高处观察台/ }).click();
+  await page.waitForSelector('.landmark-choice-note');
+  await page.screenshot({ path: path.join(output, '00-overlook-landmark-choice.png') });
+  await canvas.click({ position: { x: 631, y: 193 } });
+  await page.locator('.pi-plan').waitFor();
+  const overlookPlan = await page.locator('.pi-plan').innerText();
+  if (!overlookPlan.includes('高处观察台') || !overlookPlan.includes('新的线') || overlookPlan.includes('旧日图书馆')) throw new Error(`Canvas overlook signal selected an unexpected investigation: ${overlookPlan}`);
   await clickWhenReady(page, '跟上 Pi');
   await clickWhenReady(page, '等 Pi 带着发现回来');
   await page.waitForSelector('.kite-rethink-cue');

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import '../fountain.css';
 import { FountainStoryScene, type StoryInvestigationAnchor, type StoryLocationId, type StoryRoutePresentation } from '../world/FountainStoryScene';
 import {
@@ -10,12 +10,13 @@ import {
   type CityMissionState,
 } from '../game';
 import type { FountainSessionState } from '../game';
+import { playPiFeedback, unlockPiFeedbackAudio, type PiFeedbackEvent } from './pi-feedback';
 
 function kiteInvestigationAnchors(state: CityMissionState, questionIds: string[]): StoryInvestigationAnchor[] {
   if (state.missionId !== 'kite' || state.phase !== 'choose-question') return [];
   const anchors: Record<string, StoryInvestigationAnchor> = {
     'kite-library': { questionId: 'kite-library', label: '旧日图书馆', hint: '屋顶间的风向札记', position: [-5.2, 3.18, -1.6], color: '#f5c574' },
-    'kite-overlook': { questionId: 'kite-overlook', label: '高处观察台', hint: '一小段新鲜的风筝线', position: [-2.7, 3.04, 3.8], color: '#9ccef0' },
+    'kite-overlook': { questionId: 'kite-overlook', label: '高处观察台', hint: '一小段新鲜的风筝线', position: [-5.2, 3.18, -1.6], color: '#9ccef0' },
     'kite-reply': { questionId: 'kite-reply', label: '屋顶红门', hint: '旧日与现在共同指向的地方', position: [3.85, 2.58, -4.55], color: '#ffbf72' },
   };
   return questionIds.flatMap((id) => anchors[id] ? [anchors[id]] : []);
@@ -50,6 +51,12 @@ export function CityMissionStory({
   const definition = cityMissionDefinition(state.missionId);
   const [showStoryNote, setShowStoryNote] = useState(false);
   const [showKnowledge, setShowKnowledge] = useState(false);
+  const [piFeedback, setPiFeedback] = useState<{ event: PiFeedbackEvent; nonce: number } | null>(null);
+  const seenReturn = useRef('');
+  const emitPiFeedback = useCallback((event: PiFeedbackEvent) => {
+    void unlockPiFeedbackAudio().then(() => playPiFeedback(event));
+    setPiFeedback((previous) => ({ event, nonce: (previous?.nonce ?? 0) + 1 }));
+  }, []);
   const questions = availableCityMissionQuestions(state);
   const investigationAnchors = useMemo(() => kiteInvestigationAnchors(state, questions.map((question) => question.id)), [questions, state]);
   const pending = state.pendingQuestion ? definition.questions[state.pendingQuestion] : undefined;
@@ -78,6 +85,14 @@ export function CityMissionStory({
     if (state.phase === 'return' && state.lastReturn?.discovery) onDiscovery(state.lastReturn.discovery);
   }, [onDiscovery, state.lastReturn?.discovery, state.phase]);
 
+  useEffect(() => {
+    const returnKey = state.phase === 'return' ? `${state.lastReturn?.fact?.id ?? 'none'}:${state.facts.join('|')}` : '';
+    if (!returnKey || seenReturn.current === returnKey) return;
+    seenReturn.current = returnKey;
+    const reframed = state.missionId === 'kite' && state.facts.includes('kite-old-wind') && state.facts.includes('kite-new-string');
+    emitPiFeedback(reframed ? 'facts-reframed' : 'fact-returned');
+  }, [emitPiFeedback, state.facts, state.lastReturn?.fact?.id, state.missionId, state.phase]);
+
   return <section className={`fountain-story mission-story mission-${state.missionId} phase-${state.phase}`} aria-label={`${definition.title} 城市故事`}>
     <header className="story-topbar">
       <button className="story-bookmark" onClick={() => setShowStoryNote((value) => !value)} aria-expanded={showStoryNote}>
@@ -90,7 +105,7 @@ export function CityMissionStory({
     {showStoryNote && <aside className="story-note" role="status"><strong>这是一个作者定义的教学故事。</strong><p>它让你用城市里的事实体验 Pi 如何观察、行动、带回新发现再确认；它不是一段真实 Trace。</p></aside>}
 
     <main className="story-world">
-      <FountainStoryScene state={backdrop} missionTheme={state.missionId} missionFacts={state.facts} storyRoute={storyRoute} onSelectQuestion={() => {}} memoryWind={memoryWindReframe} memoryWindBeat={kiteRethinkReady || (state.missionId === 'kite' && state.phase === 'complete') ? 'reframe' : memoryWindReframe ? 'hold' : 'notice'} investigationAnchors={investigationAnchors} onSelectInvestigation={(questionId) => dispatch({ type: 'SELECT_QUESTION', questionId })} />
+      <FountainStoryScene state={backdrop} missionTheme={state.missionId} missionFacts={state.facts} storyRoute={storyRoute} onSelectQuestion={() => {}} memoryWind={memoryWindReframe} memoryWindBeat={kiteRethinkReady || (state.missionId === 'kite' && state.phase === 'complete') ? 'reframe' : memoryWindReframe ? 'hold' : 'notice'} heroPi={state.missionId === 'kite'} investigationAnchors={investigationAnchors} piFeedback={piFeedback} onSelectInvestigation={(questionId) => { emitPiFeedback('landmark-selected'); dispatch({ type: 'SELECT_QUESTION', questionId }); }} />
       <section className="story-copy">
         <p className="resident-tag">{definition.resident}的委托</p>
         <h1>{definition.title}</h1>
@@ -98,7 +113,7 @@ export function CityMissionStory({
       </section>
 
       <section className="story-focus" aria-live="polite">
-        <MissionFocus state={state} dispatch={dispatch} onComplete={onCompleted} timing={storyRoute} />
+        <MissionFocus state={state} dispatch={dispatch} onComplete={onCompleted} timing={storyRoute} onPiFeedback={emitPiFeedback} />
       </section>
 
       {kiteRethinkReturn && <KiteRethinkCue />}
@@ -106,7 +121,7 @@ export function CityMissionStory({
       {state.phase === 'choose-question' && <aside className="world-clue-guide mission-clue-guide" aria-label="选择下一处调查地点">
         <span aria-hidden="true">✦</span><p>{investigationAnchors.length > 0 ? '看看城里发亮的地标，指给 Pi 一处值得再弄清的地方。' : '先找一找城市里哪件事值得弄清，再告诉 Pi 要去哪儿。'}</p>
         {investigationAnchors.length > 0 && <small className="landmark-choice-note">点击地标即可让 Pi 过去看看；下面的文字选项也随时可用。</small>}
-        <div className="world-question-fallback"><small>你注意到了什么？</small>{questions.map((item) => <button key={item.id} onClick={() => dispatch({ type: 'SELECT_QUESTION', questionId: item.id })}><span>{item.observation}</span><strong>去{item.destination}看看</strong></button>)}</div>
+        <div className="world-question-fallback"><small>你注意到了什么？</small>{questions.map((item) => <button key={item.id} onClick={() => { emitPiFeedback('landmark-selected'); dispatch({ type: 'SELECT_QUESTION', questionId: item.id }); }}><span>{item.observation}</span><strong>去{item.destination}看看</strong></button>)}</div>
       </aside>}
 
       {(state.phase === 'return' || state.phase === 'complete') && <aside className={`pi-knowledge-card ${showKnowledge ? 'open' : ''}`} aria-label="Pi 小知识">
@@ -143,16 +158,16 @@ function MissionSatchel({ state }: { state: CityMissionState }) {
   })}</div></section>;
 }
 
-function MissionFocus({ state, dispatch, onComplete, timing }: { state: CityMissionState; dispatch: (action: CityMissionAction) => void; onComplete: () => void; timing: StoryRoutePresentation }) {
+function MissionFocus({ state, dispatch, onComplete, timing, onPiFeedback }: { state: CityMissionState; dispatch: (action: CityMissionAction) => void; onComplete: () => void; timing: StoryRoutePresentation; onPiFeedback: (event: PiFeedbackEvent) => void }) {
   const definition = cityMissionDefinition(state.missionId);
   const pending = state.pendingQuestion ? definition.questions[state.pendingQuestion] : undefined;
   if (state.phase === 'arrival') return <button className="scene-cta" onClick={() => dispatch({ type: 'BEGIN' })}><span>靠近委托</span><strong>和 Pi 一起看看</strong><i>→</i></button>;
   if (state.phase === 'first-look') return <button className="scene-cta listening" onClick={() => dispatch({ type: 'COMPLETE_FIRST_LOOK' })}><span>Pi 正在听和看</span><strong>先弄清一点点</strong><i>✦</i></button>;
-  if (state.phase === 'plan' && pending) return <article className="story-card pi-plan"><span>Pi 想这样弄清</span><strong>“{pending.plan}”</strong><p>它会去 <b>{pending.destination}</b>，再把看见的带回来。</p><button className="scene-cta compact" onClick={() => dispatch({ type: 'CONFIRM_PLAN' })}>跟上 Pi <i>→</i></button></article>;
+  if (state.phase === 'plan' && pending) return <article className="story-card pi-plan"><span>Pi 想这样弄清</span><strong>“{pending.plan}”</strong><p>它会去 <b>{pending.destination}</b>，再把看见的带回来。</p><button className="scene-cta compact" onClick={() => { onPiFeedback('journey-committed'); dispatch({ type: 'CONFIRM_PLAN' }); }}>跟上 Pi <i>→</i></button></article>;
   if (state.phase === 'expedition' && pending) return <article className="story-card pi-journey"><span>Pi 正沿着小城出发</span><strong>去 {pending.destination}</strong><p>{pending.plan}</p><TimedButton delay={Math.round((timing.travelSeconds ?? 2.7) * 1000 + 380)} ready="等 Pi 带着发现回来" waiting="Pi 正沿着灯火前往…" onClick={() => dispatch({ type: 'COMPLETE_EXPEDITION' })} /></article>;
   if (state.phase === 'return' && state.lastReturn) {
     const kiteRethinkReturn = state.missionId === 'kite' && state.lastReturn.fact?.id === 'kite-new-string' && state.facts.includes('kite-old-wind');
-    return <article className={`story-card story-return ${state.lastReturn.kind} ${kiteRethinkReturn ? 'rethink' : ''}`}><span>{kiteRethinkReturn ? '两条线索让 Pi 换了一个方向' : returnHeading(state.lastReturn.kind)}</span><strong>{kiteRethinkReturn ? '现在该去屋顶红门' : state.lastReturn.title}</strong><p>{kiteRethinkReturn ? '旧日风向告诉 Pi 从哪里找；眼前的风筝线告诉 Pi 现在往哪里走。' : state.lastReturn.body}</p><TimedButton delay={Math.round((timing.returnSeconds ?? 2.15) * 1000 + 320)} ready={kiteRethinkReturn ? '按这个新方向继续' : '把它记进手账'} waiting="Pi 正带着发现回来…" onClick={() => dispatch({ type: 'ACKNOWLEDGE_RETURN' })} /></article>;
+    return <article className={`story-card story-return ${state.lastReturn.kind} ${kiteRethinkReturn ? 'rethink' : ''}`}><span>{kiteRethinkReturn ? '两条线索让 Pi 换了一个方向' : returnHeading(state.lastReturn.kind)}</span><strong>{kiteRethinkReturn ? '现在该去屋顶红门' : state.lastReturn.title}</strong><p>{kiteRethinkReturn ? '旧日风向告诉 Pi 从哪里找；眼前的风筝线告诉 Pi 现在往哪里走。' : state.lastReturn.body}</p><TimedButton delay={Math.round((timing.returnSeconds ?? 2.15) * 1000 + 320)} ready={kiteRethinkReturn ? '按这个新方向继续' : '把它记进手账'} waiting="Pi 正带着发现回来…" onClick={() => { if (kiteRethinkReturn) onPiFeedback('route-chosen'); dispatch({ type: 'ACKNOWLEDGE_RETURN' }); }} /></article>;
   }
   if (state.phase === 'complete') return <article className="story-card story-complete"><span>这件心愿办好了</span><strong>{definition.title}</strong><p>{definition.resident.split(' · ')[0]}的生活在城里留下了一点新变化。</p><button className="scene-cta compact" onClick={onComplete}>带 Pi 回到心愿码头 <i>↗</i></button></article>;
   return <div className="story-empty">新的事实会让 Pi 在城市里出现下一颗疑问种子。</div>;

@@ -11,6 +11,7 @@ import {
   type FountainQuestionId,
   type FountainSessionState,
 } from '../game';
+import type { PiFeedbackEvent } from '../product/pi-feedback';
 
 type Vec3 = [number, number, number];
 export type StoryLocationId = FountainQuestionId | 'fountain' | 'workshop';
@@ -89,6 +90,7 @@ export function FountainStoryScene({
   memoryWind = false,
   memoryWindBeat = 'notice',
   heroPi = false,
+  piFeedback = null,
   investigationAnchors = [],
   onSelectInvestigation,
   onSceneReady,
@@ -101,6 +103,7 @@ export function FountainStoryScene({
   memoryWind?: boolean;
   memoryWindBeat?: MemoryWindBeat;
   heroPi?: boolean;
+  piFeedback?: { event: PiFeedbackEvent; nonce: number } | null;
   investigationAnchors?: StoryInvestigationAnchor[];
   onSelectInvestigation?: (questionId: string) => void;
   onSceneReady?: () => void;
@@ -125,7 +128,7 @@ export function FountainStoryScene({
         <pointLight position={[0, 5.3, 0]} intensity={memoryWind ? .2 : 2.8} color="#aaffee" distance={11} />
         {memoryWind && missionTheme === 'kite' && <><pointLight position={[-4.7, 2.2, 2.7]} intensity={1.12} color="#ffc36f" distance={5.2} /><pointLight position={[4.9, 2.1, -3.75]} intensity={1.18} color="#ffb96c" distance={4.8} /></>}
         <FountainCamera state={state} missionTheme={missionTheme} presentation={presentation} memoryWind={memoryWind} memoryWindBeat={memoryWindBeat} />
-        <FountainTown state={state} available={available} onSelectQuestion={onSelectQuestion} missionTheme={missionTheme} missionFacts={missionFacts} presentation={presentation} memoryWind={memoryWind} memoryWindBeat={memoryWindBeat} heroPi={heroPi} investigationAnchors={investigationAnchors} onSelectInvestigation={onSelectInvestigation} />
+        <FountainTown state={state} available={available} onSelectQuestion={onSelectQuestion} missionTheme={missionTheme} missionFacts={missionFacts} presentation={presentation} memoryWind={memoryWind} memoryWindBeat={memoryWindBeat} heroPi={heroPi} piFeedback={piFeedback} investigationAnchors={investigationAnchors} onSelectInvestigation={onSelectInvestigation} />
       </Canvas>
     </div>
   );
@@ -259,6 +262,7 @@ function FountainTown({
   memoryWind,
   memoryWindBeat,
   heroPi,
+  piFeedback,
   investigationAnchors,
   onSelectInvestigation,
 }: {
@@ -271,6 +275,7 @@ function FountainTown({
   memoryWind: boolean;
   memoryWindBeat: MemoryWindBeat;
   heroPi: boolean;
+  piFeedback: { event: PiFeedbackEvent; nonce: number } | null;
   investigationAnchors: StoryInvestigationAnchor[];
   onSelectInvestigation?: (questionId: string) => void;
 }) {
@@ -302,7 +307,7 @@ function FountainTown({
       <DeferredHarborLandmarks />
       <HarborHomes cinematic={memoryWind && missionTheme === 'kite'} />
       <HarborBoats />
-      <PiCompanion state={state} target={piTarget} complete={complete} presentation={presentation} memoryWind={memoryWind && missionTheme === 'kite'} memoryWindBeat={memoryWindBeat} heroPi={heroPi} />
+      <PiCompanion state={state} target={piTarget} complete={complete} presentation={presentation} memoryWind={memoryWind && missionTheme === 'kite'} memoryWindBeat={memoryWindBeat} heroPi={heroPi} piFeedback={piFeedback} />
       <PathLanterns state={state} target={piTarget} presentation={presentation} />
       <LanternField complete={complete} />
       <Fireflies complete={complete} />
@@ -797,7 +802,7 @@ function LocationHotspot({ position, color, active, visited, onClick }: { positi
   </group>;
 }
 
-function PiCompanion({ state, target, complete, presentation, memoryWind, memoryWindBeat, heroPi }: { state: FountainSessionState; target: StoryLocationId; complete: boolean; presentation: Required<Omit<StoryRoutePresentation, 'returnKind'>> & Pick<StoryRoutePresentation, 'returnKind'>; memoryWind: boolean; memoryWindBeat: MemoryWindBeat; heroPi: boolean }) {
+function PiCompanion({ state, target, complete, presentation, memoryWind, memoryWindBeat, heroPi, piFeedback }: { state: FountainSessionState; target: StoryLocationId; complete: boolean; presentation: Required<Omit<StoryRoutePresentation, 'returnKind'>> & Pick<StoryRoutePresentation, 'returnKind'>; memoryWind: boolean; memoryWindBeat: MemoryWindBeat; heroPi: boolean; piFeedback: { event: PiFeedbackEvent; nonce: number } | null }) {
   const group = useRef<THREE.Group>(null);
   const satchel = useRef<THREE.Group>(null);
   const desired = useMemo(() => new THREE.Vector3(), []);
@@ -805,6 +810,8 @@ function PiCompanion({ state, target, complete, presentation, memoryWind, memory
   const memoryTarget = useMemo(() => new THREE.Vector3(-1.72, 1.72, 1.18), []);
   const phaseStartedAt = useRef(0);
   const lastKey = useRef('');
+  const feedbackStartedAt = useRef(-10);
+  const feedbackKey = useRef('');
   useFrame(({ clock }, delta) => {
     if (!group.current) return;
     const key = memoryWind ? `${journeyStateKey(state)}:${memoryWindBeat}` : journeyStateKey(state);
@@ -813,6 +820,15 @@ function PiCompanion({ state, target, complete, presentation, memoryWind, memory
       phaseStartedAt.current = clock.elapsedTime;
     }
     const elapsed = clock.elapsedTime - phaseStartedAt.current;
+    const nextFeedbackKey = piFeedback ? `${piFeedback.event}:${piFeedback.nonce}` : '';
+    if (nextFeedbackKey && nextFeedbackKey !== feedbackKey.current) {
+      feedbackKey.current = nextFeedbackKey;
+      feedbackStartedAt.current = clock.elapsedTime;
+    }
+    const feedbackAge = clock.elapsedTime - feedbackStartedAt.current;
+    const feedbackPulse = piFeedback && feedbackAge < 1.1 ? Math.sin(Math.min(1, feedbackAge / .32) * Math.PI) * (piFeedback.event === 'facts-reframed' ? .075 : .045) : 0;
+    group.current.scale.setScalar((memoryWind ? 1.55 : 1) * (1 + feedbackPulse));
+    group.current.rotation.z = THREE.MathUtils.damp(group.current.rotation.z, feedbackPulse * (piFeedback?.event === 'landmark-selected' ? -.7 : .38), 10, delta);
     const destination = LOCATIONS[target].position;
     const departing = state.phase === 'expedition' && target !== 'fountain';
     const returning = state.phase === 'return' && target !== 'fountain';
@@ -875,7 +891,41 @@ function PiCompanion({ state, target, complete, presentation, memoryWind, memory
       {(returning || (memoryWind && memoryWindBeat !== 'notice')) && <><mesh position={[.01,.48,.08]} rotation={[0,.24,.12]}><planeGeometry args={[.27,.19]} /><meshStandardMaterial color="#f2dfb2" emissive="#b88947" emissiveIntensity={memoryWind ? .82 : .24} side={THREE.DoubleSide} /></mesh>{returning && <pointLight position={[.01,.48,.08]} color={tokenColor} intensity={.26} distance={1.6} />}</>}
     </group>
     {returning && <mesh position={[0,.9,.02]} rotation={[0,Math.PI/4,0]}><octahedronGeometry args={[.12,0]} /><meshStandardMaterial color={tokenColor} emissive={tokenColor} emissiveIntensity={.58} roughness={.3} /></mesh>}
+    <PiFeedbackHalo feedback={piFeedback} />
     <pointLight position={[0,.1,0]} color={styledHero ? '#ffd57d' : complete ? '#ffe3a3' : returning ? '#72b9a7' : '#adfff0'} intensity={styledHero ? .95 : state.phase === 'plan' ? 2.15 : returning ? .38 : 1.45} distance={returning ? 1.8 : 3.4} />
+  </group>;
+}
+
+function PiFeedbackHalo({ feedback }: { feedback: { event: PiFeedbackEvent; nonce: number } | null }) {
+  const group = useRef<THREE.Group>(null);
+  const outer = useRef<THREE.Mesh>(null);
+  const inner = useRef<THREE.Mesh>(null);
+  const light = useRef<THREE.PointLight>(null);
+  const startedAt = useRef(-10);
+  const key = useRef('');
+  useFrame(({ clock }) => {
+    const nextKey = feedback ? `${feedback.event}:${feedback.nonce}` : '';
+    if (nextKey && nextKey !== key.current) {
+      key.current = nextKey;
+      startedAt.current = clock.elapsedTime;
+    }
+    const age = clock.elapsedTime - startedAt.current;
+    const active = Boolean(feedback) && age >= 0 && age < 1.18;
+    const intensity = active ? Math.sin(Math.min(1, age / .35) * Math.PI) * (feedback?.event === 'facts-reframed' ? 1 : .72) : 0;
+    if (group.current) group.current.visible = active;
+    if (outer.current) outer.current.scale.setScalar(.55 + age * .95);
+    if (inner.current) inner.current.scale.setScalar(.28 + age * .48);
+    if (light.current) light.current.intensity = intensity * 1.45;
+  });
+  const color = feedback?.event === 'facts-reframed' ? '#ffbf72'
+    : feedback?.event === 'fact-returned' ? '#7ed5eb'
+      : feedback?.event === 'journey-committed' ? '#f2c474'
+        : feedback?.event === 'route-chosen' ? '#ffc48a' : '#9ce6f0';
+  return <group ref={group} visible={false} position={[0,.16,0]}>
+    <mesh ref={outer} rotation={[Math.PI / 2,0,0]}><torusGeometry args={[.56,.026,8,32]} /><meshBasicMaterial color={color} transparent opacity={.66} depthWrite={false} /></mesh>
+    <mesh ref={inner} rotation={[Math.PI / 2,0,0]}><torusGeometry args={[.5,.04,8,32]} /><meshBasicMaterial color="#fff0b4" transparent opacity={.48} depthWrite={false} /></mesh>
+    {[-.42,0,.42].map((x) => <mesh key={x} position={[x,.18,.08]}><sphereGeometry args={[.035,8,6]} /><meshBasicMaterial color={color} /></mesh>)}
+    <pointLight ref={light} color={color} distance={2.8} />
   </group>;
 }
 
