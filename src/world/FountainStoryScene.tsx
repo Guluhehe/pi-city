@@ -25,6 +25,14 @@ export interface StoryRoutePresentation {
   returnKind?: StoryReturnKind;
 }
 
+export interface StoryInvestigationAnchor {
+  questionId: string;
+  label: string;
+  hint: string;
+  position: Vec3;
+  color: string;
+}
+
 const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
 
 const HARBOR_LANDMARKS = [
@@ -81,6 +89,8 @@ export function FountainStoryScene({
   memoryWind = false,
   memoryWindBeat = 'notice',
   heroPi = false,
+  investigationAnchors = [],
+  onSelectInvestigation,
   onSceneReady,
 }: {
   state: FountainSessionState;
@@ -91,6 +101,8 @@ export function FountainStoryScene({
   memoryWind?: boolean;
   memoryWindBeat?: MemoryWindBeat;
   heroPi?: boolean;
+  investigationAnchors?: StoryInvestigationAnchor[];
+  onSelectInvestigation?: (questionId: string) => void;
   onSceneReady?: () => void;
 }) {
   const available = availableFountainQuestions(state).map((question) => question.id);
@@ -113,7 +125,7 @@ export function FountainStoryScene({
         <pointLight position={[0, 5.3, 0]} intensity={memoryWind ? .2 : 2.8} color="#aaffee" distance={11} />
         {memoryWind && missionTheme === 'kite' && <><pointLight position={[-4.7, 2.2, 2.7]} intensity={1.12} color="#ffc36f" distance={5.2} /><pointLight position={[4.9, 2.1, -3.75]} intensity={1.18} color="#ffb96c" distance={4.8} /></>}
         <FountainCamera state={state} missionTheme={missionTheme} presentation={presentation} memoryWind={memoryWind} memoryWindBeat={memoryWindBeat} />
-        <FountainTown state={state} available={available} onSelectQuestion={onSelectQuestion} missionTheme={missionTheme} missionFacts={missionFacts} presentation={presentation} memoryWind={memoryWind} memoryWindBeat={memoryWindBeat} heroPi={heroPi} />
+        <FountainTown state={state} available={available} onSelectQuestion={onSelectQuestion} missionTheme={missionTheme} missionFacts={missionFacts} presentation={presentation} memoryWind={memoryWind} memoryWindBeat={memoryWindBeat} heroPi={heroPi} investigationAnchors={investigationAnchors} onSelectInvestigation={onSelectInvestigation} />
       </Canvas>
     </div>
   );
@@ -247,6 +259,8 @@ function FountainTown({
   memoryWind,
   memoryWindBeat,
   heroPi,
+  investigationAnchors,
+  onSelectInvestigation,
 }: {
   state: FountainSessionState;
   available: FountainQuestionId[];
@@ -257,6 +271,8 @@ function FountainTown({
   memoryWind: boolean;
   memoryWindBeat: MemoryWindBeat;
   heroPi: boolean;
+  investigationAnchors: StoryInvestigationAnchor[];
+  onSelectInvestigation?: (questionId: string) => void;
 }) {
   const hasFact = (fact: FountainSessionState['facts'][number]) => state.facts.includes(fact);
   const activeQuestion = state.phase === 'choose-question' ? available : [];
@@ -274,6 +290,7 @@ function FountainTown({
       <PavedPlaza cinematic={memoryWind && missionTheme === 'kite'} />
       {memoryWind && missionTheme === 'kite' && <MemoryWindHarborLayer />}
       <MissionSetDressing theme={missionTheme} facts={missionFacts} />
+      {investigationAnchors.length > 0 && onSelectInvestigation && <InvestigationAnchors anchors={investigationAnchors} onSelect={onSelectInvestigation} />}
       {memoryWind && missionTheme === 'kite' && <MemoryWindPhenomenon beat={memoryWindBeat} />}
       <StreetDressing complete={complete} />
       <FountainPlaza state={state} memoryWind={memoryWind} />
@@ -291,6 +308,24 @@ function FountainTown({
       <Fireflies complete={complete} />
     </group>
   );
+}
+
+function InvestigationAnchors({ anchors, onSelect }: { anchors: StoryInvestigationAnchor[]; onSelect: (questionId: string) => void }) {
+  const group = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    if (!group.current) return;
+    group.current.children.forEach((child, index) => {
+      const bob = Math.sin(clock.elapsedTime * 2.1 + index * .9) * .07;
+      child.position.y = anchors[index].position[1] + bob;
+      child.rotation.y = clock.elapsedTime * .45 + index * .2;
+    });
+  });
+  return <group ref={group}>{anchors.map((anchor) => <group key={anchor.questionId} position={anchor.position} onClick={(event) => { event.stopPropagation(); onSelect(anchor.questionId); }} onPointerOver={() => { document.body.style.cursor = 'pointer'; }} onPointerOut={() => { document.body.style.cursor = 'auto'; }}>
+    <mesh><sphereGeometry args={[.48,12,10]} /><meshBasicMaterial transparent opacity={.001} depthWrite={false} /></mesh>
+    <mesh><octahedronGeometry args={[.16,0]} /><meshStandardMaterial color={anchor.color} emissive={anchor.color} emissiveIntensity={1.25} roughness={.28} /></mesh>
+    <mesh rotation={[Math.PI / 2,0,0]}><torusGeometry args={[.29,.018,7,20]} /><meshStandardMaterial color="#ffe7ae" emissive="#b88947" emissiveIntensity={.58} roughness={.32} metalness={.38} /></mesh>
+    <pointLight color={anchor.color} intensity={.74} distance={3.2} />
+  </group>)}</group>;
 }
 
 function MissionSetDressing({ theme, facts }: { theme: MissionTheme; facts: string[] }) {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import '../fountain.css';
-import { FountainStoryScene, type StoryLocationId, type StoryRoutePresentation } from '../world/FountainStoryScene';
+import { FountainStoryScene, type StoryInvestigationAnchor, type StoryLocationId, type StoryRoutePresentation } from '../world/FountainStoryScene';
 import {
   availableCityMissionQuestions,
   cityMissionDefinition,
@@ -10,6 +10,16 @@ import {
   type CityMissionState,
 } from '../game';
 import type { FountainSessionState } from '../game';
+
+function kiteInvestigationAnchors(state: CityMissionState, questionIds: string[]): StoryInvestigationAnchor[] {
+  if (state.missionId !== 'kite' || state.phase !== 'choose-question') return [];
+  const anchors: Record<string, StoryInvestigationAnchor> = {
+    'kite-library': { questionId: 'kite-library', label: '旧日图书馆', hint: '屋顶间的风向札记', position: [-5.2, 3.18, -1.6], color: '#f5c574' },
+    'kite-overlook': { questionId: 'kite-overlook', label: '高处观察台', hint: '一小段新鲜的风筝线', position: [-2.7, 3.04, 3.8], color: '#9ccef0' },
+    'kite-reply': { questionId: 'kite-reply', label: '屋顶红门', hint: '旧日与现在共同指向的地方', position: [3.85, 2.58, -4.55], color: '#ffbf72' },
+  };
+  return questionIds.flatMap((id) => anchors[id] ? [anchors[id]] : []);
+}
 
 function storyRouteFor(state: CityMissionState, destination?: string): StoryRoutePresentation {
   if (state.missionId === 'kite' && (state.phase === 'return' || state.phase === 'complete')) return { target: 'wind', travelSeconds: 3.35, returnSeconds: 2.87, returnKind: state.lastReturn?.kind };
@@ -41,12 +51,14 @@ export function CityMissionStory({
   const [showStoryNote, setShowStoryNote] = useState(false);
   const [showKnowledge, setShowKnowledge] = useState(false);
   const questions = availableCityMissionQuestions(state);
+  const investigationAnchors = useMemo(() => kiteInvestigationAnchors(state, questions.map((question) => question.id)), [questions, state]);
   const pending = state.pendingQuestion ? definition.questions[state.pendingQuestion] : undefined;
   const facts = cityMissionFactDetails(state);
   const storyRoute = useMemo(() => storyRouteFor(state, pending?.destination), [pending?.destination, state]);
   const summary = CITY_MISSIONS[state.missionId];
-  const kiteRethinkReturn = state.missionId === 'kite' && state.phase === 'return' && state.lastReturn?.fact?.id === 'kite-new-string' && state.facts.includes('kite-old-wind');
-  const memoryWindReframe = state.missionId === 'kite' && (state.phase === 'return' || state.phase === 'complete');
+  const kiteRethinkReady = state.missionId === 'kite' && state.facts.includes('kite-old-wind') && state.facts.includes('kite-new-string') && !state.facts.includes('kite-home');
+  const kiteRethinkReturn = kiteRethinkReady && state.phase === 'return' && state.lastReturn?.fact?.id === 'kite-new-string';
+  const memoryWindReframe = state.missionId === 'kite' && (state.phase === 'return' || state.phase === 'complete' || kiteRethinkReady);
   const backdrop = useMemo<FountainSessionState>(() => ({
     scenarioId: 'fountain-d-greybox',
     source: 'tutorial',
@@ -78,7 +90,7 @@ export function CityMissionStory({
     {showStoryNote && <aside className="story-note" role="status"><strong>这是一个作者定义的教学故事。</strong><p>它让你用城市里的事实体验 Pi 如何观察、行动、带回新发现再确认；它不是一段真实 Trace。</p></aside>}
 
     <main className="story-world">
-      <FountainStoryScene state={backdrop} missionTheme={state.missionId} missionFacts={state.facts} storyRoute={storyRoute} onSelectQuestion={() => {}} memoryWind={memoryWindReframe} memoryWindBeat={kiteRethinkReturn || (state.missionId === 'kite' && state.phase === 'complete') ? 'reframe' : memoryWindReframe ? 'hold' : 'notice'} />
+      <FountainStoryScene state={backdrop} missionTheme={state.missionId} missionFacts={state.facts} storyRoute={storyRoute} onSelectQuestion={() => {}} memoryWind={memoryWindReframe} memoryWindBeat={kiteRethinkReady || (state.missionId === 'kite' && state.phase === 'complete') ? 'reframe' : memoryWindReframe ? 'hold' : 'notice'} investigationAnchors={investigationAnchors} onSelectInvestigation={(questionId) => dispatch({ type: 'SELECT_QUESTION', questionId })} />
       <section className="story-copy">
         <p className="resident-tag">{definition.resident}的委托</p>
         <h1>{definition.title}</h1>
@@ -92,7 +104,8 @@ export function CityMissionStory({
       {kiteRethinkReturn && <KiteRethinkCue />}
 
       {state.phase === 'choose-question' && <aside className="world-clue-guide mission-clue-guide" aria-label="选择下一处调查地点">
-        <span aria-hidden="true">✦</span><p>先找一找城市里哪件事值得弄清，再告诉 Pi 要去哪儿。</p>
+        <span aria-hidden="true">✦</span><p>{investigationAnchors.length > 0 ? '看看城里发亮的地标，指给 Pi 一处值得再弄清的地方。' : '先找一找城市里哪件事值得弄清，再告诉 Pi 要去哪儿。'}</p>
+        {investigationAnchors.length > 0 && <small className="landmark-choice-note">点击地标即可让 Pi 过去看看；下面的文字选项也随时可用。</small>}
         <div className="world-question-fallback"><small>你注意到了什么？</small>{questions.map((item) => <button key={item.id} onClick={() => dispatch({ type: 'SELECT_QUESTION', questionId: item.id })}><span>{item.observation}</span><strong>去{item.destination}看看</strong></button>)}</div>
       </aside>}
 
